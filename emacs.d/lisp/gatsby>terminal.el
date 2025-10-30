@@ -75,7 +75,8 @@
 	(gatsby>defcommand eshell/cls (&rest _)
 		"clean screen by scrolling all the way down."
 		(let ((last-line (save-excursion (goto-char (point-max)) (beginning-of-line) (point))))
-			(set-window-start (selected-window) last-line)))
+			(set-window-start (selected-window) last-line)
+			(eshell-interrupt-process)))
 
 	(defun gatsby>eshell-alias (executable &rest args)
 		(when (executable-find executable (file-remote-p default-directory))
