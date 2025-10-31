@@ -30,7 +30,7 @@
 					 (config-root (file-name-concat gatsby>pyrefly-configfile-location (replace-regexp-in-string "/" "-" root)))
 					 (config-file (file-name-concat config-root "pyrefly.toml"))
 					 (lsp-cmd
-						`(,(expand-file-name ".venv/bin/pyrefly" user-emacs-directory)
+						`(,(expand-file-name ".venv/bin/pyrefly" gatsby>dotfiles-repo-location)
 							"lsp" "--workspace-indexing-limit" "100000"
 							))
 					 (lspce-server-programs `((python . ,lsp-cmd))))

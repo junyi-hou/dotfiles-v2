@@ -1,4 +1,4 @@
-;;; gatsby>default.el --- change emacs default -*- lexical-binding: t; -*-
+;;; gatsby>default.el --- sane emacs default -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 
@@ -47,8 +47,25 @@
   (inhibit-startup-screen t)
 	(fill-column 88)
 	(split-window-preferred-function #'gatsby>split-window-sensibly)
+	:hook
+	(elpaca-after-init . gatsby>set-dotfiles-repo-location)
   :config
   (defalias #'yes-or-no-p #'y-or-n-p)
+
+	(defun gatsby>set-dotfiles-repo-location (&rest _)
+		"Set `gastby>dotfile-repo-location' variable by finding the symlinked dotfiles.
+Only work if the config is installed correctly according to the instruction in
+`README.md'.  Display a warning if cannot find the repo location, in which case some
+functionalities will not be available"
+		(let ((repo-location (thread-first
+													 "init.el"
+													 (expand-file-name user-emacs-directory)
+													 (file-truename)
+													 (locate-dominating-file ".git"))))
+			(if repo-location
+					(defconst gatsby>dotfiles-repo-location repo-location
+						"The git root of the dotfile repo")
+				(display-warning 'gatsby "Unable to find dotfiles repo location. Did you install the configuration using `make install'?"))))
 
 	(defun gatsby>split-window-sensibly (&optional window)
 		"Split WINDOW sensibly, preferring horizontal split if wide enough.  Splits

@@ -20,15 +20,15 @@
   :hook (prog-mode . corfu-mode)
   :config
   (gatsby>defcommand gatsby>corfu-complete ()
-                     "Complete common parts of all the candidates, or insert the current selection.
+    "Complete common parts of all the candidates, or insert the current selection.
 Insert the current selection when
 1. there is only one candidate;
 2. last command is `gatsby>corfu-complete';
 3. last command is `corfu-next'or `corfu-previous'."
-                     (if (or (= (length corfu--candidates) 1)
-                             (memq last-command '(gatsby>corfu-complete corfu-next corfu-previous)))
-                         (corfu-insert)
-                       (corfu-expand)))
+    (if (or (= (length corfu--candidates) 1)
+            (memq last-command '(gatsby>corfu-complete corfu-next corfu-previous)))
+        (corfu-insert)
+      (corfu-expand)))
 
   :general
   (:keymaps 'corfu-map
@@ -66,8 +66,8 @@ Insert the current selection when
 	:ensure (:host github :repo "jdtsmith/eglot-booster")
 	:hook (elpaca-after-init . eglot-booster-mode)
 	:custom
-	(eglot-booster--boost `(,(expand-file-name (concat user-emacs-directory "bin/emacs-lsp-booster")) "--json-false-value" ":json-false" "--"))
-	(eglot-booster--boost-io-only `(,(expand-file-name (concat user-emacs-directory "bin/emacs-lsp-booster")) "--disable-bytecode" "--"))
+	(eglot-booster--boost `(,(expand-file-name (concat gatsby>dotfiles-repo-location ".tools/bin/emacs-lsp-booster")) "--json-false-value" ":json-false" "--"))
+	(eglot-booster--boost-io-only `(,(expand-file-name (concat gatsby>dotfiles-repo-location ".tools/bin/emacs-lsp-booster")) "--disable-bytecode" "--"))
 	:config
   (defun gatsby>>do-not-check-emacs-lsp-booster-executable (func &rest args)
     (cl-letf (((symbol-function #'executable-find) (lambda (&rest _) t)))

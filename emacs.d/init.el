@@ -1,4 +1,8 @@
-;; -*- lexical-binding: t; -*-
+;;; init.el --- emacs config -*- lexical-binding: t; -*-
+
+;;; Commentary:
+
+;;; Code:
 
 (add-to-list 'load-path (expand-file-name "lisp" user-emacs-directory))
 
@@ -19,3 +23,5 @@
 
 (require 'gatsby>ui)
 (require 'gatsby>remote)
+
+;;; init.el ends here

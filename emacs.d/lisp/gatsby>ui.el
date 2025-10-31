@@ -26,6 +26,11 @@
   (unless (frame-parameter nil 'fullscreen)
     (set-frame-parameter nil 'fullscreen 'maximized))
 
+	;; setup ligature if support
+	(when (and (eq system-type 'darwin)
+						 (fboundp #'mac-auto-operator-composition-mode))
+		(mac-auto-operator-composition-mode))
+
   ;; font
   (set-face-attribute
    'default nil
