@@ -51,6 +51,9 @@
   (gatsby>defcommand gatsby>switch-to-message ()
     (gatsby>switch-to-buffer-new-window (get-buffer-create "*Messages*")))
 
+	(gatsby>defcommand gatsby>kill-buffer ()
+		(kill-buffer (current-buffer)))
+
   (evil-mode 1)
 
   :general
@@ -87,7 +90,7 @@
 						:prefix "SPC"
 						"k" #'delete-window
 						"w" #'evil-write
-						"q" #'kill-buffer-and-window
+						"q" #'gatsby>kill-buffer
 						"\\" #'gatsby>split-right
 						"-" #'gatsby>split-down
 

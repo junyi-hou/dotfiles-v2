@@ -178,7 +178,8 @@
 		 "d" #'eshell/evil-delete
 		 "D" #'eshell/evil-delete-line
 		 "<" #'eshell-previous-prompt
-		 ">" #'eshell-next-prompt)
+		 ">" #'eshell-next-prompt
+		 "q" #'kill-buffer-and-window)
 
 		(general-define-key
 		 :states 'insert
