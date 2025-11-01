@@ -7,5 +7,6 @@
 **/.ipynb_checkpoints/**
 
 # age identity/key file
-module/passage/identities
+modules/passage/identities
+
 .aider*
