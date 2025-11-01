@@ -47,30 +47,30 @@
 	(:keymaps 'smerge-mode-map :states '(normal visual) :prefix "SPC"
 						"m" #'gatsby>smerge-pick-at-point))
 
-(use-package projtree
-	:ensure (:host github :repo "petergardfjall/emacs-projtree")
-	:custom
-	(projtree-show-git-status nil)
-	(projtree-profiling-enabled nil)
-	:config
-	;; don't use project-known-project-list to identify the root
-	(defun gatsby>>projtree-root (buffer)
-		"Return the root of the project in BUFFER using `project-root'."
-		(when (buffer-live-p buffer)
-			(with-current-buffer buffer
-				(let* ((buf-file (buffer-file-name buffer))
-							 ;; Note: for a non-file buffer (like `*scratch*') we consider its
-							 ;; project tree root to be default-directory.
-							 (buffer-dir (file-name-directory (or buf-file default-directory)))
-							 (project (project-current nil buffer-dir)))
-					(if project
-							(project-root project)
-						nil)))))
+;; (use-package projtree
+;; 	:ensure (:host github :repo "petergardfjall/emacs-projtree")
+;; 	:custom
+;; 	(projtree-show-git-status nil)
+;; 	(projtree-profiling-enabled nil)
+;; 	:config
+;; 	;; don't use project-known-project-list to identify the root
+;; 	(defun gatsby>>projtree-root (buffer)
+;; 		"Return the root of the project in BUFFER using `project-root'."
+;; 		(when (buffer-live-p buffer)
+;; 			(with-current-buffer buffer
+;; 				(let* ((buf-file (buffer-file-name buffer))
+;; 							 ;; Note: for a non-file buffer (like `*scratch*') we consider its
+;; 							 ;; project tree root to be default-directory.
+;; 							 (buffer-dir (file-name-directory (or buf-file default-directory)))
+;; 							 (project (project-current nil buffer-dir)))
+;; 					(if project
+;; 							(project-root project)
+;; 						nil)))))
 
-	(gatsby>defcommand gatsby>projtree-open-or-toggle ()
-		(message "%s" (button-at (point))))
+;; 	(gatsby>defcommand gatsby>projtree-open-or-toggle ()
+;; 		(message "%s" (button-at (point))))
 
-	(advice-add #'projtree--project-root :override #'gatsby>>projtree-root))
+;; 	(advice-add #'projtree--project-root :override #'gatsby>>projtree-root))
 
 (use-package envrc
 	:ensure (:host github :repo "purcell/envrc")

@@ -99,17 +99,6 @@ before saving to the cache file."
       ;; read
       items)))
 
-(defun gatsby>>unload-internal-pkg (pkg e)
-  (and (featurep pkg) (unload-feature pkg t))
-  (elpaca--continue-build e))
-
-(defun gatsby>update-internal-pkg-build-step (pkg)
-  "Usage: `(elpaca `(PKG :build ,(gatsby>update-internal-pkg-build-step PKG)))'."
-  (append (butlast (if (file-exists-p (expand-file-name (symbol-name pkg) elpaca-builds-directory))
-                       elpaca--pre-built-steps elpaca-build-steps))
-          (list (apply-partially #'gatsby>>unload-internal-pkg pkg) #'elpaca--activate-package)))
-
-
 (defun gatsby>switch-to-buffer-new-window (buffer-or-name &optional norecord)
   "Switch to buffer, reusing existing window if visible, otherwise create new window.
 If BUFFER-OR-NAME is already visible in a window, switch to that window.
@@ -158,10 +147,7 @@ The optional argument TEST specifies the hash table's test function
 								 (puthash key-string processed-value table)))
 			table)))
 
-;; update the builtin elpaca
-(elpaca `(seq :build ,(gatsby>update-internal-pkg-build-step 'seq)))
-;; (elpaca `(eldoc :build ,(gatsby>update-internal-pkg-build-step 'eldoc)))
-;; (elpaca `(jsonrpc :build ,(gatsby>update-internal-pkg-build-step 'jsonrpc)))
+;; secret management via `passage'
 
 (provide 'gatsby>>utility)
 ;;; gatsby>>utility.el ends here

@@ -44,16 +44,6 @@ Insert the current selection when
   (completion-styles '(orderless basic))
   (completion-category-overrides '((file (styles partial-completion)))))
 
-;; (use-package yasnippet
-;; 	:ensure (:host github :repo "joaotavora/yasnippet"))
-
-;; (use-package lspce
-;; 	:ensure `(:host github :repo "zbelial/lspce"
-;;          :files (:defaults ("./target/x86_64-apple-darwin/release/liblspce_module.dylib" . "./lspce-module.dylib"))
-;;          :pre-build (("sh" "-c" "cat > .cargo/config.toml <<EOF\n[build]\n\n[target.x86_64-apple-darwin]\nrustflage = [\"-C\" \"target-cpu=core2\"]\nEOF") ("cargo" "build" "--release" "--target" "x86_64-apple-darwin")))
-;; 	:custom
-;; 	(lspce-server-programs nil))
-
 (gatsby>use-internal-pacakge eglot
 	:custom-face
 	(eglot-inlay-hint-face ((t (:height 1.0))))
@@ -68,6 +58,7 @@ Insert the current selection when
 	:custom
 	(eglot-booster--boost `(,(expand-file-name (concat gatsby>dotfiles-repo-location ".tools/bin/emacs-lsp-booster")) "--json-false-value" ":json-false" "--"))
 	(eglot-booster--boost-io-only `(,(expand-file-name (concat gatsby>dotfiles-repo-location ".tools/bin/emacs-lsp-booster")) "--disable-bytecode" "--"))
+	(eglot-booster-io-only (>= emacs-major-version 30))
 	:config
   (defun gatsby>>do-not-check-emacs-lsp-booster-executable (func &rest args)
     (cl-letf (((symbol-function #'executable-find) (lambda (&rest _) t)))
@@ -75,9 +66,9 @@ Insert the current selection when
 	(advice-add #'eglot-booster-mode :around #'gatsby>>do-not-check-emacs-lsp-booster-executable))
 
 ;; display flymake information in a childframe
-(use-package flymake-childframe
-	:ensure (:host github :repo "junyi-hou/flymake-childframe")
-	:hook ((flymake eglot-managed-mode) . flymake-childframe-mode))
+;; (use-package flymake-childframe
+;; 	:ensure (:host github :repo "junyi-hou/flymake-childframe")
+;; 	:hook ((flymake eglot-managed-mode) . flymake-childframe-mode))
 
 (provide 'gatsby>lsp)
 ;;; gatsby>lsp.el ends here

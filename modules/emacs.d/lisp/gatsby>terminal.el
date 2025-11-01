@@ -91,7 +91,7 @@
 		(cond
 		 ((executable-find "exa") (apply #'gatsby>eshell-alias `("exa" "--tree" ,@args)))
 		 ((executable-find "tree") (apply #'gatsby>eshell-alias `("tree" ,@args)))
-		 (_ (user-error "Can't find `exa' or `tree'"))))
+		 (t (user-error "Can't find `exa' or `tree'"))))
 
 	(defun eshell/ls (&rest args)
 		(if (executable-find "exa")
@@ -179,6 +179,12 @@
 		 "D" #'eshell/evil-delete-line
 		 "<" #'eshell-previous-prompt
 		 ">" #'eshell-next-prompt
+		 "q" #'kill-buffer-and-window)
+
+		(general-define-key
+		 :states '(normal visual motion)
+		 :keymaps 'eshell-mode-map
+		 :prefix "SPC"
 		 "q" #'kill-buffer-and-window)
 
 		(general-define-key

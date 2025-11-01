@@ -120,11 +120,12 @@
 					 ">" #'python-indent-shift-right))
 
 ;; linting using ruff
-(use-package flymake-ruff
-	:ensure (:host github :repo "erickgnavar/flymake-ruff")
-	:custom (flymake-ruff-program (expand-file-name ".venv/bin/ruff" user-emacs-directory))
-	:hook (eglot-managed-mode . flymake-ruff-load))
+;; (use-package flymake-ruff
+;; 	:ensure (:host github :repo "erickgnavar/flymake-ruff")
+;; 	:custom (flymake-ruff-program (expand-file-name ".venv/bin/ruff" user-emacs-directory))
+;; 	:hook (eglot-managed-mode . flymake-ruff-load))
 
+;; FIXME - gatsby>jupyter-start-or-switch-to-repl and jupyter-launch-notebook are not autoloaded
 (use-package jupyter
 	:ensure (:host github :repo "nnicandro/emacs-jupyter")
   :custom-face
@@ -151,6 +152,10 @@
 							(call-interactively #'jupyter-connect-server-repl))
 					(call-interactively #'jupyter-run-repl))
         (switch-to-buffer-other-window code-buffer))))
+
+	(gatsby>defcommand gatsby>jupyter-goto-last-prompt ()
+		(goto-char (point-max))
+		(evil-insert-state))
 
 	:general
   (:keymaps 'jupyter-repl-mode-map :states '(normal visual)

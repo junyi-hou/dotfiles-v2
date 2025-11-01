@@ -9,30 +9,29 @@
 (use-package aidermacs
   :ensure (:host github :repo "MatthewZMD/aidermacs")
 	:custom
-	(aidermacs-program (expand-file-name ".venv/bin/aider" user-emacs-directory))
-	;; default model setting via cmdline arguments
-	;; this way I don't need to keep aider's config file somewhere else
-	(aidermacs-default-model "openai/gemini-2.5-pro")
-	(aidermacs-week-model "openai/gemini-2.5-flash")
-	(aidermacs-extra-args
-	 `("--model-metadata-file" ,(expand-file-name "aider.model.metadata.json" user-emacs-directory)
-		 "--model-settings-file" ,(expand-file-name "aider.model.settings.yml" user-emacs-directory)
-		 "--thinking-tokens" "8k"
-		 "--architect"))
+	(aidermacs-program (expand-file-name ".venv/bin/aider" gatsby>dotfiles-repo-location))
+	(aidermacs-default-model "openrouter/openai/gpt-5-nano")
   :config
-  (setenv "OPENAI_API_BASE" "https://genai-api.uberinternal.com/v1")
-
   (defun gatsby>>get-ai-api-key ()
-    "run ussh to get the gen-ai key"
-    (let ((api (string-trim (shell-command-to-string "usso -ussh genai-api -print \"$@\" 2>&1 | awk '/eyJ/ {print $NF}' | head -n 1"))))
-      (unless (equal "" api) api)))
+    "run passage to get the openai_api_key. Return nil if no key is found"
+		(let ((process-environment
+					 (cons (format "PASSAGE_AGE=%s" (expand-file-name ".cargo/bin/rage" gatsby>dotfiles-repo-location))
+								 process-environment))
+					(output-buffer (generate-new-buffer "*cmd-output*")))
+			(unwind-protect
+					(when (eq 0 (call-process-shell-command
+											 (format "%s show openrouter-api" (expand-file-name ".tools/bin/passage" gatsby>dotfiles-repo-location)) nil output-buffer nil))
+						(prog1
+								(with-current-buffer output-buffer
+									(string-trim (buffer-string)))
+							(kill-buffer output-buffer))))))
 
   (gatsby>defcommand gatsby>start-aider-session (subtree-only-p)
-		(if (zerop (call-process "usshcertstatus" nil nil nil "-quiet_mode"))
-				(let* ((aidermacs-extra-args `(,@aidermacs-extra-args "--openai-api-key" ,(gatsby>>get-ai-api-key)))
-							 (aidermacs-extra-args (if subtree-only-p `(,@aidermacs-extra-args "--subtree-only") aidermacs-extra-args)))
-					(aidermacs-run))
-			(user-error "Valid API keys not found, have you run `ussh' before?")))
+		(if-let ((api (format "openrouter=%s" (gatsby>>get-ai-api-key)))
+						 (aidermacs-extra-args `(,@aidermacs-extra-args "--api-key" ,api))
+						 (aidermacs-extra-args (if subtree-only-p `(,@aidermacs-extra-args "--subtree-only") aidermacs-extra-args)))
+				(aidermacs-run)
+			(user-error "Valid API keys not found")))
 
 	;; until we have smerge backend
 	(defun gatsby>>ediff-to-smerge (buffer1 buffer2)
