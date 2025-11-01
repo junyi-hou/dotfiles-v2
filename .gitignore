@@ -1,2 +1,7 @@
 .tools/
 .venv/
+.cargo/
+.rustup/
+.python-version
+**/__pycache__/**
+**/.ipynb_checkpoints/**

@@ -22,36 +22,30 @@
   (add-to-list 'major-mode-remap-alist '(python-mode . python-ts-mode))
 
 	;; lsp
-	(defconst gatsby>pyrefly-configfile-location (no-littering-expand-var-file-name "pyrightconfig"))
-	(make-directory gatsby>pyrefly-configfile-location t)
+	(defconst gatsby>pyright-configfile-location (no-littering-expand-var-file-name "pyrightconfig"))
+	(make-directory gatsby>pyright-configfile-location t)
 
-	(gatsby>defcommand gatsby>start-lsp ()
+	(gatsby>defcommand gatsby>start-pyright ()
 		(let* ((root (directory-file-name (expand-file-name (project-root (project-current)))))
 					 (config-root (file-name-concat gatsby>pyrefly-configfile-location (replace-regexp-in-string "/" "-" root)))
-					 (config-file (file-name-concat config-root "pyrefly.toml"))
+					 (config-file (file-name-concat config-root "pyrightconfig.json"))
 					 (lsp-cmd
-						`(,(expand-file-name ".venv/bin/pyrefly" gatsby>dotfiles-repo-location)
-							"lsp" "--workspace-indexing-limit" "100000"
+						`(,(expand-file-name ".venv/bin/basedpyright-langserver" gatsby>dotfiles-repo-location)
+							"--stdio"
 							))
-					 (lspce-server-programs `((python . ,lsp-cmd))))
-			;; (setenv "PYTHONPATH" "/User/junyi.hou/Uber/uber-one/data_piper")
-			;; (call-interactively #'eglot)
-			(if (file-directory-p config-root)
-					(let ((default-directory config-root))
-						(call-interactively #'lspce-mode))
-				(call-interactively #'lspce-mode))
-			))
+					 (eglot-server-programs `((python-ts-mode . ,lsp-cmd))))
+			(call-interactively #'eglot)))
 
-	(gatsby>defcommand gatsby>edit-pyrefly-config ()
-		(let* ((root (directory-file-name (expand-file-name (project-root (project-current)))))
-					 (config-root (file-name-concat gatsby>pyrefly-configfile-location (replace-regexp-in-string "/" "-" root)))
-					 (config-file (file-name-concat config-root "pyrefly.toml")))
-			(unless (file-directory-p config-root)
-				(make-directory config-root t))
-			(unless (file-exists-p config-file)
-				(with-temp-buffer
-					(write-file config-file)))
-			(find-file config-file)))
+	;; (gatsby>defcommand gatsby>edit-pyrefly-config ()
+	;; 	(let* ((root (directory-file-name (expand-file-name (project-root (project-current)))))
+	;; 				 (config-root (file-name-concat gatsby>pyrefly-configfile-location (replace-regexp-in-string "/" "-" root)))
+	;; 				 (config-file (file-name-concat config-root "pyrefly.toml")))
+	;; 		(unless (file-directory-p config-root)
+	;; 			(make-directory config-root t))
+	;; 		(unless (file-exists-p config-file)
+	;; 			(with-temp-buffer
+	;; 				(write-file config-file)))
+	;; 		(find-file config-file)))
 
 ;; 	(gatsby>defcommand gatsby>start-pyright ()
 ;;     "Start pyright with project-specific configuration.
@@ -100,7 +94,7 @@
 				(let ((b (region-beginning))
 							(e (region-end)))
 					(jupyter-eval-string (buffer-substring-no-properties b e))
-					)
+					(evil-normal-state))
 			(let* ((cell-regexp "^# %%\\(.\\)*\n")
 						 (b (save-excursion (or (and (not from-top)
                                          (re-search-backward cell-regexp nil 'noerror))
@@ -122,8 +116,8 @@
 						"rz" #'jupyter-repl-associate-buffer)
 
   (:states 'visual :keymaps 'python-ts-mode-map
-					 ">" #'python-indent-shift-left
-					 "<" #'python-indent-shift-right))
+					 "<" #'python-indent-shift-left
+					 ">" #'python-indent-shift-right))
 
 ;; linting using ruff
 (use-package flymake-ruff
@@ -135,7 +129,7 @@
 	:ensure (:host github :repo "nnicandro/emacs-jupyter")
   :custom-face
   (jupyter-repl-traceback ((t (:extend t :background "firebrick"))))
-	:commands (gatsby>jupyter-start-or-switch-to-repl)
+	:commands (gatsby>jupyter-start-or-switch-to-repl jupyter-launch-notebook)
 	:custom 
 	(jupyter-repl-allow-RET-when-busy t)
 	(jupyter-repl-echo-eval-p t)

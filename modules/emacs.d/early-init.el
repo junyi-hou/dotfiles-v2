@@ -7,8 +7,6 @@
 ;; 4. Define custom fringe
 
 ;;; Code:
-;; remove this line after the migration
-(setq user-emacs-directory (expand-file-name "~/tmp/emacs30"))
 
 ;; GC optimization
 (setq gc-cons-threshold 402653184
