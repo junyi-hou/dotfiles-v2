@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 
-import os
 import argparse
 import logging
-
 from pathlib import Path
 from typing import cast
 from dataclasses import dataclass
@@ -13,15 +11,13 @@ from _lib import git_root, symlink, move, get_target_path, get_backup_path
 logger = logging.getLogger("dotfiles_installer")
 logger.setLevel(logging.DEBUG)
 
-HOME: Path = Path(os.getenv("HOME")).resolve()
 AVAILABLE_MODULES: list[str] = [m.name for m in (git_root(__file__) / "modules").iterdir()]
 
 def install(module: str | Path, *, dry_run: bool = True) -> None:
     """
-    Install MODULE by symlinking it to the corresponding position in current user's $HOME directory.
-    If MODULE is an immediate child of the repo root, symlink it to
+    Install MODULE by symlinking it to the corresponding position in the current user's $HOME directory.
+    If MODULE is an immediate child of the repo root, symlink it to its target location.
     """
-
     module_root = git_root(__file__) / "modules"
 
     if isinstance(module, str):
@@ -37,7 +33,7 @@ def install(module: str | Path, *, dry_run: bool = True) -> None:
 
     relative_path = module.relative_to(module_root)
     install_path = get_target_path(relative_path)
-    backup_path = get_backup_path(relative_path)
+    backup_path = get_backup_path(install_path)
 
     logger.debug(f"Installing {relative_path} ...")
 
@@ -63,27 +59,29 @@ def install(module: str | Path, *, dry_run: bool = True) -> None:
     
 
 def main() -> int:
-
+    """
+    Entry point for the installer. Parses arguments and installs requested modules.
+    """
     @dataclass
     class Arguments:
         dry_run: bool
         modules: list[str]
 
     parser = argparse.ArgumentParser()
-    _ = parser.add_argument(
+    parser.add_argument(
         "--modules", "-m",
         nargs="+",
         choices=AVAILABLE_MODULES,
         default=AVAILABLE_MODULES,
         help="modules to install into $HOME.",
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--dry_run", "-d",
         action="store_true",
         help="echo the command, instead of running it."
     )
 
-    args, _ = parser.parse_known_args()
+    args = parser.parse_args()
     args = cast(Arguments, cast(object, args))
 
     for module in args.modules:

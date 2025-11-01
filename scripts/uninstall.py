@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import os
 import argparse
 import logging
 
@@ -14,7 +13,6 @@ logger.setLevel(logging.DEBUG)
 from _lib import git_root, move, get_backup_path, get_target_path, remove_file
 
 
-HOME: Path = Path(os.getenv("HOME")).resolve()
 AVAILABLE_MODULES: list[str] = [m.name for m in (git_root(__file__) / "modules").iterdir()]
 
 
@@ -36,7 +34,7 @@ def uninstall(module: str | Path, *, dry_run: bool = True) -> None:
 
     relative_path = module.relative_to(module_root)
     install_path = get_target_path(relative_path)
-    backup_path = get_backup_path(relative_path)
+    backup_path = get_backup_path(install_path)
 
     logger.debug(f"Uninstalling {relative_path} ...")
     
