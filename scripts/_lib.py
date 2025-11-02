@@ -1,10 +1,17 @@
-import os
+import sys
 import logging
 import shutil
 from pathlib import Path
 
 
 logger = logging.getLogger("dotfiles_installer")
+logger.setLevel(logging.INFO)
+
+# Create handler to stdout
+handler = logging.StreamHandler(sys.stdout)
+handler.setFormatter(logging.Formatter('%(levelname)s - %(message)s'))
+logger.addHandler(handler)
+
 
 HOME: Path = Path.home()
 
@@ -85,7 +92,7 @@ def move(src: Path, dst: Path, dry_run: bool) -> None:
         dry_run (bool): Simulation mode flag
     """
     if dry_run:
-        logger.warning(f"moving {src} to {dst}")
+        logger.info(f"[dry run] moving {src} to {dst}")
         return
 
     _ = shutil.move(src, dst)
@@ -104,7 +111,7 @@ def remove_file(path: Path, dry_run: bool) -> None:
         dry_run (bool): Simulation mode flag
     """
     if dry_run:
-        logger.warning(f"removing {path}")
+        logger.info(f"[dry run] removing {path}")
         return
 
     _ = path.unlink()
@@ -125,7 +132,7 @@ def symlink(from_: Path, to: Path, dry_run: bool) -> None:
         dry_run (bool): Simulation mode flag
     """
     if dry_run:
-        logger.warning(f"installing {from_} to {to}")
+        logger.info(f"[dry run] installing {from_} to {to}")
         return
 
     to.symlink_to(from_)

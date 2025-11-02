@@ -6,10 +6,8 @@ from pathlib import Path
 from typing import cast
 from dataclasses import dataclass
 
-from _lib import git_root, symlink, move, get_target_path, get_backup_path
+from _lib import logger, git_root, symlink, move, get_target_path, get_backup_path
 
-logger = logging.getLogger("dotfiles_installer")
-logger.setLevel(logging.DEBUG)
 
 AVAILABLE_MODULES: list[str] = [m.name for m in (git_root(__file__) / "modules").iterdir()]
 
@@ -35,12 +33,12 @@ def install(module: str | Path, *, dry_run: bool = True) -> None:
     install_path = get_target_path(relative_path)
     backup_path = get_backup_path(install_path)
 
-    logger.debug(f"Installing {relative_path} ...")
+    logger.info(f"Installing {relative_path} ...")
 
     if install_path.exists():
 
-        if install_path.resolve() == module.resolve():
-            logger.debug(f"{relative_path} already installed, skipping")
+        if install_path.resolve() == module.resolve() and not dry_run:
+            logger.info(f"{relative_path} already installed, skipping")
             return
 
         if not install_path.is_dir():
@@ -49,10 +47,14 @@ def install(module: str | Path, *, dry_run: bool = True) -> None:
 
     if module.is_file():
         symlink(module, install_path, dry_run)
-        logger.debug(f"Module {relative_path} installed!")
+        if not dry_run:
+            logger.info(f"Module {relative_path} installed!")
 
     elif module.is_dir():
-        install_path.mkdir(parents=True, exist_ok=True)
+        if dry_run:
+            logger.info(f"Would create directory {install_path}")
+        else:
+            install_path.mkdir(parents=True, exist_ok=True)
         logger.debug(f"Recursively installing {module} ...")
         for child in module.iterdir():
             install(child, dry_run=dry_run)
@@ -65,27 +67,38 @@ def main() -> int:
     @dataclass
     class Arguments:
         dry_run: bool
+        verbose: bool
         modules: list[str]
 
     parser = argparse.ArgumentParser()
-    parser.add_argument(
+    _ = parser.add_argument(
         "--modules", "-m",
         nargs="+",
         choices=AVAILABLE_MODULES,
         default=AVAILABLE_MODULES,
         help="modules to install into $HOME.",
     )
-    parser.add_argument(
+    _ = parser.add_argument(
         "--dry_run", "-d",
         action="store_true",
         help="echo the command, instead of running it."
+    )
+    _ = parser.add_argument(
+        "--verbose", "-v",
+        action="store_true",
+        help="show debug level log messages."
     )
 
     args = parser.parse_args()
     args = cast(Arguments, cast(object, args))
 
+    if args.verbose:
+        logger.setLevel(logging.DEBUG)
+
     for module in args.modules:
         install(module, dry_run=args.dry_run)
+
+    logger.info("Installation Finishes!")
 
     return 0
 

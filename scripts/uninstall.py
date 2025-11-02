@@ -7,10 +7,7 @@ from pathlib import Path
 from typing import cast
 from dataclasses import dataclass
 
-logger = logging.getLogger("dotfiles_installer")
-logger.setLevel(logging.DEBUG)
-
-from _lib import git_root, move, get_backup_path, get_target_path, remove_file
+from _lib import logger, git_root, move, get_backup_path, get_target_path, remove_file
 
 
 AVAILABLE_MODULES: list[str] = [m.name for m in (git_root(__file__) / "modules").iterdir()]
@@ -36,15 +33,15 @@ def uninstall(module: str | Path, *, dry_run: bool = True) -> None:
     install_path = get_target_path(relative_path)
     backup_path = get_backup_path(install_path)
 
-    logger.debug(f"Uninstalling {relative_path} ...")
+    logger.info(f"Uninstalling {relative_path} ...")
     
     if module.is_file():
         # if module is file, install_path must be symlink
         # make sure that install_path is what we have installed!
         if install_path.is_symlink() and install_path.resolve() == module:
             remove_file(install_path, dry_run)
-        else:
-            logger.debug(f"{relative_path} was not installed by us, leave it there...")
+        elif not dry_run:
+            logger.info(f"{relative_path} was not installed by us, leave it there...")
 
     elif module.is_dir():
         # go into install_path
@@ -61,7 +58,9 @@ def uninstall(module: str | Path, *, dry_run: bool = True) -> None:
     if backup_path.exists():
         logger.debug(f"Backup file found, restoring {relative_path} ...")
         move(backup_path, install_path, dry_run)
-    logger.debug(f"Module {relative_path} uninstalled!")
+
+    if not dry_run:
+        logger.info(f"Module {relative_path} uninstalled!")
 
 
 def main() -> int:
@@ -69,6 +68,7 @@ def main() -> int:
     @dataclass
     class Arguments:
         dry_run: bool
+        verbose: bool
         modules: list[str]
 
     parser = argparse.ArgumentParser()
@@ -84,12 +84,22 @@ def main() -> int:
         action="store_true",
         help="echo the command, instead of running it."
     )
+    _ = parser.add_argument(
+        "--verbose", "-v",
+        action="store_true",
+        help="show debug level log messages."
+    )
 
     args, _ = parser.parse_known_args()
     args = cast(Arguments, cast(object, args))
 
+    if args.verbose:
+        logger.setLevel(logging.DEBUG)
+
     for module in args.modules:
         uninstall(module, dry_run=args.dry_run)
+
+    logger.info("Uninstallation Finishes!")
 
     return 0
 
