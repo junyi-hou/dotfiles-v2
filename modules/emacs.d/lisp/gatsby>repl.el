@@ -12,7 +12,12 @@
     "clear current REPL buffer."
     (let ((last-line (save-excursion (goto-char (point-max)) (beginning-of-line) (point))))
 			(set-window-start (selected-window) last-line)
-			(evil-scroll-line-up)))
+			(call-interactively #'evil-scroll-line-up)))
+
+	(gatsby>defcommand gatsby>comint-goto-last-prompt ()
+    "clear current REPL buffer."
+    (goto-char (point-max))
+		(evil-insert-state))
 	
 	:general
 	(:keymaps 'comint-mode-map :states '(normal visual motion emacs insert) :prefix "C-c"
@@ -78,8 +83,12 @@
   
   (:keymaps 'jupyter-repl-mode-map :states 'insert
 						"<up>" #'jupyter-repl-history-previous-matching
-						"<down>" #'jupyter-repl-history-next-matching))
+						"<down>" #'jupyter-repl-history-next-matching)
 
+	;; include keymaps for all supporting kernels here
+  (:keymaps 'python-ts-mode-map :states 'normal :prefix "SPC"
+						"ro" #'gatsby>jupyter-start-or-switch-to-repl
+						"rz" #'jupyter-repl-associate-buffer))
 
 
 (provide 'gatsby>repl)

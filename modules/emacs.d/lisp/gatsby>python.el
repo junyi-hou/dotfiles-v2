@@ -11,7 +11,7 @@
 	:custom (python-indent-offset 4)
   :hook
   (python-ts-mode . gatsby>>python-set-indent-width)
-  ;; (python-ts-mode . eglot-ensure)
+  (python-ts-mode . eglot-ensure)
   :init
   (defun gatsby>>python-set-indent-width (&rest _)
     (setq-local tab-width 4))
@@ -36,29 +36,6 @@
 					 (eglot-server-programs `((python-ts-mode . ,lsp-cmd))))
 			(call-interactively #'eglot)))
 
-	;; (gatsby>defcommand gatsby>edit-pyrefly-config ()
-	;; 	(let* ((root (directory-file-name (expand-file-name (project-root (project-current)))))
-	;; 				 (config-root (file-name-concat gatsby>pyrefly-configfile-location (replace-regexp-in-string "/" "-" root)))
-	;; 				 (config-file (file-name-concat config-root "pyrefly.toml")))
-	;; 		(unless (file-directory-p config-root)
-	;; 			(make-directory config-root t))
-	;; 		(unless (file-exists-p config-file)
-	;; 			(with-temp-buffer
-	;; 				(write-file config-file)))
-	;; 		(find-file config-file)))
-
-;; 	(gatsby>defcommand gatsby>start-pyright ()
-;;     "Start pyright with project-specific configuration.
-;; If `pyrightconfig.json` does not exist in the project root,
-;; create one from the default template."
-;;     (let* (;; use custom server setting
-;; 					 (lspce-server-programs
-;; 						`(("python"
-;; 							 ,(expand-file-name ".venv/bin/basedpyright-langserver" user-emacs-directory)
-;; 							 "--stdio"
-;; 						   ,(gatsby>plist-to-hash-table-recursive gatsby>pyright-initialization-options)))))
-;; 			(lspce-mode)))
-	
   :config
   (gatsby>defcommand gatsby>python-generate-notebook (run)
     "Run the current script and produce a notebook file using `jupytext'.
@@ -110,20 +87,12 @@
 						">" #'gatsby>python-move-to-next-cell
 						"<" #'gatsby>python-move-to-prev-cell)
 
-  (:keymaps 'python-ts-mode-map :states 'normal :prefix "SPC"
-						"rr" #'gatsby>python-eval-region-or-cell
-						"ro" #'gatsby>jupyter-start-or-switch-to-repl
-						"rz" #'jupyter-repl-associate-buffer)
+  (:keymaps 'python-ts-mode-map :states '(normal visual) :prefix "SPC"
+						"rr" #'gatsby>python-eval-region-or-cell)
 
   (:states 'visual :keymaps 'python-ts-mode-map
 					 "<" #'python-indent-shift-left
 					 ">" #'python-indent-shift-right))
-
-;; linting using ruff
-;; (use-package flymake-ruff
-;; 	:ensure (:host github :repo "erickgnavar/flymake-ruff")
-;; 	:custom (flymake-ruff-program (expand-file-name ".venv/bin/ruff" user-emacs-directory))
-;; 	:hook (eglot-managed-mode . flymake-ruff-load))
 
 (provide 'gatsby>python)
 ;;; gatsby>python.el ends here
