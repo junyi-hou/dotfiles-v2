@@ -10,7 +10,7 @@
   :ensure (:host github :repo "MatthewZMD/aidermacs")
 	:custom
 	(aidermacs-program (expand-file-name ".venv/bin/aider" gatsby>dotfiles-repo-location))
-	(aidermacs-default-model "openrouter/openai/gpt-5-nano")
+	(aidermacs-default-model "openrouter/deepseek/deepseek-r1-0528")
   :config
   (defun gatsby>>get-ai-api-key ()
     "run passage to get the openai_api_key. Return nil if no key is found"

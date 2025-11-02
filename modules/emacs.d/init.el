@@ -13,6 +13,7 @@
 (require 'gatsby>project-management)
 
 (require 'gatsby>lsp)
+(require 'gatsby>repl)
 
 (require 'gatsby>python)
 (require 'gatsby>elisp)

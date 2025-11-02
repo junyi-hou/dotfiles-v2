@@ -113,6 +113,13 @@ the first call.  Delete the auto-inserted comment for the second call.  Otherwis
 
   (advice-add #'newline :around #'gatsby>>newline))
 
+(gatsby>use-internal-pacakge server
+	:hook (elpaca-after-init . gatsby>>start-server)
+	:config
+	(defun gatsby>>start-server (&rest _)
+		(unless (server-running-p)
+			(server-start))))
+
 (gatsby>use-internal-pacakge compile
   :init
   (require 'ansi-color)
