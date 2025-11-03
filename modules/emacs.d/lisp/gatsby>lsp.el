@@ -66,9 +66,33 @@ Insert the current selection when
 	(advice-add #'eglot-booster-mode :around #'gatsby>>do-not-check-emacs-lsp-booster-executable))
 
 ;; display flymake information in a childframe
-;; (use-package flymake-childframe
-;; 	:ensure (:host github :repo "junyi-hou/flymake-childframe")
-;; 	:hook ((flymake eglot-managed-mode) . flymake-childframe-mode))
+(use-package flymake-childframe
+	:ensure (:host github :repo "junyi-hou/flymake-childframe")
+  :custom (flymake-childframe-prefix '((note . "i") (warning . "?") (error . "!")))
+	:hook ((flymake eglot-managed-mode) . flymake-childframe-mode))
+
+(use-package eldoc-mouse
+  :ensure (:host github :repo "huangfeiyu/eldoc-mouse")
+  :general
+  (:states 'normal :prefix "SPC"
+           "rh" #'eldoc-mouse-pop-doc-at-cursor))
+
+(gatsby>use-internal-pacakge xref
+  :config
+  ;; use consult
+  (with-eval-after-load 'consult
+    (setq xref-show-definitions-function #'consult-xref
+          xref-show-xrefs-function #'consult-xref)
+    (consult-customize
+     consult-xref
+     :preview-key 'any))
+  
+  :general
+  (:states 'normal :prefix "SPC"
+           "rl" #'xref-find-definitions
+           "rL" #'xref-find-references
+           "rb" #'xref-go-back
+           "rf" #'xref-go-forward))
 
 (provide 'gatsby>lsp)
 ;;; gatsby>lsp.el ends here
