@@ -14,24 +14,24 @@
 
   :general
   (:keymaps '(emacs-lisp-mode-map lisp-interaction-mode-map) :states '(motion normal visual) :prefix "SPC"
-						"el" #'eval-last-sexp
-						"eL" #'eval-buffer))
+            "el" #'eval-last-sexp
+            "eL" #'eval-buffer))
 
 (use-package helpful
   :ensure (:host github :repo "Wilfred/helpful")
-	:custom (helpful-switch-buffer-function #'gatsby>switch-to-buffer-new-window)
+  :custom (helpful-switch-buffer-function #'gatsby>switch-to-buffer-new-window)
   :config
   (add-to-list 'evil-motion-state-modes 'helpful-mode)
   :general
   (:keymaps 'helpful-mode-map :states 'motion :prefix "SPC"
-						"q" #'kill-buffer-and-window
-						"el" #'eval-last-sexp
-						"eL" #'eval-buffer)
+            "q" #'kill-buffer-and-window
+            "el" #'eval-last-sexp
+            "eL" #'eval-buffer)
 
   (:keymaps '(motion normal visual) :prefix "SPC"
-						"hf" #'helpful-callable
-						"hk" #'helpful-key
-						"hv" #'helpful-variable))
+            "hf" #'helpful-callable
+            "hk" #'helpful-key
+            "hv" #'helpful-variable))
 
 
 (provide 'gatsby>elisp)
