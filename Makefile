@@ -8,3 +8,6 @@ uninstall:
 
 update-secret:
 	@python ./scripts/install.py -m passage
+
+test:
+	@pytest ./test_scripts
