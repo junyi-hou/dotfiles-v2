@@ -84,10 +84,17 @@ Insert the current selection when
            "rh" #'gatsby>eldoc-pop))
 
 (gatsby>use-internal-pacakge xref
+  :custom (xref-prompt-for-identifier nil)
   :config
   ;; use consult
   (with-eval-after-load 'consult
+
     (defun gatsby>consult-xref (fetcher &optional alist)
+      "Show xrefs with preview in the minibuffer.
+
+This function can be used for `xref-show-xrefs-function'.
+See `xref-show-xrefs-function' for the description of the
+FETCHER and ALIST arguments."
       (let* ((consult-xref--fetcher fetcher)
              (candidates (consult-xref--candidates))
              (display (alist-get 'display-action alist)))
@@ -96,7 +103,7 @@ Insert the current selection when
         (xref-pop-to-location
          (consult--read
           candidates
-          :command #'consult-xref
+          :command #'gatsby>consult-xref
           :prompt "Go to xref: "
           :history 'consult-xref--history
           :require-match t
@@ -120,7 +127,7 @@ Insert the current selection when
     (consult-customize
      gatsby>consult-xref
      :preview-key 'any))
-  
+
   :general
   (:states 'normal :prefix "SPC"
            "rl" #'xref-find-definitions
