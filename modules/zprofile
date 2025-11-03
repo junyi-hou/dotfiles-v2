@@ -1,6 +1,11 @@
-export EDITOR=emacsclient
+export EDITOR="emacsclient -c -a ''"
 
 # source existing zprofile file backed up if exists
 if [ -f "$HOME/.zprofile.backup" ]; then
-	source "$HOME/.zprofile.backup"
+    source "$HOME/.zprofile.backup"
 fi
+
+# Local Variables:
+# mode: shell-script
+# End:
+
