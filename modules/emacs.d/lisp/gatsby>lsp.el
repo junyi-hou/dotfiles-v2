@@ -73,18 +73,52 @@ Insert the current selection when
 
 (use-package eldoc-mouse
   :ensure (:host github :repo "huangfeiyu/eldoc-mouse")
+  :config
+  (gatsby>defcommand gatsby>eldoc-pop ()
+    "Use alternative poshandler, since the package did not provide this option."
+    (cl-letf (((symbol-function #'posframe-poshandler-point-bottom-left-corner-upward)
+               #'posframe-poshandler-point-bottom-left-corner))
+      (call-interactively #'eldoc-mouse-pop-doc-at-cursor)))
   :general
   (:states 'normal :prefix "SPC"
-           "rh" #'eldoc-mouse-pop-doc-at-cursor))
+           "rh" #'gatsby>eldoc-pop))
 
 (gatsby>use-internal-pacakge xref
   :config
   ;; use consult
   (with-eval-after-load 'consult
-    (setq xref-show-definitions-function #'consult-xref
-          xref-show-xrefs-function #'consult-xref)
+    (defun gatsby>consult-xref (fetcher &optional alist)
+      (let* ((consult-xref--fetcher fetcher)
+             (candidates (consult-xref--candidates))
+             (display (alist-get 'display-action alist)))
+        (unless candidates
+          (user-error "No xref locations"))
+        (xref-pop-to-location
+         (consult--read
+          candidates
+          :command #'consult-xref
+          :prompt "Go to xref: "
+          :history 'consult-xref--history
+          :require-match t
+          :sort nil
+          :category 'consult-xref
+          :group #'consult--prefix-group
+          :state
+          ;; do not preview other frame
+          (when-let (fun (pcase-exhaustive display
+                           ('frame nil)
+                           ('window #'switch-to-buffer-other-window)
+                           ('nil #'switch-to-buffer)))
+            (consult-xref--preview fun))
+          :lookup (apply-partially #'consult--lookup-prop 'consult-xref))
+         display)))
+
+    (setq xref-show-definitions-function #'gatsby>consult-xref
+          xref-show-xrefs-function #'gatsby>consult-xref
+          consult-xref--preview `(,@consult-xref--preview xref-elisp-location))
+
     (consult-customize
-     consult-xref
+     gatsby>consult-xref
      :preview-key 'any))
   
   :general
