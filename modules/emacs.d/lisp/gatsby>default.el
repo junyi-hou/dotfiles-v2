@@ -171,12 +171,22 @@ the first call.  Delete the auto-inserted comment for the second call.  Otherwis
 
 (gatsby>use-internal-pacakge simple
   :init
-  (setq-default tab-width 4)
+  (setq-default tab-width 4
+								indent-tabs-mode nil
+								electric-indent-inhibit t)
   :config
-  (indent-tabs-mode -1)
+	(global-visual-line-mode 1)
+
+  (gatsby>defcommand gatsby>message-cls ()
+    (let ((last-line (save-excursion (goto-char (point-max)) (beginning-of-line) (point))))
+			(set-window-start (selected-window) last-line)))
+
   :general
-  (:keymaps '(message-buffer-mode-map special-mode-map) :states '(motion normal)
-						"q" #'kill-buffer-and-window))
+  (:keymaps '(messages-buffer-mode-map special-mode-map) :states '(motion normal)
+						"q" #'kill-buffer-and-window)
+
+  (:keymaps '(messages-buffer-mode-map) :states '(motion normal) :prefix "C-c"
+						"C-l" #'gatsby>message-cls))
 
 (gatsby>use-internal-pacakge backtrace
   :general
