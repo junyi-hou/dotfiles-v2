@@ -1,4 +1,4 @@
-export EDITOR="emacsclient -c -a ''"
+export EDITOR="/Applications/Emacs.app/Contents/MacOS/bin/emacsclient -c -a ''"
 
 # source existing zprofile file backed up if exists
 if [ -f "$HOME/.zprofile.backup" ]; then
