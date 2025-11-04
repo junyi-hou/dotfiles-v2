@@ -134,18 +134,18 @@ with an even number of elements.
 The optional argument TEST specifies the hash table's test function
 (e.g., 'eq, 'eql, or 'equal). Defaults to 'equal."
   (when plist
-		(let ((table (make-hash-table :test (or test #'equal))))
-			(cl-loop for (key value) on plist by #'cddr do
-							 (let* ((processed-value
-											 ;; Heuristic: Is the value a plist that should be converted?
-											 (if (and (listp value)
-																(> (length value) 0)
-																(cl-evenp (length value)))
-													 (gatsby>plist-to-hash-table-recursive value test)
-												 value))
-											(key-string (substring (symbol-name key) 1)))
-								 (puthash key-string processed-value table)))
-			table)))
+    (let ((table (make-hash-table :test (or test #'equal))))
+      (cl-loop for (key value) on plist by #'cddr do
+               (let* ((processed-value
+                       ;; Heuristic: Is the value a plist that should be converted?
+                       (if (and (listp value)
+                                (> (length value) 0)
+                                (cl-evenp (length value)))
+                           (gatsby>plist-to-hash-table-recursive value test)
+                         value))
+                      (key-string (substring (symbol-name key) 1)))
+                 (puthash key-string processed-value table)))
+      table)))
 
 ;; secret management via `passage'
 

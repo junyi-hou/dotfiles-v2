@@ -31,8 +31,8 @@
         custom-file (no-littering-expand-etc-file-name "custom.el"))
   (load custom-file 'noerror))
 
-(gatsby>use-internal-pacakge emacs
-  :demand t
+(use-package emacs
+  :ensure nil
   :custom
   (visible-bell t)
   (ring-bell-function 'ignore)
@@ -45,38 +45,21 @@
   (scroll-step 1)
   (use-short-answers t)
   (inhibit-startup-screen t)
-	(fill-column 88)
-	(split-window-preferred-function #'gatsby>split-window-sensibly)
-	:hook
-	(elpaca-after-init . gatsby>set-dotfiles-repo-location)
+  (fill-column 88)
+  (split-window-preferred-function #'gatsby>split-window-sensibly)
   :config
   (defalias #'yes-or-no-p #'y-or-n-p)
 
-	(defun gatsby>set-dotfiles-repo-location (&rest _)
-		"Set `gastby>dotfile-repo-location' variable by finding the symlinked dotfiles.
-Only work if the config is installed correctly according to the instruction in
-`README.md'.  Display a warning if cannot find the repo location, in which case some
-functionalities will not be available"
-		(let ((repo-location (thread-first
-													 "init.el"
-													 (expand-file-name user-emacs-directory)
-													 (file-truename)
-													 (locate-dominating-file ".git"))))
-			(if repo-location
-					(defconst gatsby>dotfiles-repo-location repo-location
-						"The git root of the dotfile repo")
-				(display-warning 'gatsby "Unable to find dotfiles repo location. Did you install the configuration using `make install'?"))))
-
-	(defun gatsby>split-window-sensibly (&optional window)
-		"Split WINDOW sensibly, preferring horizontal split if wide enough.  Splits
+  (defun gatsby>split-window-sensibly (&optional window)
+    "Split WINDOW sensibly, preferring horizontal split if wide enough.  Splits
 horizontally if window width > 2 times of `fill-column', returning right window.
 Otherwise splits vertically, returning bottom window."
-		(let ((window (or window (selected-window))))
-			(with-selected-window window
-				(if (> (window-width window) (* 2 fill-column))
-						(split-window-right)
-					(split-window-below)))))
-	
+    (let ((window (or window (selected-window))))
+      (with-selected-window window
+        (if (> (window-width window) (* 2 fill-column))
+            (split-window-right)
+          (split-window-below)))))
+  
   (defconst gatsby>>unkillable-buffers '("*scratch*" "*Messages*")
     "List of buffers that should not be killed")
 
@@ -114,11 +97,11 @@ the first call.  Delete the auto-inserted comment for the second call.  Otherwis
   (advice-add #'newline :around #'gatsby>>newline))
 
 (gatsby>use-internal-pacakge server
-	:hook (elpaca-after-init . gatsby>>start-server)
-	:config
-	(defun gatsby>>start-server (&rest _)
-		(unless (server-running-p)
-			(server-start))))
+  :hook (elpaca-after-init . gatsby>>start-server)
+  :config
+  (defun gatsby>>start-server (&rest _)
+    (unless (server-running-p)
+      (server-start))))
 
 (gatsby>use-internal-pacakge compile
   :init
@@ -152,8 +135,8 @@ the first call.  Delete the auto-inserted comment for the second call.  Otherwis
 
   :general
   (:keymaps 'compilation-shell-minor-mode-map
-						:state 'normal
-						"q" #'gatsby>compilation-delete-buffer-if-process-finished))
+            :state 'normal
+            "q" #'gatsby>compilation-delete-buffer-if-process-finished))
 
 (gatsby>use-internal-pacakge autorevert
   :hook (elpaca-after-init . global-auto-revert-mode))
@@ -172,29 +155,29 @@ the first call.  Delete the auto-inserted comment for the second call.  Otherwis
 (gatsby>use-internal-pacakge simple
   :init
   (setq-default tab-width 4
-								indent-tabs-mode nil
-								electric-indent-inhibit t)
+                indent-tabs-mode nil
+                electric-indent-inhibit t)
   :config
-	(global-visual-line-mode 1)
+  (global-visual-line-mode 1)
 
   (gatsby>defcommand gatsby>message-cls ()
     (let ((last-line (save-excursion (goto-char (point-max)) (beginning-of-line) (point))))
-			(set-window-start (selected-window) last-line)))
+      (set-window-start (selected-window) last-line)))
 
   :general
   (:keymaps '(messages-buffer-mode-map special-mode-map) :states '(motion normal)
-						"q" #'kill-buffer-and-window)
+            "q" #'kill-buffer-and-window)
 
   (:keymaps '(messages-buffer-mode-map) :states '(motion normal) :prefix "C-c"
-						"C-l" #'gatsby>message-cls))
+            "C-l" #'gatsby>message-cls))
 
 (gatsby>use-internal-pacakge backtrace
   :general
   (:keymaps 'backtrace-mode-map :states '(motion normal)
-						"q" #'kill-buffer-and-window))
+            "q" #'kill-buffer-and-window))
 
 (gatsby>use-internal-pacakge recentf
-	:hook (elpaca-after-init . recentf-mode))
+  :hook (elpaca-after-init . recentf-mode))
 
 
 (provide 'gatsby>default)

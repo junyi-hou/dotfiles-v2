@@ -29,7 +29,7 @@ LIBRARY_PATH="/opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/15 \
 make -j10 && make install
 ```
 
-Finally, install direnv for local environment
+Finally, install dependencies for emacs packages
 ```
 brew install direnv
 ```

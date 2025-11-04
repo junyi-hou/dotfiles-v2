@@ -8,7 +8,7 @@
 
 (gatsby>use-internal-pacakge python
   :mode ("\\.py\\'" . python-ts-mode)
-	:custom (python-indent-offset 4)
+  :custom (python-indent-offset 4)
   :hook
   (python-ts-mode . gatsby>>python-set-indent-width)
   (python-ts-mode . eglot-ensure)
@@ -16,25 +16,25 @@
   (defun gatsby>>python-set-indent-width (&rest _)
     (setq-local tab-width 4))
 
-	;; tree-sitter
+  ;; tree-sitter
   (gatsby>install-treesitter-grammar
    'python "https://github.com/tree-sitter/tree-sitter-python" "v0.23.6")
   (add-to-list 'major-mode-remap-alist '(python-mode . python-ts-mode))
 
-	;; lsp
-	(defconst gatsby>pyright-configfile-location (no-littering-expand-var-file-name "pyrightconfig"))
-	(make-directory gatsby>pyright-configfile-location t)
+  ;; lsp
+  (defconst gatsby>pyright-configfile-location (no-littering-expand-var-file-name "pyrightconfig"))
+  (make-directory gatsby>pyright-configfile-location t)
 
-	(gatsby>defcommand gatsby>start-pyright ()
-		(let* ((root (directory-file-name (expand-file-name (project-root (project-current)))))
-					 (config-root (file-name-concat gatsby>pyrefly-configfile-location (replace-regexp-in-string "/" "-" root)))
-					 (config-file (file-name-concat config-root "pyrightconfig.json"))
-					 (lsp-cmd
-						`(,(expand-file-name ".venv/bin/basedpyright-langserver" gatsby>dotfiles-repo-location)
-							"--stdio"
-							))
-					 (eglot-server-programs `((python-ts-mode . ,lsp-cmd))))
-			(call-interactively #'eglot)))
+  (gatsby>defcommand gatsby>start-pyright ()
+    (let* ((root (directory-file-name (expand-file-name (project-root (project-current)))))
+           (config-root (file-name-concat gatsby>pyrefly-configfile-location (replace-regexp-in-string "/" "-" root)))
+           (config-file (file-name-concat config-root "pyrightconfig.json"))
+           (lsp-cmd
+            `(,(expand-file-name ".venv/bin/basedpyright-langserver" gatsby>dotfiles-repo-location)
+              "--stdio"
+              ))
+           (eglot-server-programs `((python-ts-mode . ,lsp-cmd))))
+      (call-interactively #'eglot)))
 
   :config
   (gatsby>defcommand gatsby>python-generate-notebook (run)
@@ -66,33 +66,33 @@
     (let ((cell-regexp "^# %%\\(.\\)*\n"))
       (re-search-backward cell-regexp nil 'noerror)))
 
-	(gatsby>defcommand gatsby>python-eval-region-or-cell ()
-		(if (region-active-p)
-				(let ((b (region-beginning))
-							(e (region-end)))
-					(jupyter-eval-string (buffer-substring-no-properties b e))
-					(evil-normal-state))
-			(let* ((cell-regexp "^# %%\\(.\\)*\n")
-						 (b (save-excursion (or (and (not from-top)
+  (gatsby>defcommand gatsby>python-eval-region-or-cell ()
+    (if (region-active-p)
+        (let ((b (region-beginning))
+              (e (region-end)))
+          (jupyter-eval-string (buffer-substring-no-properties b e))
+          (evil-normal-state))
+      (let* ((cell-regexp "^# %%\\(.\\)*\n")
+             (b (save-excursion (or (and (not from-top)
                                          (re-search-backward cell-regexp nil 'noerror))
                                     (point-min))))
-						 (e (save-excursion (or (re-search-forward cell-regexp nil 'noerror) (point-max)))))
-				(jupyter-eval-string (buffer-substring-no-properties b e)))))
+             (e (save-excursion (or (re-search-forward cell-regexp nil 'noerror) (point-max)))))
+        (jupyter-eval-string (buffer-substring-no-properties b e)))))
 
   :general
   (:keymaps 'python-ts-mode-map :states '(insert normal)
-						"M-RET" #'gatsby>python-insert-delimiter)
+            "M-RET" #'gatsby>python-insert-delimiter)
 
   (:keymaps 'python-ts-mode-map :states 'normal
-						">" #'gatsby>python-move-to-next-cell
-						"<" #'gatsby>python-move-to-prev-cell)
+            ">" #'gatsby>python-move-to-next-cell
+            "<" #'gatsby>python-move-to-prev-cell)
 
   (:keymaps 'python-ts-mode-map :states '(normal visual) :prefix "SPC"
-						"rr" #'gatsby>python-eval-region-or-cell)
+            "rr" #'gatsby>python-eval-region-or-cell)
 
   (:states 'visual :keymaps 'python-ts-mode-map
-					 "<" #'python-indent-shift-left
-					 ">" #'python-indent-shift-right))
+           "<" #'python-indent-shift-left
+           ">" #'python-indent-shift-right))
 
 (provide 'gatsby>python)
 ;;; gatsby>python.el ends here

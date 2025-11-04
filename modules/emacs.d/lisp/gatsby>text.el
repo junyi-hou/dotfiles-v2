@@ -6,18 +6,18 @@
 (require 'gatsby>>utility)
 
 (use-package markdown-ts-mode
-	:ensure (:host github :repo "LionyxML/markdown-ts-mode")
+  :ensure (:host github :repo "LionyxML/markdown-ts-mode")
   :mode ("\\.md\\'" . markdown-ts-mode)
   :defer t
   :init
-	;; treesitter
-	(gatsby>install-treesitter-grammar
-	 'markdown "https://github.com/tree-sitter-grammars/tree-sitter-markdown" "v0.4.1" "tree-sitter-markdown/src")
+  ;; treesitter
+  (gatsby>install-treesitter-grammar
+   'markdown "https://github.com/tree-sitter-grammars/tree-sitter-markdown" "v0.4.1" "tree-sitter-markdown/src")
   (gatsby>install-treesitter-grammar 'markdown-inline "https://github.com/tree-sitter-grammars/tree-sitter-markdown" "v0.4.1" "tree-sitter-markdown-inline/src")
 
-	;; lsp
-	
-	)
+  ;; lsp
+  
+  )
 
 (provide 'gatsby>text)
 ;;; gatsby>text.el ends here

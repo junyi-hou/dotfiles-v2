@@ -8,7 +8,7 @@
 ;; theme
 (use-package doom-themes
   :ensure (:host github :repo "doomemacs/themes")
-	:demand t
+  :demand t
   :custom
   (doom-themes-enable-italic t)
   (doom-themes-enable-bold t)
@@ -26,10 +26,10 @@
   (unless (frame-parameter nil 'fullscreen)
     (set-frame-parameter nil 'fullscreen 'maximized))
 
-	;; setup ligature if support
-	(when (and (eq system-type 'darwin)
-						 (fboundp #'mac-auto-operator-composition-mode))
-		(mac-auto-operator-composition-mode))
+  ;; setup ligature if support
+  (when (and (eq system-type 'darwin)
+             (fboundp #'mac-auto-operator-composition-mode))
+    (mac-auto-operator-composition-mode))
 
   ;; font
   (set-face-attribute
@@ -89,8 +89,8 @@
 
   :general
   (:keymaps '(motion normal visual emacs insert)
-   "C--" #'gatsby>theme-fontsize-down
-   "C-+" #'gatsby>theme-fontsize-up))
+            "C--" #'gatsby>theme-fontsize-down
+            "C-+" #'gatsby>theme-fontsize-up))
 
 (use-package indent-bars
   :ensure (:host github :repo "jdtsmith/indent-bars")
@@ -115,19 +115,19 @@
 
 (gatsby>use-internal-pacakge display-line-numbers
   :custom
-	(display-line-numbers-width-start t)
+  (display-line-numbers-width-start t)
   (display-line-numbers-type 'visual)
   :hook
-	(prog-mode . gatsby>set-line-numbers-width)
+  (prog-mode . gatsby>set-line-numbers-width)
   (prog-mode . display-line-numbers-mode)
   :config
   (set-face-attribute 'line-number nil :background (face-background 'default))
 
-	(defun gatsby>set-line-numbers-width ()
-		"Set line number width based on total lines in buffer."
-		(when display-line-numbers-mode
-			(setq-local display-line-numbers-width
-									(+ 1 (length (number-to-string (count-lines (point-min) (point-max)))))))))
+  (defun gatsby>set-line-numbers-width ()
+    "Set line number width based on total lines in buffer."
+    (when display-line-numbers-mode
+      (setq-local display-line-numbers-width
+                  (+ 1 (length (number-to-string (count-lines (point-min) (point-max)))))))))
 
 ;; (use-package eldoc-box
 ;;   :ensure (:host github :repo "casouri/eldoc-box")
@@ -143,9 +143,9 @@
 ;;      :height (face-attribute 'default :height main-frame)))
 ;;   (add-hook 'eldoc-box-frame-hook #'gatsby>>eldoc-box-set-font-size)
 ;;   :general
-;; 	(:keymaps 'eldoc-box-hover-mode-map
-;; 		"M-j" #'eldoc-box-scroll-up
-;; 		"M-k" #'eldoc-box-scroll-down))
+;;  (:keymaps 'eldoc-box-hover-mode-map
+;;      "M-j" #'eldoc-box-scroll-up
+;;      "M-k" #'eldoc-box-scroll-down))
 
 ;; minibuffer
 (use-package vertico
@@ -207,17 +207,17 @@ current candidate"
                t nil)))))
   :general
   (:keymaps 'vertico-map
-   "M-j" #'vertico-next
-   "M-k" #'vertico-previous
-   "C-h" #'windmove-left
-   "C-j" #'windmove-down
-   "C-k" #'windmove-up
-   "C-l" #'windmove-right
-   "<backspace>" #'gatsby>vertico-better-backspace
-   "<tab>" #'gatsby>vertico-complete-common-or-select)
+            "M-j" #'vertico-next
+            "M-k" #'vertico-previous
+            "C-h" #'windmove-left
+            "C-j" #'windmove-down
+            "C-k" #'windmove-up
+            "C-l" #'windmove-right
+            "<backspace>" #'gatsby>vertico-better-backspace
+            "<tab>" #'gatsby>vertico-complete-common-or-select)
 
   (:keymaps 'minibuffer-mode-map
-   "C-k" #'windmove-up))
+            "C-k" #'windmove-up))
 
 
 (provide 'gatsby>ui)

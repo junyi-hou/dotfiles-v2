@@ -32,44 +32,37 @@ Insert the current selection when
 
   :general
   (:keymaps 'corfu-map
-   "<tab>" #'gatsby>corfu-complete
-   "M-j" #'corfu-next
-   "M-k" #'corfu-previous
-	 "SPC" #'corfu-insert-separator))
+            "<tab>" #'gatsby>corfu-complete
+            "M-j" #'corfu-next
+            "M-k" #'corfu-previous
+            "SPC" #'corfu-insert-separator))
 
 (use-package orderless
   :ensure (:host github :repo "oantolin/orderless")
   :custom
-	(orderless-matching-styles '(orderless-prefixes orderless-literal orderless-regexp))
+  (orderless-matching-styles '(orderless-prefixes orderless-literal orderless-regexp))
   (completion-styles '(orderless basic))
   (completion-category-overrides '((file (styles partial-completion)))))
 
 (gatsby>use-internal-pacakge eglot
-	:custom-face
-	(eglot-inlay-hint-face ((t (:height 1.0))))
-	(eglot-type-hint-face ((t (:height 1.0))))
-	(eglot-parameter-hint-face ((t (:height 1.0))))
-	:custom
-	(eglot-server-programs nil))
+  :custom-face
+  (eglot-inlay-hint-face ((t (:height 1.0))))
+  (eglot-type-hint-face ((t (:height 1.0))))
+  (eglot-parameter-hint-face ((t (:height 1.0))))
+  :custom
+  (eglot-server-programs nil))
 
-(use-package eglot-booster
-	:ensure (:host github :repo "jdtsmith/eglot-booster")
-	:hook (elpaca-after-init . eglot-booster-mode)
-	:custom
-	(eglot-booster--boost `(,(expand-file-name (concat gatsby>dotfiles-repo-location ".tools/bin/emacs-lsp-booster")) "--json-false-value" ":json-false" "--"))
-	(eglot-booster--boost-io-only `(,(expand-file-name (concat gatsby>dotfiles-repo-location ".tools/bin/emacs-lsp-booster")) "--disable-bytecode" "--"))
-	(eglot-booster-io-only (>= emacs-major-version 30))
-	:config
-  (defun gatsby>>do-not-check-emacs-lsp-booster-executable (func &rest args)
-    (cl-letf (((symbol-function #'executable-find) (lambda (&rest _) t)))
-      (apply func args)))
-	(advice-add #'eglot-booster-mode :around #'gatsby>>do-not-check-emacs-lsp-booster-executable))
+;; TODO: until I figure out a way to install emacs-lsp-booster reliably
+;; (use-package eglot-booster
+;;  :ensure (:host github :repo "jdtsmith/eglot-booster")
+;;  :custom (eglot-booster-io-only (>= emacs-major-version 30))
+;;   :hook (elpaca-after-init . eglot-booster-mode))
 
 ;; display flymake information in a childframe
 (use-package flymake-childframe
-	:ensure (:host github :repo "junyi-hou/flymake-childframe")
+  :ensure (:host github :repo "junyi-hou/flymake-childframe")
   :custom (flymake-childframe-prefix '((note . "i") (warning . "?") (error . "!")))
-	:hook ((flymake eglot-managed-mode) . flymake-childframe-mode))
+  :hook ((flymake eglot-managed-mode) . flymake-childframe-mode))
 
 (use-package eldoc-mouse
   :ensure (:host github :repo "huangfeiyu/eldoc-mouse")
@@ -84,49 +77,17 @@ Insert the current selection when
            "rh" #'gatsby>eldoc-pop))
 
 (gatsby>use-internal-pacakge xref
-  :custom (xref-prompt-for-identifier nil)
+  :custom
+  (xref-prompt-for-identifier nil)
+  (xref-show-definitions-function #'consult-xref)
+  (xref-show-xrefs-function #'consult-xref)
   :config
   ;; use consult
-  (with-eval-after-load 'consult
+  (defun gatsby>>xref-always-prompt (fn &optional args)
+    (cl-letf (((symbol-function #'cdr) (lambda (&rest _) t)))
+      (apply fn args)))
 
-    (defun gatsby>consult-xref (fetcher &optional alist)
-      "Show xrefs with preview in the minibuffer.
-
-This function can be used for `xref-show-xrefs-function'.
-See `xref-show-xrefs-function' for the description of the
-FETCHER and ALIST arguments."
-      (let* ((consult-xref--fetcher fetcher)
-             (candidates (consult-xref--candidates))
-             (display (alist-get 'display-action alist)))
-        (unless candidates
-          (user-error "No xref locations"))
-        (xref-pop-to-location
-         (consult--read
-          candidates
-          :command #'gatsby>consult-xref
-          :prompt "Go to xref: "
-          :history 'consult-xref--history
-          :require-match t
-          :sort nil
-          :category 'consult-xref
-          :group #'consult--prefix-group
-          :state
-          ;; do not preview other frame
-          (when-let (fun (pcase-exhaustive display
-                           ('frame nil)
-                           ('window #'switch-to-buffer-other-window)
-                           ('nil #'switch-to-buffer)))
-            (consult-xref--preview fun))
-          :lookup (apply-partially #'consult--lookup-prop 'consult-xref))
-         display)))
-
-    (setq xref-show-definitions-function #'gatsby>consult-xref
-          xref-show-xrefs-function #'gatsby>consult-xref
-          consult-xref--preview `(,@consult-xref--preview xref-elisp-location))
-
-    (consult-customize
-     gatsby>consult-xref
-     :preview-key 'any))
+  (advice-add #'consult-xref :around #'gatsby>>xref-always-prompt)
 
   :general
   (:states 'normal :prefix "SPC"
