@@ -10,7 +10,7 @@
   :ensure (:host github :repo "MatthewZMD/aidermacs")
   :custom
   (aidermacs-program (expand-file-name ".venv/bin/aider" gatsby>dotfiles-repo-location))
-  (aidermacs-default-model "openrouter/deepseek/deepseek-r1-0528")
+  (aidermacs-default-model "openrouter/openai/gpt-5-mini:floor")
   :config
   (defun gatsby>>get-ai-api-key ()
     "run passage to get the openai_api_key. Return nil if no key is found"
@@ -93,15 +93,12 @@
                       (file-name-directory buffer-file-name))
                     default-directory)))
 
-  :general
-  (:keymaps '(normal motion) :prefix "SPC"
-            "a" #'gatsby>start-aider-session)
-  (:keymaps '(normal motion)
-            "`" #'aidermacs-transient-menu)
-  (:keymaps 'aidermacs-comint-mode-map :states 'normal
-            "q" #'delete-window)
-  (:keymaps 'aidermacs-comint-mode-map :states 'normal :prefix "SPC"
-            "q" #'delete-window))
+  :evil-bind
+  ((:maps normal)
+   ("SPC a" . #'gatsby>start-aider-session)
+   ("`" . #'aidermacs-transient-menu)
+   (:maps aidermacs-comint-mode-map :states normal)
+   ("q" . #'delete-window)))
 
 (provide 'gatsby>ai)
 ;;; gatsby>ai.el ends here

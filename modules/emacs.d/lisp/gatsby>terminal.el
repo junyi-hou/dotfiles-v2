@@ -168,35 +168,28 @@
 
   (defun gatsby>eshell-setkey ()
     "Customize key in eshell-mode."
-    (general-define-key
-     :states '(normal visual motion)
-     :keymaps 'eshell-mode-map
-     "A" #'gatsby>eshell-goto-last-prompt
-     "H" #'eshell-bol
-     "c" #'eshell/evil-change
-     "C" #'eshell/evil-change-line
-     "d" #'eshell/evil-delete
-     "D" #'eshell/evil-delete-line
-     "<" #'eshell-previous-prompt
-     ">" #'eshell-next-prompt
-     "q" #'kill-buffer-and-window)
+    (with-eval-after-load 'evil
+      (evil-define-key '(normal visual motion) eshell-mode-map
+        (kbd "A") #'gatsby>eshell-goto-last-prompt
+        (kbd "H") #'eshell-bol
+        (kbd "c") #'eshell/evil-change
+        (kbd "C") #'eshell/evil-change-line
+        (kbd "d") #'eshell/evil-delete
+        (kbd "D") #'eshell/evil-delete-line
+        (kbd "<") #'eshell-previous-prompt
+        (kbd ">") #'eshell-next-prompt
+        (kbd "q") #'kill-buffer-and-window)
 
-    (general-define-key
-     :states '(normal visual motion)
-     :keymaps 'eshell-mode-map
-     :prefix "SPC"
-     "q" #'kill-buffer-and-window)
+      (evil-define-key '(normal visual motion) eshell-mode-map
+        (kbd "SPC") nil
+        (kbd "SPC q") #'kill-buffer-and-window)
 
-    (general-define-key
-     :states 'insert
-     :keymaps 'eshell-mode-map
-     "C-r" #'gatsby>eshell-history)
+      (evil-define-key 'insert 'eshell-mode-map
+        (kbd "C-r") #'gatsby>eshell-history)
 
-    (general-define-key
-     :states '(normal visual motion emacs insert)
-     :keymaps 'eshell-mode-map
-     :prefix "C-c"
-     "C-l" #'eshell/cls))
+      (evil-define-key '(normal visual motion emacs insert) eshell-mode-map
+        (kbd "C-c") nil
+        (kbd "C-c C-l") #'eshell/cls)))
 
   :config
   (gatsby>defcommand gatsby>eshell-open-or-switch (home)

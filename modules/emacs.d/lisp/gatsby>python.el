@@ -22,19 +22,19 @@
   (add-to-list 'major-mode-remap-alist '(python-mode . python-ts-mode))
 
   ;; lsp
-  (defconst gatsby>pyright-configfile-location (no-littering-expand-var-file-name "pyrightconfig"))
-  (make-directory gatsby>pyright-configfile-location t)
+  ;; (defconst gatsby>pyright-configfile-location (no-littering-expand-var-file-name "pyrightconfig"))
+  ;; (make-directory gatsby>pyright-configfile-location t)
 
-  (gatsby>defcommand gatsby>start-pyright ()
-    (let* ((root (directory-file-name (expand-file-name (project-root (project-current)))))
-           (config-root (file-name-concat gatsby>pyrefly-configfile-location (replace-regexp-in-string "/" "-" root)))
-           (config-file (file-name-concat config-root "pyrightconfig.json"))
-           (lsp-cmd
-            `(,(expand-file-name ".venv/bin/basedpyright-langserver" gatsby>dotfiles-repo-location)
-              "--stdio"
-              ))
-           (eglot-server-programs `((python-ts-mode . ,lsp-cmd))))
-      (call-interactively #'eglot)))
+  ;; (gatsby>defcommand gatsby>start-pyright ()
+  ;;   (let* ((root (directory-file-name (expand-file-name (project-root (project-current)))))
+  ;;          (config-root (file-name-concat gatsby>pyrefly-configfile-location (replace-regexp-in-string "/" "-" root)))
+  ;;          (config-file (file-name-concat config-root "pyrightconfig.json"))
+  ;;          (lsp-cmd
+  ;;           `(,(expand-file-name ".venv/bin/basedpyright-langserver" gatsby>dotfiles-repo-location)
+  ;;             "--stdio"
+  ;;             ))
+  ;;          (eglot-server-programs `((python-ts-mode . ,lsp-cmd))))
+  ;;     (call-interactively #'eglot)))
 
   :config
   (gatsby>defcommand gatsby>python-generate-notebook (run)
@@ -79,20 +79,20 @@
              (e (save-excursion (or (re-search-forward cell-regexp nil 'noerror) (point-max)))))
         (jupyter-eval-string (buffer-substring-no-properties b e)))))
 
-  :general
-  (:keymaps 'python-ts-mode-map :states '(insert normal)
-            "M-RET" #'gatsby>python-insert-delimiter)
+  :evil-bind
+  ((:maps python-ts-mode-map :states (insert normal))
+   ("M-RET" . #'gatsby>python-insert-delimiter)
 
-  (:keymaps 'python-ts-mode-map :states 'normal
-            ">" #'gatsby>python-move-to-next-cell
-            "<" #'gatsby>python-move-to-prev-cell)
+   (:maps python-ts-mode-map :states normal)
+   (">" . gatsby>python-move-to-next-cell)
+   ("<" . gatsby>python-move-to-prev-cell)
 
-  (:keymaps 'python-ts-mode-map :states '(normal visual) :prefix "SPC"
-            "rr" #'gatsby>python-eval-region-or-cell)
+   (:maps python-ts-mode-map :states (normal visual))
+   ("SPC r r" . #'gatsby>python-eval-region-or-cell)
 
-  (:states 'visual :keymaps 'python-ts-mode-map
-           "<" #'python-indent-shift-left
-           ">" #'python-indent-shift-right))
+   (:maps python-ts-mode-map :states visual)
+   ("<" . #'python-indent-shift-left)
+   (">" . #'python-indent-shift-right)))
 
 (provide 'gatsby>python)
 ;;; gatsby>python.el ends here

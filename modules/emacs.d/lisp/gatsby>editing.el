@@ -17,6 +17,8 @@
   (evil-want-C-u-scroll t)
   (evil-want-C-u-delete t)
   (evil-want-C-w-delete t)
+  :hook
+  (elpaca-after-init . evil-mode)
   :config
   (evil-define-motion gatsby>evil-next-three-lines ()
     "Jump to the next 3 visual line"
@@ -54,58 +56,51 @@
   (gatsby>defcommand gatsby>kill-buffer ()
     (kill-buffer (current-buffer)))
 
-  (evil-mode 1)
+  :evil-bind
+  ((:maps (visual emacs insert))
+   ("<escape>" . #'evil-normal-state)
 
-  :general
-  (:keymaps '(visual emacs insert)
-            "<escape>"  #'evil-normal-state)
+   (:maps (visual emacs insert motion normal))
+   ("M-u" . #'universal-argument)
+   ("C-l" . #'windmove-right)
+   ("C-h" . #'windmove-left)
+   ("C-j" . #'windmove-down)
+   ("C-k" . #'windmove-up)
+   ("C-e" . #'gatsby>evil-scroll-down)
+   ("C-y" . #'gatsby>evil-scroll-up)
 
-  (:keymaps '(visual emacs insert motion normal)
-            "M-u" #'universal-argument
-            "C-l" #'windmove-right
-            "C-h" #'windmove-left
-            "C-j" #'windmove-down
-            "C-k" #'windmove-up
-            "C-e" #'gatsby>evil-scroll-down
-            "C-y" #'gatsby>evil-scroll-up)
+   (:maps (motion normal visual))
+   ("j" . #'evil-next-visual-line)
+   ("k" . #'evil-previous-visual-line)
+   ("J" . #'gatsby>evil-next-three-lines)
+   ("K" . #'gatsby>evil-prev-three-lines)
+   ("H" . #'evil-first-non-blank-of-visual-line)
+   ("L" . #'evil-end-of-visual-line)
 
-  (:keymaps '(motion normal visual)
-            "j" #'evil-next-visual-line
-            "k" #'evil-previous-visual-line
-            "J" #'gatsby>evil-next-three-lines
-            "K" #'gatsby>evil-prev-three-lines
-            "H" #'evil-first-non-blank-of-visual-line
-            "L" #'evil-end-of-visual-line
+   (:maps (motion normal))
+   ("<tab>" . #'evil-jump-item)
 
-            "SPC" nil)
+   ("SPC k" . #'delete-window)
+   ("SPC w" . #'evil-write)
+   ("SPC q" . #'gatsby>kill-buffer)
+   ("SPC \\" . #'gatsby>split-right)
+   ("SPC -" . #'gatsby>split-down)
 
-  (:keymaps '(normal motion)
-            "<tab>" #'evil-jump-item)
+   ("SPC o b" . #'switch-to-buffer)
+   ("SPC o f" . #'find-file)
+   ("SPC o m" . #'gatsby>switch-to-message)
+   ("SPC o s" . #'gatsby>eshell-open-or-switch)
 
-  (:keymaps 'visual
-            "<tab>" #'gatsby>evil-visual-tab)
+   (:maps visual)
+   ("<tab>" . #'gatsby>evil-visual-tab)))
 
-  ;; leader key
-  (:keymaps '(motion normal)
-            :prefix "SPC"
-            "k" #'delete-window
-            "w" #'evil-write
-            "q" #'gatsby>kill-buffer
-            "\\" #'gatsby>split-right
-            "-" #'gatsby>split-down
-
-            "ob" #'switch-to-buffer
-            "of" #'find-file
-            "om" #'gatsby>switch-to-message
-            "os" #'gatsby>eshell-open-or-switch))
 
 (use-package expand-region
   :ensure (expand-region :host github :repo "magnars/expand-region.el")
-  :commands (er/expand-region er/contract-region)
-  :general
-  (:keymaps 'visual
-            "v" #'er/expand-region
-            "V" #'er/contract-region)
+  :evil-bind
+  ((:maps visual)
+   ("v" . #'er/expand-region)
+   ("V" . #'er/contract-region))
   :config
   (defun gatsby>>treesit-expand ()
     "Use treesitter to find next region if treesitter is available."
@@ -127,12 +122,9 @@
 
 (use-package evil-nerd-commenter
   :ensure (:host github :repo "redguardtoo/evil-nerd-commenter")
-  :after evil
-  :commands evilnc-comment-or-uncomment-lines
-  :general
-  (:keymaps '(normal visual)
-            :prefix "SPC"
-            "t" #'evilnc-comment-or-uncomment-lines))
+  :evil-bind
+  ((:maps (normal visual))
+   ("SPC t" . #'evilnc-comment-or-uncomment-lines)))
 
 (use-package evil-surround
   :ensure (:host github :repo "emacs-evil/evil-surround")
@@ -192,7 +184,6 @@
    gatsby>consult-search-visual-outline
    :preview-key 'any)
 
-
   ;; during `/' or `?' search, <C-Return> will start a consult search 
   (gatsby>defcommand gatsby>consult-line-from-evil (arg)
     "Take current search string and run `consult-line' on it.
@@ -233,19 +224,17 @@
   (advice-add #'consult-line :around #'gatsby>>consult-tempoarily-add-to-minibuffer-hooks)
   (advice-add #'consult-outline :around #'gatsby>>consult-tempoarily-add-to-minibuffer-hooks)
   
-  :general
-  (:keymaps '(motion normal visual)
-            [remap switch-to-buffer] #'consult-buffer)
-  (:keymaps 'isearch-mode-map
-            "<C-return>" #'gatsby>consult-line-from-evil)
-  (:keymaps '(motion normal)
-            "*" #'consult-line
-            "#" #'consult-outline)
-  
-  (:keymaps 'visual
-            "*" #'gatsby>consult-search-visual-line
-            "#" #'gatsby>consult-search-visual-outline))
-
+  :evil-bind
+  ((:maps (motion normal visual))
+   ([remap switch-to-buffer] . #'consult-buffer)
+   (:maps isearch-mode-map)
+   ("<C-return>" . #'gatsby>consult-line-from-evil)
+   (:maps (motion normal))
+   ("*" . #'consult-line)
+   ("#" . #'consult-outline)
+   (:maps visual)
+   ("*" . #'gatsby>consult-search-visual-line)
+   ("#" . #'gatsby>consult-search-visual-outline)))
 
 (provide 'gatsby>editing)
 ;;; gatsby>editing.el ends here

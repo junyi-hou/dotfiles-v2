@@ -100,7 +100,8 @@ the first call.  Delete the auto-inserted comment for the second call.  Otherwis
   :hook (elpaca-after-init . gatsby>>start-server)
   :config
   (defun gatsby>>start-server (&rest _)
-    (unless (server-running-p)
+    (if (server-running-p)
+        (display-warning 'Dotfiles "Another emacs server is running. Do not launch new server.")
       (server-start))))
 
 (gatsby>use-internal-pacakge compile
@@ -133,10 +134,9 @@ the first call.  Delete the auto-inserted comment for the second call.  Otherwis
         (call-interactively #'delete-window)
       (call-interactively #'kill-buffer-and-window)))
 
-  :general
-  (:keymaps 'compilation-shell-minor-mode-map
-            :state 'normal
-            "q" #'gatsby>compilation-delete-buffer-if-process-finished))
+  :evil-bind
+  ((:maps compilation-shell-minor-mode-map :states normal)
+   ("q" . #'gatsby>compilation-delete-buffer-if-process-finished)))
 
 (gatsby>use-internal-pacakge autorevert
   :hook (elpaca-after-init . global-auto-revert-mode))
@@ -164,17 +164,16 @@ the first call.  Delete the auto-inserted comment for the second call.  Otherwis
     (let ((last-line (save-excursion (goto-char (point-max)) (beginning-of-line) (point))))
       (set-window-start (selected-window) last-line)))
 
-  :general
-  (:keymaps '(messages-buffer-mode-map special-mode-map) :states '(motion normal)
-            "q" #'kill-buffer-and-window)
-
-  (:keymaps '(messages-buffer-mode-map) :states '(motion normal) :prefix "C-c"
-            "C-l" #'gatsby>message-cls))
+  :evil-bind
+  ((:maps messages-buffer-mode-map :states (normal motion))
+   ("q" . #'kill-buffer-and-window)
+   ("SPC q" . #'kill-buffer-and-window)
+   ("C-c C-l" . #'gatsby>message-cls)))
 
 (gatsby>use-internal-pacakge backtrace
-  :general
-  (:keymaps 'backtrace-mode-map :states '(motion normal)
-            "q" #'kill-buffer-and-window))
+  :evil-bind
+  ((:maps backtrace-mode-map :states (motion normal))
+   ("q" . #'kill-buffer-and-window)))
 
 (gatsby>use-internal-pacakge recentf
   :hook (elpaca-after-init . recentf-mode))

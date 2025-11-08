@@ -13,7 +13,7 @@
 (let ((repo-location (locate-dominating-file (file-truename (expand-file-name "init.el" user-emacs-directory)) ".git")))
   (if repo-location
       (defconst gatsby>dotfiles-repo-location repo-location "The git root of the dotfile repo")
-    (display-warning 'gatsby "Unable to find dotfiles repo location. Did you install the configuration using `make install'?")))
+    (display-warning 'Dotfiles "Unable to find dotfiles repo location. Did you install the configuration using `make install'?")))
 
 
 (require 'gatsby>use-package)

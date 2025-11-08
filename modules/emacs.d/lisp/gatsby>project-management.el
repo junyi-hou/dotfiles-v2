@@ -31,21 +31,15 @@
                        (make-gatsby>project :root expanded-project))))
                  gatsby>project-list))))
 
-  (add-hook 'project-find-functions #'gatsby>project-try -10)
-  
-  :commands project-find-file
-  :general
-  (:keymaps '(normal motion) :prefix "SPC"
-            "op" #'project-find-file))
+  (add-hook 'project-find-functions #'gatsby>project-try -10))
 
 (gatsby>use-internal-pacakge smerge-mode
-  :defer t
-  :config
-  (gatsby>defcommand gatsby>smerge-pick-at-point (both)
-    (if both (call-interactively #'smerge-keep-all) (call-interactively #'smerge-keep-current)))
-  :general
-  (:keymaps 'smerge-mode-map :states '(normal visual) :prefix "SPC"
-            "m" #'gatsby>smerge-pick-at-point))
+  :evil-bind
+  ((:maps smerge-mode-map :states (normal visual))
+   ("SPC ]" . #'smerge-next)
+   ("SPC [" . #'smerge-prev)
+   ("SPC m" . #'smerge-keep-current)
+   ("SPC M" . #'smerge-keep-all)))
 
 ;; (use-package projtree
 ;;  :ensure (:host github :repo "petergardfjall/emacs-projtree")
@@ -120,27 +114,28 @@
   (gatsby>defcommand gatsby>envrc-log-buffer ()
     (switch-to-buffer-other-window "*envrc*"))
 
-  :general
-  (:keymaps '(normal visual motion) :prefix "SPC"
-            "nn" #'envrc-reload
-            "nd" #'envrc-deny
-            "na" #'envrc-allow
-            "nl" #'gatsby>envrc-log-buffer))
+  :evil-bind
+  ((:maps normal)
+   ("SPC n n" . #'envrc-reload)
+   ("SPC n a" . #'envrc-allow)
+   ("SPC n l" . #'gatsby>envrc-log-buffer)))
 
-(gatsby>use-internal-pacakge git-rebase
-  :config
-  (add-to-list 'evil-motion-state-modes 'git-rebase-mode)
-  :general
-  (:keymaps 'git-rebase-mode-map :states 'motion
-            "p" #'git-rebase-pick
-            "e" #'git-rebase-edit
-            "l" #'git-rebase-label
-            "r" #'git-rebase-reword
-            "s" #'git-rebase-squash
-            "d" #'git-rebase-kill-line
-            "f" #'git-rebase-fixup
-            "M-j" #'git-rebase-move-line-down
-            "M-k" #'git-rebase-move-line-up))
+;; This is part of magit
+;; (gatsby>use-internal-pacakge git-rebase
+;;   :init
+;;   (add-to-list 'evil-motion-state-modes 'git-rebase-mode)
+;;   ;; :evil-bind
+;;   ;; ((:maps git-rebase-mode-map :states motion)
+;;   ;;  ("p" . #'git-rebase-pick)
+;;   ;;  ("e" . #'git-rebase-edit)
+;;   ;;  ("l" . #'git-rebase-label)
+;;   ;;  ("r" . #'git-rebase-reword)
+;;   ;;  ("s" . #'git-rebase-squash)
+;;   ;;  ("d" . #'git-rebase-kill-line)
+;;   ;;  ("f" . #'git-rebase-fixup)
+;;   ;;  ("M-j" . #'git-rebase-move-line-down)
+;;   ;;  ("M-k" . #'git-rebase-move-line-up))
+;;   )
 
 (provide 'gatsby>project-management)
 ;;; gatsby>project-management.el ends here

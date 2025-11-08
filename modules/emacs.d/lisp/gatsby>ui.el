@@ -87,10 +87,10 @@
             evil-replace-state-exit-hook
             window-selection-change-functions)))
 
-  :general
-  (:keymaps '(motion normal visual emacs insert)
-            "C--" #'gatsby>theme-fontsize-down
-            "C-+" #'gatsby>theme-fontsize-up))
+  :evil-bind
+  ((:maps (motion normal visual emacs insert))
+   ("C--" . #'gatsby>theme-fontsize-down)
+   ("C-+" . #'gatsby>theme-fontsize-up)))
 
 (use-package indent-bars
   :ensure (:host github :repo "jdtsmith/indent-bars")
@@ -128,24 +128,6 @@
     (when display-line-numbers-mode
       (setq-local display-line-numbers-width
                   (+ 1 (length (number-to-string (count-lines (point-min) (point-max)))))))))
-
-;; (use-package eldoc-box
-;;   :ensure (:host github :repo "casouri/eldoc-box")
-;;   :hook ((prog-mode text-mode) . eldoc-box-hover-mode)
-;;   :custom
-;;   (eldoc-box-clear-with-C-g t)
-;;   (eldoc-idle-delay 1)
-;;   (eldoc-box-cleanup-interval 0.5)
-;;   :config
-;;   (defun gatsby>>eldoc-box-set-font-size (main-frame)
-;;     (set-face-attribute
-;;      'default eldoc-box--frame
-;;      :height (face-attribute 'default :height main-frame)))
-;;   (add-hook 'eldoc-box-frame-hook #'gatsby>>eldoc-box-set-font-size)
-;;   :general
-;;  (:keymaps 'eldoc-box-hover-mode-map
-;;      "M-j" #'eldoc-box-scroll-up
-;;      "M-k" #'eldoc-box-scroll-down))
 
 ;; minibuffer
 (use-package vertico
@@ -205,19 +187,19 @@ current candidate"
                    (insert common))))
               (;; one of the 3 conditions is satisfied, do nothing
                t nil)))))
-  :general
-  (:keymaps 'vertico-map
-            "M-j" #'vertico-next
-            "M-k" #'vertico-previous
-            "C-h" #'windmove-left
-            "C-j" #'windmove-down
-            "C-k" #'windmove-up
-            "C-l" #'windmove-right
-            "<backspace>" #'gatsby>vertico-better-backspace
-            "<tab>" #'gatsby>vertico-complete-common-or-select)
+  :evil-bind
+  ((:maps vertico-map)
+   ("M-j" . #'vertico-next)
+   ("M-k" . #'vertico-previous)
+   ("C-h" . #'windmove-left)
+   ("C-j" . #'windmove-down)
+   ("C-k" . #'windmove-up)
+   ("C-l" . #'windmove-right)
+   ("<backspace>" . #'gatsby>vertico-better-backspace)
+   ("<tab>" . #'gatsby>vertico-complete-common-or-select)
 
-  (:keymaps 'minibuffer-mode-map
-            "C-k" #'windmove-up))
+   (:maps minibuffer-mode-map)
+   ("C-k" . #'windmove-up)))
 
 
 (provide 'gatsby>ui)

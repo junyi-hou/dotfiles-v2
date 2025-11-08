@@ -19,22 +19,21 @@
     (goto-char (point-max))
     (evil-insert-state))
   
-  :general
-  (:keymaps 'comint-mode-map :states '(normal visual motion emacs insert) :prefix "C-c"
-            "C-l" 'gatsby>comint-cls
-            "C-c" 'comint-interrupt-subjob)
-  
-  (:keymaps 'comint-mode-map :states 'insert
-            "<up>" #'comint-previous-matching-input-from-input
-            "<down>" #'comint-next-matching-input-from-input)
-  
-  (:keymaps 'comint-mode-map :states '(normal motion visual)
-            "<" #'comint-previous-prompt
-            ">" #'comint-next-prompt
-            "A" #'gatsby>comint-goto-last-prompt
-            "H" #'comint-bol))
+  :evil-bind
+  ((:maps comint-mode-map :states (normal visual insert))
+   ("C-c C-l" . #'gatsby>comint-cls)
+   ("C-c C-c" . #'comint-interrupt-subjob)
+   
+   (:maps comint-mode-map :states insert)
+   ("<up>" . #'comint-previous-matching-input-from-input)
+   ("<down>" . #'comint-next-matching-input-from-input)
+   
+   (:maps comint-mode-map :states (normal visual))
+   ("<" . #'comint-previous-prompt)
+   (">" . #'comint-next-prompt)
+   ("A" . #'gatsby>comint-goto-last-prompt)
+   ("H" . #'comint-bol)))
 
-;; FIXME - gatsby>jupyter-start-or-switch-to-repl and jupyter-launch-notebook are not autoloaded
 (use-package jupyter
   :ensure (:host github :repo "nnicandro/emacs-jupyter")
   :custom-face
@@ -66,30 +65,26 @@
     (goto-char (point-max))
     (evil-insert-state))
 
-  :general
-  (:keymaps 'jupyter-repl-mode-map :states '(normal visual)
-            "A" #'gatsby>jupyter-goto-last-prompt
-            "<" #'jupyter-repl-backward-cell
-            ">" #'jupyter-repl-forward-cell
-            "SPC" nil)
-  
-  (:keymaps 'jupyter-repl-mode-map :states '(normal visual insert) :prefix "C-c"
-            "C-c" #'jupyter-repl-interrupt-kernel
-            "C-l" #'jupyter-repl-clear-cells)
-  
-  (:keymaps 'jupyter-repl-mode-map :states '(normal visual) :prefix "SPC"
-            "q" #'kill-buffer-and-window
-            "r" #'jupyter-repl-restart-kernel)
-  
-  (:keymaps 'jupyter-repl-mode-map :states 'insert
-            "<up>" #'jupyter-repl-history-previous-matching
-            "<down>" #'jupyter-repl-history-next-matching)
+  :evil-bind
+  ((:maps jupyter-repl-mode-map :states (normal visual))
+   ("A" . #'gatsby>jupyter-goto-last-prompt)
+   ("<" . #'jupyter-repl-backward-cell)
+   (">" . #'jupyter-repl-forward-cell)
+   ("SPC q" . #'kill-buffer-and-window)
+   ("SPC r" . #'jupyter-repl-restart-kernel)
 
-  ;; include keymaps for all supporting kernels here
-  (:keymaps 'python-ts-mode-map :states 'normal :prefix "SPC"
-            "ro" #'gatsby>jupyter-start-or-switch-to-repl
-            "rz" #'jupyter-repl-associate-buffer))
+   (:maps jupyter-repl-mode-map :states (normal visual insert))
+   ("C-c C-c" . #'jupyter-repl-interrupt-kernel)
+   ("C-c C-l" . #'jupyter-repl-clear-cells)
+   
+   (:maps jupyter-repl-mode-map :states insert)
+   ("<up>" . #'jupyter-repl-history-previous-matching)
+   ("<down>" . #'jupyter-repl-history-next-matching)
 
+   ;; include keymaps for all supporting kernels here
+   (:maps python-ts-mode-map :states normal)
+   ("SPC r o" . #'gatsby>jupyter-start-or-switch-to-repl)
+   ("SPC r z" . #'jupyter-repl-associate-buffer)))
 
 (provide 'gatsby>repl)
 ;;; gatsby>repl.el ends here

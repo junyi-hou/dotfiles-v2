@@ -148,6 +148,9 @@ The optional argument TEST specifies the hash table's test function
       table)))
 
 ;; secret management via `passage'
+;; (gatsby>defcommand gatsby>retrieve-secret ()
+;;   (set-register)
+;;   )
 
 (provide 'gatsby>>utility)
 ;;; gatsby>>utility.el ends here

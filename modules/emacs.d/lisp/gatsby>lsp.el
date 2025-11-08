@@ -6,9 +6,6 @@
 
 (require 'gatsby>>utility)
 
-(eval-when-compile
-  (require 'cl-lib))
-
 ;; completion
 (use-package corfu
   :ensure (:host github :repo "emacs-straight/corfu" :files ("*" "extensions/*.el" (:exclude ".git")))
@@ -30,12 +27,12 @@ Insert the current selection when
         (corfu-insert)
       (corfu-expand)))
 
-  :general
-  (:keymaps 'corfu-map
-            "<tab>" #'gatsby>corfu-complete
-            "M-j" #'corfu-next
-            "M-k" #'corfu-previous
-            "SPC" #'corfu-insert-separator))
+  :evil-bind
+  ((:maps corfu-map)
+   ("<tab>" . #'gatsby>corfu-complete)
+   ("M-j" . #'corfu-next)
+   ("M-k" . #'corfu-previous)
+   ("SPC" . #'corfu-insert-separator)))
 
 (use-package orderless
   :ensure (:host github :repo "oantolin/orderless")
@@ -52,7 +49,21 @@ Insert the current selection when
   :custom
   (eglot-server-programs nil))
 
-;; TODO: until I figure out a way to install emacs-lsp-booster reliably
+;; TODO: xref-* functions are not autoloaded?!
+(gatsby>use-internal-pacakge xref
+  :demand t
+  :custom
+  (xref-prompt-for-identifier nil)
+  (xref-show-definitions-function #'consult-xref)
+  (xref-show-xrefs-function #'consult-xref)
+  :evil-bind
+  ((:maps (normal visual motion))
+   ("SPC r l" . #'xref-find-definitions)
+   ("SPC r L" . #'xref-find-references)
+   ("SPC r b" . #'xref-go-back)
+   ("SPC r f" . #'xref-go-forward)))
+
+;; ;; TODO: until I figure out a way to install emacs-lsp-booster reliably
 ;; (use-package eglot-booster
 ;;  :ensure (:host github :repo "jdtsmith/eglot-booster")
 ;;  :custom (eglot-booster-io-only (>= emacs-major-version 30))
@@ -72,29 +83,11 @@ Insert the current selection when
     (cl-letf (((symbol-function #'posframe-poshandler-point-bottom-left-corner-upward)
                #'posframe-poshandler-point-bottom-left-corner))
       (call-interactively #'eldoc-mouse-pop-doc-at-cursor)))
-  :general
-  (:states 'normal :prefix "SPC"
-           "rh" #'gatsby>eldoc-pop))
 
-(gatsby>use-internal-pacakge xref
-  :custom
-  (xref-prompt-for-identifier nil)
-  (xref-show-definitions-function #'consult-xref)
-  (xref-show-xrefs-function #'consult-xref)
-  :config
-  ;; use consult
-  (defun gatsby>>xref-always-prompt (fn &optional args)
-    (cl-letf (((symbol-function #'cdr) (lambda (&rest _) t)))
-      (apply fn args)))
-
-  (advice-add #'consult-xref :around #'gatsby>>xref-always-prompt)
-
-  :general
-  (:states 'normal :prefix "SPC"
-           "rl" #'xref-find-definitions
-           "rL" #'xref-find-references
-           "rb" #'xref-go-back
-           "rf" #'xref-go-forward))
+  ;; TODO: support transiant map
+  :evil-bind
+  ((:maps (normal visual motion))
+   ("SPC r h" . #'gatsby>eldoc-pop)))
 
 (provide 'gatsby>lsp)
 ;;; gatsby>lsp.el ends here
