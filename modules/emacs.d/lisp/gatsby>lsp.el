@@ -84,7 +84,56 @@ Insert the current selection when
                #'posframe-poshandler-point-bottom-left-corner))
       (call-interactively #'eldoc-mouse-pop-doc-at-cursor)))
 
-  ;; TODO: support transiant map
+  ;; enable transiant map
+  ;; commands
+  (defmacro gatsby>>eldoc-transiant-command (fn form)
+    (declare
+     (indent defun))
+    `(gatsby>defcommand ,fn ()
+       (let* ((frame
+               (with-current-buffer (get-buffer-create eldoc-mouse-posframe-buffer-name)
+                 posframe--frame))
+              (window
+               (get-buffer-window
+                eldoc-mouse-posframe-buffer-name
+                frame)))
+         (with-selected-window window
+           ,form))))
+
+  (gatsby>>eldoc-transiant-command gatsby>eldoc-scroll-up
+    (scroll-down (max 1 (/ (1- (window-height (selected-window))) 2))))
+
+  (gatsby>>eldoc-transiant-command gatsby>eldoc-scroll-down
+    (scroll-up (max 1 (/ (1- (window-height (selected-window))) 2))))
+
+  (defconst gatsby>eldoc-transiant-map
+    (let ((map (make-sparse-keymap)))
+      (suppress-keymap map t)
+      (define-key map (kbd "J") #'gatsby>eldoc-scroll-down)
+      (define-key map (kbd "K") #'gatsby>eldoc-scroll-up)
+      (define-key map (kbd "C-u") #'gatsby>eldoc-scroll-up)
+      (define-key map (kbd "C-d") #'gatsby>eldoc-scroll-down)
+      map))
+
+  (defvar gatsby>>eldoc-restore-keymap-fn nil
+    "Controlling when transient map is enabled")
+
+  (defun gatsby>>eldoc-enable-transiant-map (&rest _)
+    (with-current-buffer (get-buffer-create eldoc-mouse-posframe-buffer-name)
+      (setq-local gatsby>>eldoc-restore-keymap-fn
+                  (set-transient-map
+                   gatsby>eldoc-transiant-map t #'eldoc-mouse--hide-posframe))))
+
+  (defun gatsby>>eldoc-disable-transiant-map (&rest _)
+    (with-current-buffer (get-buffer-create eldoc-mouse-posframe-buffer-name)
+      (let ((fn gatsby>>eldoc-restore-keymap-fn))
+        (setq-local gatsby>>eldoc-restore-keymap-fn nil)
+        (when (functionp fn)
+         (funcall fn)))))
+
+  (advice-add #'eldoc-mouse--pop-doc :after #'gatsby>>eldoc-enable-transiant-map)
+  (advice-add #'eldoc-mouse--hide-posframe :after #'gatsby>>eldoc-disable-transiant-map)
+
   :evil-bind
   ((:maps (normal visual motion))
    ("SPC r h" . #'gatsby>eldoc-pop)))

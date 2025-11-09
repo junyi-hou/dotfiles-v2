@@ -120,6 +120,18 @@
    ("SPC n a" . #'envrc-allow)
    ("SPC n l" . #'gatsby>envrc-log-buffer)))
 
+
+;; (use-package magit
+;;   :ensure (:host github :repo "magit/magit")
+;;   :init
+;;   (add-to-list 'evil-motion-state-modes 'magit-status-mode)
+;;   (add-to-list 'evil-motion-state-modes 'magit-diff-mode)
+;;   (add-to-list 'evil-motion-state-modes 'magit-log-mode)
+;;   (add-to-list 'evil-motion-state-modes 'magit-revision-mode)
+;;   (add-to-list 'evil-motion-state-modes 'magit-process-mode)
+;;   (add-to-list 'evil-insert-state-modes 'git-commit-mode)
+;;   )
+
 ;; This is part of magit
 ;; (gatsby>use-internal-pacakge git-rebase
 ;;   :init

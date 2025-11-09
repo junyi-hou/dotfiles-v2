@@ -104,6 +104,11 @@ the first call.  Delete the auto-inserted comment for the second call.  Otherwis
         (display-warning 'Dotfiles "Another emacs server is running. Do not launch new server.")
       (server-start))))
 
+(use-package axis
+  :ensure (:host github :repo "junyi-hou/emacs-axis")
+  :custom (axis-db-location (concat (no-littering-expand-var-file-name "axis-data.sqlite")))
+  :hook (elpaca-after-init . global-axis-mode))
+
 (gatsby>use-internal-pacakge compile
   :init
   (require 'ansi-color)
@@ -165,9 +170,10 @@ the first call.  Delete the auto-inserted comment for the second call.  Otherwis
       (set-window-start (selected-window) last-line)))
 
   :evil-bind
-  ((:maps messages-buffer-mode-map :states (normal motion))
+  ((:maps special-mode-map :states (normal motion))
    ("q" . #'kill-buffer-and-window)
-   ("SPC q" . #'kill-buffer-and-window)
+   (:maps messages-buffer-mode-map :states (normal motion))
+   ("q" . #'delete-window)
    ("C-c C-l" . #'gatsby>message-cls)))
 
 (gatsby>use-internal-pacakge backtrace
