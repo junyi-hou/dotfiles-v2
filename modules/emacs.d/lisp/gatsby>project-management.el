@@ -121,33 +121,131 @@
    ("SPC n l" . #'gatsby>envrc-log-buffer)))
 
 
-;; (use-package magit
-;;   :ensure (:host github :repo "magit/magit")
-;;   :init
-;;   (add-to-list 'evil-motion-state-modes 'magit-status-mode)
-;;   (add-to-list 'evil-motion-state-modes 'magit-diff-mode)
-;;   (add-to-list 'evil-motion-state-modes 'magit-log-mode)
-;;   (add-to-list 'evil-motion-state-modes 'magit-revision-mode)
-;;   (add-to-list 'evil-motion-state-modes 'magit-process-mode)
-;;   (add-to-list 'evil-insert-state-modes 'git-commit-mode)
-;;   )
+;; This is a missing dependency in magit
+(use-package transient
+  :defer t
+  :ensure (:host github :repo "magit/transient"))
 
-;; This is part of magit
-;; (gatsby>use-internal-pacakge git-rebase
-;;   :init
-;;   (add-to-list 'evil-motion-state-modes 'git-rebase-mode)
-;;   ;; :evil-bind
-;;   ;; ((:maps git-rebase-mode-map :states motion)
-;;   ;;  ("p" . #'git-rebase-pick)
-;;   ;;  ("e" . #'git-rebase-edit)
-;;   ;;  ("l" . #'git-rebase-label)
-;;   ;;  ("r" . #'git-rebase-reword)
-;;   ;;  ("s" . #'git-rebase-squash)
-;;   ;;  ("d" . #'git-rebase-kill-line)
-;;   ;;  ("f" . #'git-rebase-fixup)
-;;   ;;  ("M-j" . #'git-rebase-move-line-down)
-;;   ;;  ("M-k" . #'git-rebase-move-line-up))
-;;   )
+(use-package magit
+  :ensure (:host github :repo "magit/magit")
+  :after transient
+  :hook ((evil-mode . (lambda () (gatsby>>put-mode-to-evil-state '(magit-status-mode
+                                                                   magit-diff-mode
+                                                                   magit-log-mode
+                                                                   magit-revision-mode
+                                                                   magit-revision-mode
+                                                                   magit-process-mode
+                                                                   git-rebase-mode)
+                                                                 'motion)))
+         (evil-mode . (lambda () (gatsby>>put-mode-to-evil-state 'git-commit-mode 'insert))))
+  :custom
+  (magit-status-section-hook '(magit-insert-status-headers
+                               magit-insert-untracked-files
+                               magit-insert-unstaged-changes
+                               magit-insert-staged-changes
+                               magit-insert-recent-commits))
+  :config
+  (make-variable-buffer-local 'magit-log-section-commit-count)
+  (defun gatsby>>magit-change-number-of-commits (n increase)
+    "Change the number of commits shown by N.
+  If INCREASE is non-nil, show `magit-log-section-commit-count'+N commits,
+  otherwise show `magit-log-section-commit-count' - N commits."
+    (if increase
+        (setq-local magit-log-section-commit-count (+ magit-log-section-commit-count n))
+      (setq-local magit-log-section-commit-count (- magit-log-section-commit-count n)))
+
+    (let ((inhibit-read-only t)
+          (magit-section-initial-visibility-alist `(,@magit-section-initial-visibility-alist (recent . show)))
+          (point (point)))
+      (erase-buffer)
+      (magit-status-refresh-buffer)
+      (goto-char (min (point-max) point))))
+
+  (defun gatsby>magit-increase-number-of-commits (&optional n)
+    "Increase the current shown number of commits by N.
+  If N is not given, increase by 1"
+    (interactive "p")
+    (gatsby>>magit-change-number-of-commits n t))
+
+  (defun gatsby>magit-decrease-number-of-commits (&optional n)
+    "Decrease the current shown number of commits by N.
+  If N is not given, increase by 1"
+    (interactive "p")
+    (gatsby>>magit-change-number-of-commits n nil))
+
+  (gatsby>defcommand gatsby>magit-visit-thing-at-point ()
+    "Get file at point in magit buffers."
+    (cond ((magit-section-match '([file] [hunk]))
+           (let ((file (magit-file-at-point t)))
+             (unless file
+               (error "No file at point"))
+             (magit-diff-visit-file--internal file nil #'switch-to-buffer-other-window)))
+          ((magit-section-match [commit])
+           ;; commits: show the commit details
+           (call-interactively #'magit-show-commit))
+          ((magit-section-match [* error])
+           (call-interactively #'magit-process-buffer))
+          ;; TODO: use smerge instead of ediff
+          ;; ((magit-section-match [stash])
+          ;;  (call-interactively #'magit-ediff-show-stash))
+          ;; ((and (magit-section-match '(issue pullreq))
+          ;;       (featurep 'forge))
+          ;;  ;; for `forge-issue' and `forge-pullreq' block, visit corresponding issue
+          ;;  (call-interactively #'forge-visit-topic))
+          ;; fallback - `magit-visit-thing'
+          (t 'magit-visit-thing)))
+
+  (gatsby>defcommand gatsby>magit-show-all-status ()
+    (let ((magit-status-section-hook '(magit-insert-status-headers
+                                       magit-insert-merge-log
+                                       magit-insert-rebase-sequence
+                                       magit-insert-am-sequence
+                                       magit-insert-sequencer-sequence
+                                       magit-insert-bisect-output
+                                       magit-insert-bisect-rest
+                                       magit-insert-bisect-log
+                                       magit-insert-untracked-files
+                                       magit-insert-unstaged-changes
+                                       magit-insert-staged-changes
+                                       magit-insert-stashes
+                                       magit-insert-unpushed-to-pushremote
+                                       magit-insert-unpushed-to-upstream
+                                       magit-insert-unpulled-from-pushremote
+                                       magit-insert-unpulled-from-upstream
+                                       magit-insert-recent-commits))
+          (inhibit-read-only t)
+          (point (point)))
+      (erase-buffer)
+      (magit-status-refresh-buffer)
+      (goto-char (min (point-max) point))))
+
+  :evil-bind
+  ((:maps normal)
+   ("SPC g g" . #'magit-status)
+   ("SPC g l" . #'magit-log-buffer-file)
+   (:maps magit-status-mode-map :states motion)
+   ("+" . #'gatsby>magit-increase-number-of-commits)
+   ("-" . #'gatsby>magit-decrease-number-of-commits)
+   ("SPC R" . #'gatsby>magit-show-all-status)
+   (:maps (magit-status-mode-map magit-diff-mode-map magit-log-mode-map) :states motion)
+   (">" . #'magit-section-forward-sibling)
+   ("<" . #'magit-section-backward-sibling)
+   ("`" . #'magit-dispatch)
+   ("zo" . #'magit-section-show)
+   ("zc" . #'magit-section-hide)
+   ("RET" . #'gatsby>magit-visit-thing-at-point)
+   (:maps (magit-status-mode-map magit-diff-mode-map magit-log-mode-map magit-revision-mode-map) :states motion)
+   ("SPC r" . #'magit-refresh-buffer)
+   (:maps git-rebase-mode-map :states motion)
+   ("p" . #'git-rebase-pick)
+   ("e" . #'git-rebase-edit)
+   ("l" . #'git-rebase-label)
+   ("r" . #'git-rebase-reword)
+   ("s" . #'git-rebase-squash)
+   ("d" . #'git-rebase-kill-line)
+   ("f" . #'git-rebase-fixup)
+   ("M-j" . #'git-rebase-move-line-down)
+   ("M-k" . #'git-rebase-move-line-up)))
 
 (provide 'gatsby>project-management)
 ;;; gatsby>project-management.el ends here

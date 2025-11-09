@@ -169,7 +169,7 @@
   (defun gatsby>eshell-setkey ()
     "Customize key in eshell-mode."
     (with-eval-after-load 'evil
-      (evil-define-key '(normal visual motion) eshell-mode-map
+      (evil-define-key 'normal eshell-mode-map
         (kbd "A") #'gatsby>eshell-goto-last-prompt
         (kbd "H") #'eshell-bol
         (kbd "c") #'eshell/evil-change
@@ -178,17 +178,13 @@
         (kbd "D") #'eshell/evil-delete-line
         (kbd "<") #'eshell-previous-prompt
         (kbd ">") #'eshell-next-prompt
-        (kbd "q") #'kill-buffer-and-window)
-
-      (evil-define-key '(normal visual motion) eshell-mode-map
-        (kbd "SPC") nil
+        (kbd "q") #'kill-buffer-and-window
         (kbd "SPC q") #'kill-buffer-and-window)
 
       (evil-define-key 'insert 'eshell-mode-map
         (kbd "C-r") #'gatsby>eshell-history)
 
-      (evil-define-key '(normal visual motion emacs insert) eshell-mode-map
-        (kbd "C-c") nil
+      (evil-define-key '(normal visual emacs insert) eshell-mode-map
         (kbd "C-c C-l") #'eshell/cls)))
 
   :config

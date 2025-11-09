@@ -56,9 +56,14 @@
   (gatsby>defcommand gatsby>kill-buffer ()
     (kill-buffer (current-buffer)))
 
+  (gatsby>defcommand gatsby>normal-or-motion-state ()
+    (if (memq major-mode evil-motion-state-modes)
+        (evil-motion-state 1)
+      (call-interactively #'evil-normal-state)))
+
   :evil-bind
   ((:maps (visual emacs insert))
-   ("<escape>" . #'evil-normal-state)
+   ("<escape>" . #'gatsby>normal-or-motion-state)
 
    (:maps (visual emacs insert motion normal))
    ("M-u" . #'universal-argument)
@@ -80,6 +85,7 @@
    (:maps (motion normal))
    ("<tab>" . #'evil-jump-item)
 
+   (:maps (motion normal visual))
    ("SPC k" . #'delete-window)
    ("SPC w" . #'evil-write)
    ("SPC q" . #'gatsby>kill-buffer)
@@ -225,7 +231,7 @@
   (advice-add #'consult-outline :around #'gatsby>>consult-tempoarily-add-to-minibuffer-hooks)
   
   :evil-bind
-  ((:maps (motion normal visual))
+  ((:maps (motion normal))
    ([remap switch-to-buffer] . #'consult-buffer)
    (:maps isearch-mode-map)
    ("<C-return>" . #'gatsby>consult-line-from-evil)

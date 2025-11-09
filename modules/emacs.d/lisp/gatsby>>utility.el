@@ -147,6 +147,16 @@ The optional argument TEST specifies the hash table's test function
                  (puthash key-string processed-value table)))
       table)))
 
+;; putting modes in evil-STATE-state-modes
+;; should bind to `evil-mode-hook'
+(defun gatsby>>put-mode-to-evil-state (modes state)
+  (let ((list (intern (format "evil-%s-state-modes" (symbol-name state))))
+        (other-modes (cdr-safe modes)))
+    (if other-modes
+        (dolist (mode modes)
+          (add-to-list list mode))
+      (add-to-list list modes))))
+
 ;; secret management via `passage'
 ;; (gatsby>defcommand gatsby>retrieve-secret ()
 ;;   (set-register)

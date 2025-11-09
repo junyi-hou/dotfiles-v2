@@ -162,6 +162,7 @@ the first call.  Delete the auto-inserted comment for the second call.  Otherwis
   (setq-default tab-width 4
                 indent-tabs-mode nil
                 electric-indent-inhibit t)
+  :hook (evil-mode . (lambda () (gatsby>>put-mode-to-evil-state 'special-mode 'motion)))
   :config
   (global-visual-line-mode 1)
 
@@ -170,15 +171,16 @@ the first call.  Delete the auto-inserted comment for the second call.  Otherwis
       (set-window-start (selected-window) last-line)))
 
   :evil-bind
-  ((:maps special-mode-map :states (normal motion))
+  ((:maps special-mode-map :states motion)
    ("q" . #'kill-buffer-and-window)
-   (:maps messages-buffer-mode-map :states (normal motion))
+   (:maps messages-buffer-mode-map :states motion)
    ("q" . #'delete-window)
    ("C-c C-l" . #'gatsby>message-cls)))
 
 (gatsby>use-internal-pacakge backtrace
+  :hook (evil-mode . (lambda () (gatsby>>put-mode-to-evil-state 'backtrace-mode 'motion)))
   :evil-bind
-  ((:maps backtrace-mode-map :states (motion normal))
+  ((:maps backtrace-mode-map :states motion)
    ("q" . #'kill-buffer-and-window)))
 
 (gatsby>use-internal-pacakge recentf
