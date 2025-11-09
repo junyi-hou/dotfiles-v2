@@ -1,4 +1,14 @@
+# TODO: this is not portable
 export EDITOR="/Applications/Emacs.app/Contents/MacOS/bin/emacsclient -c -a ''"
+
+# mac setting
+if [[ "$(uname)" == "Darwin" ]]; then
+  current_value=$(defaults read com.apple.dock show-recents 2>/dev/null)
+  if [[ "$current_value" != "0" && "$current_value" != "false" ]]; then
+    defaults write com.apple.dock show-recents -bool false
+    killall Dock >/dev/null 2>&1
+  fi
+fi
 
 # source existing zprofile file backed up if exists
 if [ -f "$HOME/.zprofile.backup" ]; then
@@ -8,4 +18,3 @@ fi
 # Local Variables:
 # mode: shell-script
 # End:
-
