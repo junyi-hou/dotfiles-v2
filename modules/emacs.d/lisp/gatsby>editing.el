@@ -62,7 +62,7 @@
       (call-interactively #'evil-normal-state)))
 
   :evil-bind
-  ((:maps (visual emacs insert))
+  ((:maps (visual emacs insert normal motion))
    ("<escape>" . #'gatsby>normal-or-motion-state)
 
    (:maps (visual emacs insert motion normal))

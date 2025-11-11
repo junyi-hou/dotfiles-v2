@@ -84,8 +84,8 @@
    ("M-RET" . #'gatsby>python-insert-delimiter)
 
    (:maps python-ts-mode-map :states normal)
-   (">" . gatsby>python-move-to-next-cell)
-   ("<" . gatsby>python-move-to-prev-cell)
+   (">" . #'gatsby>python-move-to-next-cell)
+   ("<" . #'gatsby>python-move-to-prev-cell)
 
    (:maps python-ts-mode-map :states (normal visual))
    ("SPC r r" . #'gatsby>python-eval-region-or-cell)
