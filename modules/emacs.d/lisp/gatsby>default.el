@@ -162,7 +162,7 @@ the first call.  Delete the auto-inserted comment for the second call.  Otherwis
   (setq-default tab-width 4
                 indent-tabs-mode nil
                 electric-indent-inhibit t)
-  :hook (evil-mode . (lambda () (gatsby>>put-mode-to-evil-state 'special-mode 'motion)))
+  :hook (evil-mode . (lambda () (gatsby>>put-mode-to-evil-state '(special-mode messages-buffer-mode) 'motion)))
   :config
   (global-visual-line-mode 1)
 
@@ -173,6 +173,7 @@ the first call.  Delete the auto-inserted comment for the second call.  Otherwis
   :evil-bind
   ((:maps special-mode-map :states motion)
    ("q" . #'kill-buffer-and-window)
+   ;; TODO - q doesn't work in the messages-buffer-mode
    (:maps messages-buffer-mode-map :states motion)
    ("q" . #'delete-window)
    ("C-c C-l" . #'gatsby>message-cls)))

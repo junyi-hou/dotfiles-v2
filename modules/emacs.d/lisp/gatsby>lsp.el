@@ -11,10 +11,12 @@
   :ensure (:host github :repo "emacs-straight/corfu" :files ("*" "extensions/*.el" (:exclude ".git")))
   :custom
   (corfu-cycle t)
-  (tab-always-indent 'complete)
-  (corfu-quit-at-boundary nil) ;; don't quit when hitting non-word boundary like SPC
-  (corfu-quit-no-match 'separator) ;; optionally allow typing unmatched input
-  :hook (prog-mode . corfu-mode)
+  (corfu-preselect 'prompt)
+  ;; (corfu-quit-at-boundary 'separator) ;; don't quit when inserting separator
+  ;; (corfu-quit-no-match 'separator) ;; optionally allow typing unmatched input
+  :hook
+  (prog-mode . corfu-mode)
+  (corfu-mode . corfu-popupinfo-mode)
   :config
   (gatsby>defcommand gatsby>corfu-complete ()
     "Complete common parts of all the candidates, or insert the current selection.
@@ -22,17 +24,27 @@ Insert the current selection when
 1. there is only one candidate;
 2. last command is `gatsby>corfu-complete';
 3. last command is `corfu-next'or `corfu-previous'."
-    (if (or (= (length corfu--candidates) 1)
-            (memq last-command '(gatsby>corfu-complete corfu-next corfu-previous)))
-        (corfu-insert)
+    (if (memq last-command '(gatsby>corfu-complete corfu-complete corfu-next corfu-previous))
+        (let ((corfu--index 0))
+          (corfu-insert))
       (corfu-expand)))
 
+  ;; for some reason I cannot bind <TAB> to any different variables, let's just override that function
+  (advice-add #'corfu-complete :override #'gatsby>corfu-complete)
   :evil-bind
-  ((:maps corfu-map)
-   ("<tab>" . #'gatsby>corfu-complete)
+  ((:maps insert)
+   ("<tab>" . #'completion-at-point)
+   (:maps corfu-map)
    ("M-j" . #'corfu-next)
+   ("M-i" . #'corfu-info-documentation)
    ("M-k" . #'corfu-previous)
-   ("SPC" . #'corfu-insert-separator)))
+   ("SPC" . #'corfu-insert-separator)
+   (:maps corfu-popupinfo-map)
+   ("J" . #'corfu-popupinfo-scroll-up)
+   ("K" . #'corfu-popupinfo-scroll-down)
+   ("<esc>" . #'corfu-popupinfo-toggle)))
+
+
 
 (use-package orderless
   :ensure (:host github :repo "oantolin/orderless")
@@ -48,6 +60,69 @@ Insert the current selection when
   (eglot-parameter-hint-face ((t (:height 1.0))))
   :custom
   (eglot-server-programs nil))
+
+;; template system
+(use-package tempel
+  :ensure (:host github :repo "minad/tempel")
+  :evil-bind
+  ((:maps tempel-map)
+   ("C-g" . #'tempel-abort)
+   ("M-j" . #'tempel-next)
+   ("M-k" . #'tempel-prev))
+  :hook (corfu-mode . gatsby>>enable-tempel)
+  :commands (tempel--templates)
+  :init
+  (defun gatsby>>enable-tempel ()
+    (setq-local completion-at-point-functions `(gatsby>tempel-capf ,@completion-at-point-functions)))
+
+  (defun gatsby>tempel-capf ()
+    "CAPF that only complete the snippet names (and do not expand). If there's exact match, expand"
+    (let* ((bounds (bounds-of-thing-at-point 'symbol))
+           (name (buffer-substring-no-properties
+                  (car bounds) (cdr bounds)))
+           (sym (intern-soft name))
+           (templates (tempel--templates)))
+      (if-let ((template (assq sym templates)))
+          ;; exact match - expand
+          (list (car bounds) (cdr bounds) (list template)
+              :category 'tempel
+              :exclusive 'no
+              :exit-function (apply-partially #'tempel--exit templates nil))
+        (let ((template-names (mapcar #'car templates)))
+          (list (car bounds) (cdr bounds) template-names
+                :category 'templ
+                :company-kind (lambda (_) 'snippet)
+                :exclusive 'no
+                :company-doc-buffer
+              (apply-partially #'tempel--info-buffer templates
+                               (lambda (elts)
+                                 (insert (tempel--print-template elts))
+                                 (tempel--insert-doc elts)
+                                 (current-buffer)))
+              :company-location
+              (apply-partially #'tempel--info-buffer templates
+                               (lambda (elts)
+                                 (pp (cl-loop for x in elts
+                                              until (keywordp x) collect x)
+                                     (current-buffer))
+                                 (tempel--insert-doc elts)
+                                 (list (current-buffer))))
+              :annotation-function
+              (and tempel-complete-annotation
+                   (apply-partially #'tempel--annotate
+                                    templates tempel-complete-annotation " "))))))))
+
+(use-package eglot-tempel
+  :ensure (:host github :repo "fejfighter/eglot-tempel")
+  :hook (eglot-managed-mode . eglot-tempel-mode))
+
+;; (use-package lspce
+;;   ;; TODO: find a way to allow elpaca to accept `(expand-file-name ".cargo/bin/cargo" gatsby>dotfiles-repo-location)'
+;;   ;; this won't work now since elpaca does
+;;   ;; `emacs -Q' when building
+;;   :ensure (:host github :repo "zbelial/lspce"
+;;                  :files (:defaults)
+;;                  :pre-build (("/User/dad/Projects/dotfiles/.cargo/bin/cargo" "build" "--release"))))
 
 ;; TODO: xref-* functions are not autoloaded?!
 (gatsby>use-internal-pacakge xref
