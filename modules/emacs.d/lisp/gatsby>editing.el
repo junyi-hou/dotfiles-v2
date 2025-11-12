@@ -100,7 +100,6 @@
    (:maps visual)
    ("<tab>" . #'gatsby>evil-visual-tab)))
 
-
 (use-package expand-region
   :ensure (expand-region :host github :repo "magnars/expand-region.el")
   :evil-bind
@@ -140,9 +139,9 @@
 (gatsby>use-internal-pacakge elec-pair
   :hook (elpaca-after-init . electric-pair-mode))
 
-;; (use-package ws-butler
-;;   :ensure (:host github :repo "lewang/ws-butler")
-;;   :hook (elpaca-after-init . ws-butler-global-mode))
+(use-package ws-butler
+  :ensure (:host github :repo "lewang/ws-butler" :branch "master")
+  :hook (elpaca-after-init . ws-butler-global-mode))
 
 (gatsby>use-internal-pacakge subword
   :hook (elpaca-after-init . global-subword-mode))
