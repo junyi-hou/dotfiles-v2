@@ -44,8 +44,6 @@ Insert the current selection when
    ("K" . #'corfu-popupinfo-scroll-down)
    ("<esc>" . #'corfu-popupinfo-toggle)))
 
-
-
 (use-package orderless
   :ensure (:host github :repo "oantolin/orderless")
   :custom
@@ -114,7 +112,7 @@ Insert the current selection when
 
 (use-package eglot-tempel
   :ensure (:host github :repo "fejfighter/eglot-tempel")
-  :hook (eglot-managed-mode . eglot-tempel-mode))
+  :hook (elpaca-after-init . eglot-tempel-mode))
 
 ;; (use-package lspce
 ;;   ;; TODO: find a way to allow elpaca to accept `(expand-file-name ".cargo/bin/cargo" gatsby>dotfiles-repo-location)'
