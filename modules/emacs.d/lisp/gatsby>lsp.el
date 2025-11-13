@@ -62,6 +62,7 @@ Insert the current selection when
 ;; template system
 (use-package tempel
   :ensure (:host github :repo "minad/tempel")
+  :custom (tempel-path (no-littering-expand-etc-file-name "tempel/*.eld"))
   :evil-bind
   ((:maps tempel-map)
    ("C-g" . #'tempel-abort)
