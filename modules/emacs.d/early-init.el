@@ -52,6 +52,8 @@
 (add-hook 'after-init-hook #'elpaca-process-queues)
 (elpaca `(,@elpaca-order))
 
+(setq elpaca-lock-file (expand-file-name "elpaca-lock.el" user-emacs-directory))
+
 ;; Install use-package support
 (elpaca elpaca-use-package (elpaca-use-package-mode))
 
