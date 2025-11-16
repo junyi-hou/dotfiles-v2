@@ -179,7 +179,7 @@
            (let ((file (magit-file-at-point t)))
              (unless file
                (error "No file at point"))
-             (magit-diff-visit-file--internal file nil #'switch-to-buffer-other-window)))
+             (magit-diff-visit-file--internal nil #'switch-to-buffer-other-window)))
           ((magit-section-match [commit])
            ;; commits: show the commit details
            (call-interactively #'magit-show-commit))
