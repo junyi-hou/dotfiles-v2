@@ -66,7 +66,7 @@
     (let ((cell-regexp "^# %%\\(.\\)*\n"))
       (re-search-backward cell-regexp nil 'noerror)))
 
-  (gatsby>defcommand gatsby>python-eval-region-or-cell ()
+  (gatsby>defcommand gatsby>python-eval-region-or-cell (from-top)
     (if (region-active-p)
         (let ((b (region-beginning))
               (e (region-end)))
@@ -78,6 +78,16 @@
                                     (point-min))))
              (e (save-excursion (or (re-search-forward cell-regexp nil 'noerror) (point-max)))))
         (jupyter-eval-string (buffer-substring-no-properties b e)))))
+
+  (gatsby>defcommand gatsby>python-generate-notebook (run)
+    "Run the current script and produce a notebook file using `jupytext'.
+
+   If the prefix argument RUN is non-nil, execute all cells to produce output."
+    (let* ((file (buffer-file-name))
+           (command (concat "jupytext --to ipynb " file)))
+      (when run
+        (setq command (s-join " " `(,command "--pipe-fmt" "ipynb" "--pipe" "'jupyter nbconvert --to ipynb --execute --allow-errors --stdin --stdout'"))))
+      (compile command)))
 
   :evil-bind
   ((:maps python-ts-mode-map :states (insert normal))
