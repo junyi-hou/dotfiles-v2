@@ -43,18 +43,20 @@
   (defvar gatsby>>typst-watching-file nil)
 
   (defun gatsby>>typst-stop-watching (&rest _)
-    (when (and (file-equal-p current-file gatsby>>typst-watching-file)
+    (let ((current-file (buffer-file-name)))
+     (when (and (file-equal-p current-file gatsby>>typst-watching-file)
                (process-live-p (get-buffer-process typst-ts-watch-process-buffer-name)))
       (typst-ts-watch-stop)
-      (setq gatsby>>typst-watching-file nil)))
+      (setq gatsby>>typst-watching-file nil))))
 
   (defun gatsby>>typst-start-watching (&rest _)
     (cl-letf (((symbol-function #'message) #'ignore)
               (current-file (buffer-file-name)))
 
       ;; turn off watching if we are watching other file
-      (unless (and (file-equal-p current-file gatsby>>typst-watching-file)
-                   (y-or-n-p-insert-y (format "Watch is running on %s, kill it now? " gatsby>>typst-watching-file)))
+      (when (and gatsby>>typst-watching-file
+                 (file-equal-p current-file gatsby>>typst-watching-file)
+                 (y-or-n-p (format "Watch is running on %s, kill it now? " gatsby>>typst-watching-file)))
         (typst-ts-watch-stop)
         (setq gatsby>>typst-watching-file nil))
 
@@ -66,7 +68,7 @@
         ;; setup stop watching hook
         (add-hook 'kill-buffer-hook #'gatsby>>typst-stop-watching nil t))))
 
-  (advice-add #'typst-ts-compile-and-preview :after #'gatsby>>typst-start-watching)
+  (advice-add #'typst-ts-compile-and-preview :before #'gatsby>>typst-start-watching)
 
   :evil-bind
   ((:maps typst-ts-mode-map :states normal)
