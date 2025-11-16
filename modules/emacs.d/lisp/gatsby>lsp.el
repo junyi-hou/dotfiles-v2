@@ -31,14 +31,28 @@ Insert the current selection when
 
   ;; for some reason I cannot bind <TAB> to any different variables, let's just override that function
   (advice-add #'corfu-complete :override #'gatsby>corfu-complete)
+
+
+  (gatsby>defcommand gatsby>complete-or-tab ()
+    "If point is at beginning of line (or only preceded by whitespace) insert
+`tab-width' spaces, otherwise call `completion-at-point'."
+    (if (save-excursion
+          ;; move backward over any spaces/tabs and test if we reached BOL
+          (skip-chars-backward " \t")
+          (bolp))
+        (insert (make-string tab-width ?\s))
+      (completion-at-point)))
+
+  ;; TODO: if at BOL then insert `tab-width' number of spaces, otherwise call completion-at-point
   :evil-bind
   ((:maps insert)
-   ("<tab>" . #'completion-at-point)
+   ("<tab>" . #'gatsby>complete-or-tab)
    (:maps corfu-map)
    ("M-j" . #'corfu-next)
    ("M-i" . #'corfu-info-documentation)
    ("M-k" . #'corfu-previous)
    ("SPC" . #'corfu-insert-separator)
+   ("<return>" . #'corfu-complete)
    (:maps corfu-popupinfo-map)
    ("J" . #'corfu-popupinfo-scroll-up)
    ("K" . #'corfu-popupinfo-scroll-down)
