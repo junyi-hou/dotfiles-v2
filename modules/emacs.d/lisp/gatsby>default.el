@@ -59,7 +59,7 @@ Otherwise splits vertically, returning bottom window."
         (if (> (window-width window) (* 2 fill-column))
             (split-window-right)
           (split-window-below)))))
-  
+
   (defconst gatsby>>unkillable-buffers '("*scratch*" "*Messages*")
     "List of buffers that should not be killed")
 
@@ -138,6 +138,19 @@ the first call.  Delete the auto-inserted comment for the second call.  Otherwis
     (if (get-buffer-process (current-buffer))
         (call-interactively #'delete-window)
       (call-interactively #'kill-buffer-and-window)))
+
+  (defun gatsby>>compilation-start-no-popup (fun &rest args)
+    (cl-letf (((symbol-function #'display-buffer) #'ignore))
+      (apply fun args)))
+
+  (advice-add #'compilation-start :around #'gatsby>>compilation-start-no-popup)
+
+  (defun gatsby>>compilation-sentinel (proc _)
+    "Pop the compilation buffer if the process errored out"
+    (unless (= (process-exit-status proc) 0)
+      (display-buffer (process-buffer proc) '(nil (allow-no-window . t)))))
+
+  (advice-add #'compilation-sentinel :before #'gatsby>>compilation-sentinel)
 
   :evil-bind
   ((:maps compilation-shell-minor-mode-map :states normal)
