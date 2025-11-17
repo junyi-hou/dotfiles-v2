@@ -129,6 +129,15 @@
       (setq-local display-line-numbers-width
                   (+ 1 (length (number-to-string (count-lines (point-min) (point-max)))))))))
 
+(use-package hl-todo
+  :ensure (:host github :repo "tarsius/hl-todo")
+  :hook (elpaca-after-init . global-hl-todo-mode)
+  :custom
+  (hl-todo-keyword-faces `(("TODO" . ,(doom-color 'red))
+                           ("FIXME"  . ,(doom-color 'red))
+                           ("NOTE"   . ,(doom-color 'yellow))
+                           ("HACK"   . ,(doom-color 'yellow)))))
+
 ;; minibuffer
 (use-package vertico
   :ensure (vertico :host github :repo "minad/vertico")
