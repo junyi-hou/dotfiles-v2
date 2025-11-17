@@ -29,6 +29,7 @@
   (typst-ts-mode . eglot-ensure)
   (typst-ts-mode . corfu-mode)
   (typst-ts-mode . display-line-numbers-mode)
+  (typst-ts-mode . typst-ts-watch-mode)
   :init
   ;; tree-sitter
   (gatsby>install-treesitter-grammar
