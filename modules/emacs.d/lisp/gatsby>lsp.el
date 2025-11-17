@@ -12,6 +12,7 @@
   :custom
   (corfu-cycle t)
   (corfu-preselect 'prompt)
+  (completion-at-point-functions `(,@(butlast completion-at-point-functions) gatsby>>insert-tab-if-no-compliaton-is-found t))
   ;; (corfu-quit-at-boundary 'separator) ;; don't quit when inserting separator
   ;; (corfu-quit-no-match 'separator) ;; optionally allow typing unmatched input
   :hook
@@ -32,21 +33,13 @@ Insert the current selection when
   ;; for some reason I cannot bind <TAB> to any different variables, let's just override that function
   (advice-add #'corfu-complete :override #'gatsby>corfu-complete)
 
+  ;; If no completion is found, insert a tab:
+  (defun gatsby>>insert-tab-if-no-compliaton-is-found ()
+    (when (save-excursion (skip-chars-backward " \t") (bolp)) (insert-tab)) nil)
 
-  (gatsby>defcommand gatsby>complete-or-tab ()
-    "If point is at beginning of line (or only preceded by whitespace) insert
-`tab-width' spaces, otherwise call `completion-at-point'."
-    (if (save-excursion
-          ;; move backward over any spaces/tabs and test if we reached BOL
-          (skip-chars-backward " \t")
-          (bolp))
-        (insert (make-string tab-width ?\s))
-      (completion-at-point)))
-
-  ;; TODO: if at BOL then insert `tab-width' number of spaces, otherwise call completion-at-point
   :evil-bind
   ((:maps insert)
-   ("<tab>" . #'gatsby>complete-or-tab)
+   ("<tab>" . #'completion-at-point)
    (:maps corfu-map)
    ("M-j" . #'corfu-next)
    ("M-i" . #'corfu-info-documentation)
@@ -90,40 +83,40 @@ Insert the current selection when
 
   (defun gatsby>tempel-capf ()
     "CAPF that only complete the snippet names (and do not expand). If there's exact match, expand"
-    (let* ((bounds (bounds-of-thing-at-point 'symbol))
-           (name (buffer-substring-no-properties
-                  (car bounds) (cdr bounds)))
-           (sym (intern-soft name))
-           (templates (tempel--templates)))
-      (if-let ((template (assq sym templates)))
-          ;; exact match - expand
-          (list (car bounds) (cdr bounds) (list template)
-              :category 'tempel
-              :exclusive 'no
-              :exit-function (apply-partially #'tempel--exit templates nil))
-        (let ((template-names (mapcar #'car templates)))
-          (list (car bounds) (cdr bounds) template-names
-                :category 'templ
-                :company-kind (lambda (_) 'snippet)
-                :exclusive 'no
-                :company-doc-buffer
-              (apply-partially #'tempel--info-buffer templates
-                               (lambda (elts)
-                                 (insert (tempel--print-template elts))
-                                 (tempel--insert-doc elts)
-                                 (current-buffer)))
-              :company-location
-              (apply-partially #'tempel--info-buffer templates
-                               (lambda (elts)
-                                 (pp (cl-loop for x in elts
-                                              until (keywordp x) collect x)
-                                     (current-buffer))
-                                 (tempel--insert-doc elts)
-                                 (list (current-buffer))))
-              :annotation-function
-              (and tempel-complete-annotation
-                   (apply-partially #'tempel--annotate
-                                    templates tempel-complete-annotation " "))))))))
+    (when-let ((bounds (bounds-of-thing-at-point 'symbol)))
+      (let* ((name (buffer-substring-no-properties
+                    (car bounds) (cdr bounds)))
+             (sym (intern-soft name))
+             (templates (tempel--templates)))
+        (if-let ((template (assq sym templates)))
+            ;; exact match - expand
+            (list (car bounds) (cdr bounds) (list template)
+                  :category 'tempel
+                  :exclusive 'no
+                  :exit-function (apply-partially #'tempel--exit templates nil))
+          (let ((template-names (mapcar #'car templates)))
+            (list (car bounds) (cdr bounds) template-names
+                  :category 'templ
+                  :company-kind (lambda (_) 'snippet)
+                  :exclusive 'no
+                  :company-doc-buffer
+                  (apply-partially #'tempel--info-buffer templates
+                                   (lambda (elts)
+                                     (insert (tempel--print-template elts))
+                                     (tempel--insert-doc elts)
+                                     (current-buffer)))
+                  :company-location
+                  (apply-partially #'tempel--info-buffer templates
+                                   (lambda (elts)
+                                     (pp (cl-loop for x in elts
+                                                  until (keywordp x) collect x)
+                                         (current-buffer))
+                                     (tempel--insert-doc elts)
+                                     (list (current-buffer))))
+                  :annotation-function
+                  (and tempel-complete-annotation
+                       (apply-partially #'tempel--annotate
+                                        templates tempel-complete-annotation " "))))))))
 
 (use-package eglot-tempel
   :ensure (:host github :repo "fejfighter/eglot-tempel")
