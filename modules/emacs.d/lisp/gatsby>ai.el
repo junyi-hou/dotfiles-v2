@@ -27,11 +27,19 @@
               (kill-buffer output-buffer))))))
 
   (gatsby>defcommand gatsby>start-aider-session (subtree-only-p)
-    (if-let ((api (format "openrouter=%s" (gatsby>>get-ai-api-key)))
+    (let ((api (format "openrouter=%s" (gatsby>>get-ai-api-key)))
+          (project (project-current)))
+      (unless api
+        (user-error "Valid API keys not found"))
+
+      (unless project
+        (user-error "Not inside a project"))
+
+      (let* ((context-file (expand-file-name (expand-file-name "AIDER.md" (project-root project))))
+             (aidermacs-extra-args (if (file-exists-p context-file) `(,@aidermacs-extra-args "--read" ,context-file) aidermacs-extra-args))
              (aidermacs-extra-args `(,@aidermacs-extra-args "--api-key" ,api))
              (aidermacs-extra-args (if subtree-only-p `(,@aidermacs-extra-args "--subtree-only") aidermacs-extra-args)))
-        (aidermacs-run)
-      (user-error "Valid API keys not found")))
+        (aidermacs-run))))
 
   ;; until we have smerge backend
   (defun gatsby>>ediff-to-smerge (buffer1 buffer2)

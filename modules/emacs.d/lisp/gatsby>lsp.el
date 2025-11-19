@@ -116,7 +116,7 @@ Insert the current selection when
                   :annotation-function
                   (and tempel-complete-annotation
                        (apply-partially #'tempel--annotate
-                                        templates tempel-complete-annotation " "))))))))
+                                        templates tempel-complete-annotation " ")))))))))
 
 (use-package eglot-tempel
   :ensure (:host github :repo "fejfighter/eglot-tempel")
