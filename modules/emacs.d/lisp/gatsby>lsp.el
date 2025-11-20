@@ -12,9 +12,6 @@
   :custom
   (corfu-cycle t)
   (corfu-preselect 'prompt)
-  (completion-at-point-functions `(,@(butlast completion-at-point-functions) gatsby>>insert-tab-if-no-compliaton-is-found t))
-  ;; (corfu-quit-at-boundary 'separator) ;; don't quit when inserting separator
-  ;; (corfu-quit-no-match 'separator) ;; optionally allow typing unmatched input
   :hook
   (prog-mode . corfu-mode)
   (corfu-mode . corfu-popupinfo-mode)
@@ -34,6 +31,7 @@ Insert the current selection when
   (advice-add #'corfu-complete :override #'gatsby>corfu-complete)
 
   ;; If no completion is found, insert a tab:
+  ;; TODO: how to make sure that this is always the first in the `completion-at-point-functions' list?
   (defun gatsby>>insert-tab-if-no-compliaton-is-found ()
     (when (save-excursion (skip-chars-backward " \t") (bolp)) (insert-tab)) nil)
 
@@ -64,7 +62,10 @@ Insert the current selection when
   (eglot-type-hint-face ((t (:height 1.0))))
   (eglot-parameter-hint-face ((t (:height 1.0))))
   :custom
-  (eglot-server-programs nil))
+  (eglot-server-programs nil)
+  :evil-bind
+  ((:maps (normal visual))
+   ("SPC r a" . #'eglot-code-actions)))
 
 ;; template system
 (use-package tempel
@@ -78,6 +79,7 @@ Insert the current selection when
   :hook (corfu-mode . gatsby>>enable-tempel)
   :commands (tempel--templates)
   :init
+  ;; TODO: how to make sure that this is always the first in the `completion-at-point-functions' list?
   (defun gatsby>>enable-tempel ()
     (setq-local completion-at-point-functions `(gatsby>tempel-capf ,@completion-at-point-functions)))
 
