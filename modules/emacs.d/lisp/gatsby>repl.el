@@ -1,4 +1,4 @@
-;;; gatsby>repl.el --- emacs builtin REPL -*- lexical-binding: t; -*-
+;;; gatsby>repl.el --- REPL via jupyter and comint -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 
@@ -38,7 +38,8 @@
   :ensure (:host github :repo "nnicandro/emacs-jupyter")
   :custom-face
   (jupyter-repl-traceback ((t (:extend t :background "firebrick"))))
-  :commands (gatsby>jupyter-start-or-switch-to-repl jupyter-launch-notebook)
+  :commands (gatsby>jupyter-managed-mode gatsby>jupyter-start-or-switch-to-repl)
+  :autoload jupyter-launch-notebook
   :custom 
   (jupyter-repl-allow-RET-when-busy t)
   (jupyter-repl-echo-eval-p t)
@@ -46,16 +47,64 @@
   (jupyter-repl-history-maximum-length 5000)
   (jupyter-use-zmq nil)
   :hook (jupyter-repl-mode . corfu-mode)
-  :config
+  :init
+  (defvar gatsby>jupyter-managed-mode-map (make-sparse-keymap))
+
+  (define-minor-mode gatsby>jupyter-managed-mode
+    "Minor mode that provides keybinds and commands to major-modes that supports a jupyter repl."
+    :lighter nil
+    :group jupyter
+    :keymap gatsby>jupyter-managed-mode-map)
+
+  (gatsby>defcommand gatsby>jupyter-insert-cell-separator (markdown)
+    (insert "\n# %%")
+    (when markdown (insert " [markdown]"))
+    (insert "\n")
+    (when markdown
+      (insert "\"\"\"\"\"\"") (backward-char 3)))
+
+  (gatsby>defcommand gatsby>jupyter-next-cell ()
+    (let ((cell-regexp "^# %%\\(.\\)*\n"))
+      (re-search-forward cell-regexp nil 'noerror)))
+
+  (gatsby>defcommand gatsby>jupyter-prev-cell ()
+    (let ((cell-regexp "^# %%\\(.\\)*\n"))
+      (re-search-backward cell-regexp nil 'noerror)))
+
+  (gatsby>defcommand gatsby>jupyter-generate-notebook (run)
+    "Run the current script and produce a notebook file using `jupytext'.
+
+   If the prefix argument RUN is non-nil, execute all cells to produce output."
+    (let* ((file (buffer-file-name))
+           (jupytext (executable-find "jupytext"))
+           (command (concat jupytext " --to ipynb " file)))
+      (when run
+        (setq command (s-join " " `(,command "--pipe-fmt" "ipynb" "--pipe" "'jupyter nbconvert --to ipynb --execute --allow-errors --stdin --stdout'"))))
+      (compile command)))
+
+  (gatsby>defcommand gatsby>jupyter-eval-region-or-cell (from-top)
+    (if (region-active-p)
+        (let ((b (region-beginning))
+              (e (region-end)))
+          (jupyter-eval-string (buffer-substring-no-properties b e))
+          (evil-normal-state))
+      (let* ((cell-regexp "^# %%\\(.\\)*\n")
+             (b (save-excursion (or (and (not from-top)
+                                         (re-search-backward cell-regexp nil 'noerror))
+                                    (point-min))))
+             (e (save-excursion (or (re-search-forward cell-regexp nil 'noerror) (point-max)))))
+        (jupyter-eval-string (buffer-substring-no-properties b e)))))
+
   (gatsby>defcommand gatsby>jupyter-start-or-switch-to-repl (connect)
     "Switch to REPL associated the current buffer."
-    (if (and jupyter-current-client
+    (if (and (boundp 'jupyter-current-client)
+             jupyter-current-client
              (jupyter-kernel-alive-p jupyter-current-client)
              (buffer-live-p (oref jupyter-current-client buffer)))
         (jupyter-repl-pop-to-buffer)
       (let ((code-buffer (current-buffer)))
         (if connect
-            ;; TODO: fix connecting to a repl v
+            ;; TODO: fix connecting to a remote repl
             (let ((current-prefix-arg t))
               (call-interactively #'jupyter-connect-server-repl))
           (call-interactively #'jupyter-run-repl))
@@ -82,9 +131,17 @@
    ("<down>" . #'jupyter-repl-history-next-matching)
 
    ;; include keymaps for all supporting kernels here
-   (:maps python-ts-mode-map :states normal)
+   (:maps gatsby>jupyter-managed-mode-map :states normal)
+   (">" . #'gatsby>jupyter-next-cell)
+   ("<" . #'gatsby>jupyter-prev-cell)
    ("SPC r o" . #'gatsby>jupyter-start-or-switch-to-repl)
-   ("SPC r z" . #'jupyter-repl-associate-buffer)))
+   ("SPC r z" . #'jupyter-repl-associate-buffer)
+
+   (:maps gatsby>jupyter-managed-mode-map :states (normal visual))
+   ("SPC r r" . #'gatsby>jupyter-eval-region-or-cell)
+
+   (:maps gatsby>jupyter-managed-mode-map :states (insert normal))
+   ("M-RET" . #'gatsby>jupyter-insert-cell-separator)))
 
 (provide 'gatsby>repl)
 ;;; gatsby>repl.el ends here
