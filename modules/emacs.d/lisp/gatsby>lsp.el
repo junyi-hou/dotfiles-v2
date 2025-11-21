@@ -63,6 +63,14 @@ Insert the current selection when
   (eglot-parameter-hint-face ((t (:height 1.0))))
   :custom
   (eglot-server-programs nil)
+  :init
+  (defun gatsby>>maybe-format-buffer ()
+    (add-hook 'before-save-hook (defun gatsby>>maybe-format-before-save (&rest _)
+                                  (when (eglot-server-capable :documentFormattingProvider)
+                                    (eglot-format-buffer)))
+              nil
+              t))
+  :hook (eglot-managed-mode . gatsby>>maybe-format-buffer)
   :evil-bind
   ((:maps (normal visual))
    ("SPC r a" . #'eglot-code-actions)))
