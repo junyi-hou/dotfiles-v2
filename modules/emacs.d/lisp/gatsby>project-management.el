@@ -35,7 +35,7 @@
 
 (gatsby>use-internal-pacakge smerge-mode
   :evil-bind
-  ((:maps smerge-mode-map :states (normal visual))
+  ((:maps (normal visual))
    ("SPC ]" . #'smerge-next)
    ("SPC [" . #'smerge-prev)
    ("SPC m" . #'smerge-keep-current)
