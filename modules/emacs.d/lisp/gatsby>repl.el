@@ -114,6 +114,12 @@
     (goto-char (point-max))
     (evil-insert-state))
 
+  (gatsby>defcommand gatsby>jupyter-interrupt-or-clean-input ()
+    (if-let ((client (jupyter-repl--get-client))
+             (_ (jupyter-kernel-busy-p client)))
+        (jupyter-repl-interrupt-kernel client)
+      (call-interactively #'jupyter-repl-clear-input)))
+
   :evil-bind
   ((:maps jupyter-repl-mode-map :states (normal visual))
    ("A" . #'gatsby>jupyter-goto-last-prompt)
@@ -123,7 +129,7 @@
    ("SPC r" . #'jupyter-repl-restart-kernel)
 
    (:maps jupyter-repl-mode-map :states (normal visual insert))
-   ("C-c C-c" . #'jupyter-repl-interrupt-kernel)
+   ("C-c C-c" . #'gatsby>jupyter-interrupt-or-clean-input)
    ("C-c C-l" . #'jupyter-repl-clear-cells)
    
    (:maps jupyter-repl-mode-map :states insert)
