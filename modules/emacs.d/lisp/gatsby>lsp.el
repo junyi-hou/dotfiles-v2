@@ -66,7 +66,8 @@ Insert the current selection when
   :init
   (defun gatsby>>maybe-format-buffer ()
     (add-hook 'before-save-hook (defun gatsby>>maybe-format-before-save (&rest _)
-                                  (when (eglot-server-capable :documentFormattingProvider)
+                                  (when (and (eglot-current-server)
+                                             (eglot-server-capable :documentFormattingProvider))
                                     (eglot-format-buffer)))
               nil
               t))
@@ -140,7 +141,6 @@ Insert the current selection when
 ;;                  :files (:defaults)
 ;;                  :pre-build (("/User/dad/Projects/dotfiles/.cargo/bin/cargo" "build" "--release"))))
 
-;; TODO: xref-* functions are not autoloaded?!
 (gatsby>use-internal-pacakge xref
   :demand t
   :custom

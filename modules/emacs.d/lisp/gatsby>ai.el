@@ -35,7 +35,7 @@
       (unless project
         (user-error "Not inside a project"))
 
-      (let* ((context-file (expand-file-name (expand-file-name "AIDER.md" (project-root project))))
+      (let* ((context-file (expand-file-name (expand-file-name "README.md" (project-root project))))
              (aidermacs-extra-args (if (file-exists-p context-file) `(,@aidermacs-extra-args "--read" ,context-file) aidermacs-extra-args))
              (aidermacs-extra-args `(,@aidermacs-extra-args "--api-key" ,api))
              (aidermacs-extra-args (if subtree-only-p `(,@aidermacs-extra-args "--subtree-only") aidermacs-extra-args)))

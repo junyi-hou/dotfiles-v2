@@ -197,6 +197,12 @@ the first call.  Delete the auto-inserted comment for the second call.  Otherwis
   ((:maps backtrace-mode-map :states motion)
    ("q" . #'kill-buffer-and-window)))
 
+(gatsby>use-internal-pacakge debug
+  :hook (evil-mode . (lambda () (gatsby>>put-mode-to-evil-state 'debugger-mode 'motion)))
+  :evil-bind
+  ((:maps debugger-mode-map :states motion)
+   ("q" . #'debugger-quit)))
+
 (gatsby>use-internal-pacakge recentf
   :hook (elpaca-after-init . recentf-mode))
 

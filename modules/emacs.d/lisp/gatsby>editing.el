@@ -56,17 +56,20 @@
   (gatsby>defcommand gatsby>kill-buffer ()
     (kill-buffer (current-buffer)))
 
-  (gatsby>defcommand gatsby>normal-or-motion-state ()
+  (evil-define-command gatsby>normal-or-motion-state ()
+    "Switch to normal or motion state without recording current command."
+    :repeat abort
+    :suppress-operator t
     (if (memq major-mode evil-motion-state-modes)
-        (evil-motion-state 1)
-      (call-interactively #'evil-normal-state)))
+        (evil-motion-state)
+      (evil-normal-state)))
+
+  (advice-add #'evil-force-normal-state :override #'gatsby>normal-or-motion-state)
 
   :evil-bind
-  ((:maps (visual emacs insert normal motion))
-   ("<escape>" . #'gatsby>normal-or-motion-state)
-
-   (:maps (visual emacs insert motion normal))
+  ((:maps global-map)
    ("M-u" . #'universal-argument)
+   (:maps (visual emacs insert motion normal))
    ("C-l" . #'windmove-right)
    ("C-h" . #'windmove-left)
    ("C-j" . #'windmove-down)
