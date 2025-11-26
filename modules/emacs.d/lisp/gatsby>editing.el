@@ -64,12 +64,13 @@
         (evil-motion-state)
       (evil-normal-state)))
 
-  (advice-add #'evil-force-normal-state :override #'gatsby>normal-or-motion-state)
+  ;; (advice-add #'evil-force-normal-state :override #'gatsby>normal-or-motion-state)
 
   :evil-bind
   ((:maps global-map)
-   ("M-u" . #'universal-argument)
+   ("<escape>" . #'gatsby>normal-or-motion-state)
    (:maps (visual emacs insert motion normal))
+   ("M-u" . #'universal-argument)
    ("C-l" . #'windmove-right)
    ("C-h" . #'windmove-left)
    ("C-j" . #'windmove-down)

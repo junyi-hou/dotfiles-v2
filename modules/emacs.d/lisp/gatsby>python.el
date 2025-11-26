@@ -23,9 +23,9 @@
   (add-to-list 'major-mode-remap-alist '(python-mode . python-ts-mode))
 
   ;; lsp
-  (add-to-list 'eglot-server-programs '(python-ts-mode "basedpyright-langserver" "--stdio"))
+  ;; (add-to-list 'eglot-server-programs '(python-ts-mode "basedpyright-langserver" "--stdio"))
 
-  (gatsby>defcommand gatsby>start-pyright ()
+  (gatsby>defcommand gatsby>start-alligator ()
     (call-interactively #'eglot-shutdown-all)
     (let* ((eglot-server-programs `((python-ts-mode ,(expand-file-name "src/main.py" (project-root (project-current)))))))
       (call-interactively #'eglot)))
