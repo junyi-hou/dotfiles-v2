@@ -184,23 +184,23 @@ the first call.  Delete the auto-inserted comment for the second call.  Otherwis
       (set-window-start (selected-window) last-line)))
 
   :evil-bind
-  ((:maps special-mode-map :states motion)
+  ((:maps special-mode-map :states (normal motion))
    ("q" . #'kill-buffer-and-window)
    ;; TODO - q doesn't work in the messages-buffer-mode
-   (:maps messages-buffer-mode-map :states motion)
+   (:maps messages-buffer-mode-map :states (normal motion))
    ("q" . #'delete-window)
    ("C-c C-l" . #'gatsby>message-cls)))
 
 (gatsby>use-internal-pacakge backtrace
   :hook (evil-mode . (lambda () (gatsby>>put-mode-to-evil-state 'backtrace-mode 'motion)))
   :evil-bind
-  ((:maps backtrace-mode-map :states motion)
+  ((:maps backtrace-mode-map :states (normal motion))
    ("q" . #'kill-buffer-and-window)))
 
 (gatsby>use-internal-pacakge debug
   :hook (evil-mode . (lambda () (gatsby>>put-mode-to-evil-state 'debugger-mode 'motion)))
   :evil-bind
-  ((:maps debugger-mode-map :states motion)
+  ((:maps debugger-mode-map :states (normal motion))
    ("q" . #'debugger-quit)))
 
 (gatsby>use-internal-pacakge recentf

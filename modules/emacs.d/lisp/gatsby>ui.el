@@ -13,7 +13,7 @@
   (doom-themes-enable-italic t)
   (doom-themes-enable-bold t)
   :config
-  (load-theme 'doom-nord t)
+  (load-theme 'doom-material-dark t)
 
   ;; default UI
   (line-number-mode -1)
@@ -137,6 +137,15 @@
                            ("FIXME"  . ,(doom-color 'red))
                            ("NOTE"   . ,(doom-color 'yellow))
                            ("HACK"   . ,(doom-color 'yellow)))))
+
+(use-package auto-dim-other-buffers
+  :ensure (:host github :repo "mina86/auto-dim-other-buffers.el")
+  :custom
+  (auto-dim-other-buffers-affected-faces
+  '((default        . (auto-dim-other-buffers . nil))
+    (line-number    . (auto-dim-other-buffers . nil))))
+
+  :custom-face (auto-dim-other-buffers ((t :background ,(doom-color 'bg-alt)))))
 
 ;; minibuffer
 (use-package vertico
