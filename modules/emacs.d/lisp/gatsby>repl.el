@@ -18,7 +18,127 @@
     "clear current REPL buffer."
     (goto-char (point-max))
     (evil-insert-state))
-  
+
+  ;; interacting with comint REPL
+  (defvar gatsby>comint-managed-mode-map (make-sparse-keymap))
+
+  (defvar-local gatsby>comint-command nil
+    "The command to start the REPL")
+
+  (defvar-local gatsby>comint-buffer nil
+    "The buffer that holds comint")
+
+  (defvar gatsby>comint-buffer-list nil
+    "A list of all managed comint buffer")
+
+  (defun gatsby>>comint-is-running (&optional buffer)
+    (with-current-buffer (or buffer (current-buffer))
+      (and gatsby>comint-buffer
+           (buffer-live-p gatsby>comint-buffer)
+           (process-live-p (get-buffer-process gatsby>comint-buffer)))))
+
+  (define-minor-mode gatsby>comint-managed-mode
+    "Minor mode that provides keybinds and commands to major-modes that support comint repl."
+    :lighter nil
+    :group comint
+    :keymap gatsby>comint-managed-mode-map)
+
+  (defun gatsby>start-comint (cmd code-buffer)
+    "Run CMD in a new comint window and associated it with the code-buffer"
+
+    ;; do not start a second repl if one exists
+    (when (gatsby>>comint-is-running code-buffer)
+      (user-error "An existing REPL is running"))
+
+    (let ((default-directory (if-let ((project (project-current)))
+                                 (project-root project)
+                               default-directory))
+          (repl-buffer (make-comint
+                        (format "%s: %s" cmd (thread-first default-directory
+                                                           directory-file-name
+                                                           file-name-base))
+                        cmd)))
+      (with-current-buffer code-buffer (setq-local gatsby>comint-buffer repl-buffer))
+      (add-to-list 'gatsby>comint-buffer-list repl-buffer)
+      (pop-to-buffer repl-buffer)))
+
+  (gatsby>defcommand gatsby>comint-start-or-switch-to-repl (connect)
+    "Pop to the REPL buffer if exists, or start a new one.
+
+If the prefix argument CONNECT is non nil, connect the current code buffer to an
+existing comint REPL."
+    (cond
+     (connect (let* ((code-buffer (current-buffer))
+                     (updated-comint-list (cl-remove-if-not #'gatsby>>comint-is-running gatsby>comint-buffer-list))
+                     (repl-buffer (completing-read "connect to: " (mapcar #'buffer-name updated-comint-list))))
+                (setq gatsby>comint-buffer-list updated-comint-list)
+                (setq-local gatsby>comint-buffer (get-buffer repl-buffer))
+                (pop-to-buffer repl-buffer)))
+
+     ((gatsby>>comint-is-running) (pop-to-buffer gatsby>comint-buffer))
+
+     ;; use the same REPL for files in the same project
+     ((let* ((updated-comint-list (cl-remove-if-not #'gatsby>>comint-is-running gatsby>comint-buffer-list))
+             (repl-buffer (cl-find-if (lambda (comint-buffer)
+                                        (file-equal-p
+                                         (with-current-buffer comint-buffer default-directory)
+                                         default-directory))
+                                      updated-comint-list)))
+        (setq-local gatsby>comint-buffer repl-buffer))
+      (pop-to-buffer gatsby>comint-buffer))
+
+     (t (gatsby>start-comint gatsby>comint-command (current-buffer)))))
+
+  (defun gatsby>comint-eval-string (string)
+    "Send STRING to the comint process associated with `gatsby>comint-buffer',
+preserving any current input typed in the comint buffer.
+
+This temporarily replaces the current input line with STRING, calls
+`comint-send-input' to run it, and then restores the previously-typed input
+at point-max."
+    (unless (gatsby>>comint-is-running)
+      (user-error "No live REPL"))
+    (with-current-buffer gatsby>comint-buffer
+      (let* ((inhibit-read-only t)
+             (input-start (comint-line-beginning-position))
+             (saved-input (buffer-substring-no-properties input-start (point-max))))
+        ;; Replace current input with STRING and send it.
+        (goto-char (point-max))
+        (delete-region input-start (point-max))
+        (insert string)
+        (comint-send-input)
+        ;; Restore previous typed input at the end of buffer.
+        (goto-char (point-max))
+        (insert saved-input))))
+
+  (gatsby>defcommand gatsby>comint-eval-region-or-cell (from-top)
+    (if (region-active-p)
+        (let ((b (region-beginning))
+              (e (region-end)))
+          (gatsby>comint-eval-string (buffer-substring-no-properties b e))
+          (evil-normal-state))
+      (let* ((format "^%s +\\(.\\)*\n" comment-start)
+             (b (save-excursion (or (and (not from-top)
+                                         (re-search-backward cell-regexp nil 'noerror))
+                                    (point-min))))
+             (e (save-excursion (or (re-search-forward cell-regexp nil 'noerror) (point-max)))))
+        (gatsby>comint-eval-string (buffer-substring-no-properties b e)))))
+
+  (gatsby>defcommand gatsby>comint-insert-cell-separator (markdown)
+    (insert (format "\n%s +" comment-start))
+    (when markdown (insert " [markdown]"))
+    (insert "\n")
+    (when markdown
+      (insert "\"\"\"\"\"\"") (backward-char 3)))
+
+  (gatsby>defcommand gatsby>comint-next-cell ()
+    (let ((cell-regexp (format "^%s +\\(.\\)*\n" comment-start)))
+      (re-search-forward cell-regexp nil 'noerror)))
+
+  (gatsby>defcommand gatsby>comint-prev-cell ()
+    (let ((cell-regexp (format "^%s +\\(.\\)*\n" comment-start)))
+      (re-search-backward cell-regexp nil 'noerror)))
+
   :evil-bind
   ((:maps comint-mode-map :states (normal visual insert))
    ("C-c C-l" . #'gatsby>comint-cls)
@@ -28,11 +148,24 @@
    ("<up>" . #'comint-previous-matching-input-from-input)
    ("<down>" . #'comint-next-matching-input-from-input)
    
-   (:maps comint-mode-map :states (normal visual))
+   (:maps comint-mode-map :states normal)
    ("<" . #'comint-previous-prompt)
    (">" . #'comint-next-prompt)
    ("A" . #'gatsby>comint-goto-last-prompt)
-   ("H" . #'comint-bol)))
+   ("SPC . q" . #'kill-buffer-and-window)
+   (:maps comint-mode-map :states (normal visual))
+   ("H" . #'comint-bol)
+
+   (:maps gatsby>comint-managed-mode-map :states normal)
+   (">" . #'gatsby>comint-next-cell)
+   ("<" . #'gatsby>comint-prev-cell)
+   ("<SPC> r o" . #'gatsby>comint-start-or-switch-to-repl)
+
+   (:maps gatsby>comint-managed-mode-map :states (normal visual))
+   ("<SPC> r r" . #'gatsby>comint-eval-region-or-cell)
+
+   (:maps gatsby>comint-managed-mode-map :states (insert normal))
+   ("M-RET" . #'gatsby>comint-insert-cell-separator)))
 
 (use-package jupyter
   :ensure (:host github :repo "nnicandro/emacs-jupyter")

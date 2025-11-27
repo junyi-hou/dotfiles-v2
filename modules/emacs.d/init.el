@@ -26,6 +26,7 @@
 (require 'gatsby>repl)
 
 (require 'gatsby>python)
+(require 'gatsby>clojure)
 (require 'gatsby>elisp)
 (require 'gatsby>config-files)
 (require 'gatsby>text)
