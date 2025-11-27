@@ -25,11 +25,6 @@
   ;; lsp
   ;; (add-to-list 'eglot-server-programs '(python-ts-mode "basedpyright-langserver" "--stdio"))
 
-  (gatsby>defcommand gatsby>start-alligator ()
-    (call-interactively #'eglot-shutdown-all)
-    (let* ((eglot-server-programs `((python-ts-mode ,(expand-file-name "src/main.py" (project-root (project-current)))))))
-      (call-interactively #'eglot)))
-
   :evil-bind
   ((:maps python-ts-mode-map :states visual)
    ("<" . #'python-indent-shift-left)
