@@ -23,7 +23,8 @@
   (add-to-list 'major-mode-remap-alist '(python-mode . python-ts-mode))
 
   ;; lsp
-  ;; (add-to-list 'eglot-server-programs '(python-ts-mode "basedpyright-langserver" "--stdio"))
+  (with-eval-after-load 'eglot
+   (add-to-list 'eglot-server-programs '(python-ts-mode "basedpyright-langserver" "--stdio")))
 
   :evil-bind
   ((:maps python-ts-mode-map :states visual)

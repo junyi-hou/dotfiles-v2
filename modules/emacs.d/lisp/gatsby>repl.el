@@ -184,24 +184,24 @@ at point-max."
   (defvar gatsby>jupyter-managed-mode-map (make-sparse-keymap))
 
   (define-minor-mode gatsby>jupyter-managed-mode
-    "Minor mode that provides keybinds and commands to major-modes that supports a jupyter repl."
+    "Minor mode that provides keybinds and commands to major-modes that support jupyter repl."
     :lighter nil
     :group jupyter
     :keymap gatsby>jupyter-managed-mode-map)
 
   (gatsby>defcommand gatsby>jupyter-insert-cell-separator (markdown)
-    (insert "\n# %%")
+    (insert (format "\n%s +" comment-start))
     (when markdown (insert " [markdown]"))
     (insert "\n")
     (when markdown
       (insert "\"\"\"\"\"\"") (backward-char 3)))
 
   (gatsby>defcommand gatsby>jupyter-next-cell ()
-    (let ((cell-regexp "^# %%\\(.\\)*\n"))
+    (let ((cell-regexp (format "^%s +\\(.\\)*\n" comment-start)))
       (re-search-forward cell-regexp nil 'noerror)))
 
   (gatsby>defcommand gatsby>jupyter-prev-cell ()
-    (let ((cell-regexp "^# %%\\(.\\)*\n"))
+    (let ((cell-regexp (format "^%s +\\(.\\)*\n" comment-start)))
       (re-search-backward cell-regexp nil 'noerror)))
 
   (gatsby>defcommand gatsby>jupyter-generate-notebook (run)
@@ -210,7 +210,7 @@ at point-max."
    If the prefix argument RUN is non-nil, execute all cells to produce output."
     (let* ((file (buffer-file-name))
            (jupytext (executable-find "jupytext"))
-           (command (concat jupytext " --to ipynb " file)))
+           (command (concat jupytext " --set-kernel - --to ipynb " file)))
       (when run
         (setq command (s-join " " `(,command "--pipe-fmt" "ipynb" "--pipe" "'jupyter nbconvert --to ipynb --execute --allow-errors --stdin --stdout'"))))
       (compile command)))
@@ -221,7 +221,7 @@ at point-max."
               (e (region-end)))
           (jupyter-eval-string (buffer-substring-no-properties b e))
           (evil-normal-state))
-      (let* ((cell-regexp "^# %%\\(.\\)*\n")
+      (let* ((format "^%s +\\(.\\)*\n" comment-start)
              (b (save-excursion (or (and (not from-top)
                                          (re-search-backward cell-regexp nil 'noerror))
                                     (point-min))))
@@ -254,7 +254,7 @@ at point-max."
       (call-interactively #'jupyter-repl-clear-input)))
 
   :evil-bind
-  ((:maps jupyter-repl-mode-map :states (normal visual))
+  ((:maps jupyter-repl-mode-map :states normal)
    ("A" . #'gatsby>jupyter-goto-last-prompt)
    ("<" . #'jupyter-repl-backward-cell)
    (">" . #'jupyter-repl-forward-cell)
