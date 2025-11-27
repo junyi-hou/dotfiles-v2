@@ -145,6 +145,7 @@
   (auto-dim-other-buffers-affected-faces
   '((default            . (auto-dim-other-buffers . nil))
     (frige              . (auto-dim-other-buffers . nil))
+    (border              . (auto-dim-other-buffers . nil))
     (mode-line-inactive . (auto-dim-other-buffers . nil))
     (line-number        . (auto-dim-other-buffers . nil))))
   :custom-face (auto-dim-other-buffers ((t :background ,(doom-color 'bg-alt)))))
