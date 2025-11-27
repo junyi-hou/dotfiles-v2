@@ -34,7 +34,7 @@
   ;; font
   (set-face-attribute
    'default nil
-   :family "PragmataPro Mono Liga"
+   :family "PragmataPro Liga"
    :height 130
    :width 'normal
    :weight 'Regular)
@@ -140,11 +140,13 @@
 
 (use-package auto-dim-other-buffers
   :ensure (:host github :repo "mina86/auto-dim-other-buffers.el")
+  :hook (elpaca-after-init . auto-dim-other-buffers-mode)
   :custom
   (auto-dim-other-buffers-affected-faces
-  '((default        . (auto-dim-other-buffers . nil))
-    (line-number    . (auto-dim-other-buffers . nil))))
-
+  '((default            . (auto-dim-other-buffers . nil))
+    (frige              . (auto-dim-other-buffers . nil))
+    (mode-line-inactive . (auto-dim-other-buffers . nil))
+    (line-number        . (auto-dim-other-buffers . nil))))
   :custom-face (auto-dim-other-buffers ((t :background ,(doom-color 'bg-alt)))))
 
 ;; minibuffer
