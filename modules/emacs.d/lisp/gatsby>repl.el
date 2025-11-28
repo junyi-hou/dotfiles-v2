@@ -37,10 +37,13 @@
     "A list of all managed comint buffer")
 
   (defun gatsby>>comint-is-running (&optional buffer)
-    (with-current-buffer (or buffer (current-buffer))
-      (and gatsby>comint-buffer
-           (buffer-live-p gatsby>comint-buffer)
-           (process-live-p (get-buffer-process gatsby>comint-buffer)))))
+    "Return t if a comint repl BUFFER exists and a live process is running in it.
+If BUFFER is nil, use `gatsby>comint-buffer'."
+
+    (let ((repl-buffer (or buffer gatsby>comint-buffer)))
+      (and repl-buffer
+           (buffer-live-p repl-buffer)
+           (process-live-p (get-buffer-process repl-buffer)))))
 
   (define-minor-mode gatsby>comint-managed-mode
     "Minor mode that provides keybinds and commands to major-modes that support comint repl."
@@ -55,14 +58,13 @@
     (when (gatsby>>comint-is-running code-buffer)
       (user-error "An existing REPL is running"))
 
-    (let ((default-directory (if-let ((project (project-current)))
-                                 (project-root project)
-                               default-directory))
-          (repl-buffer (make-comint
-                        (format "%s: %s" cmd (thread-first default-directory
-                                                           directory-file-name
-                                                           file-name-base))
-                        cmd)))
+    (let* ((default-directory (if-let ((project (project-current)))
+                                  (project-root project)
+                                default-directory))
+           (repl-buffer (get-buffer-create (format "*%s: %s*" cmd (thread-first default-directory
+                                                                                directory-file-name
+                                                                                file-name-base)))))
+      (make-comint-in-buffer "clojure-REPL" repl-buffer cmd)
       (with-current-buffer code-buffer (setq-local gatsby>comint-buffer repl-buffer))
       (add-to-list 'gatsby>comint-buffer-list repl-buffer)
       (pop-to-buffer repl-buffer)))
