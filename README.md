@@ -17,6 +17,7 @@ Then install homebrew:
 Build Emacs-mac from [the source](https://github.com/jdtsmith/emacs-mac):
 ```
 brew install gcc pkgconf texinfo autoconf tree-sitter libgccjit librsvg
+brew install cmake libtool  # to compile vterm module
 
 cd ~ && mkdir -p tmp && cd ~/tmp
 git clone https://github.com/jdtsmith/emacs-mac.git

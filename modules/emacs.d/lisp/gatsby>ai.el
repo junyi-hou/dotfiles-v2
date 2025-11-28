@@ -9,8 +9,27 @@
 (use-package aidermacs
   :ensure (:host github :repo "MatthewZMD/aidermacs")
   :custom
+  (aidermacs-backend 'vterm)
   (aidermacs-program (expand-file-name ".venv/bin/aider" gatsby>dotfiles-repo-location))
-  (aidermacs-default-model "openrouter/openai/gpt-5-mini:floor")
+  (aidermacs-default-model "openrouter/anthropic/claude-sonnet-4.5:floor")
+  :init
+
+  ;; display chat window always in the side window
+  (add-to-list 'display-buffer-alist '("^\\*aidermacs:\\(.+?\\)\\*"
+                                       (display-buffer-in-side-window)
+                                       (side . right)
+                                       (slot . 0)
+                                       (window-width . 0.25)
+                                       (preserve-size . (t . nil))))
+
+  ;; display file action window always in the bottom
+  (add-to-list 'display-buffer-alist '((derived-mode . aidermacs-file-diff-selection-mode)
+                                       (display-buffer-in-side-window)
+                                       (side . bottom)
+                                       (slot . 1)
+                                       (window-height . 10)
+                                       (preserve-size . (nil . t))))
+
   :config
   (defun gatsby>>get-ai-api-key ()
     "run passage to get the openai_api_key. Return nil if no key is found"
@@ -80,18 +99,6 @@
                 (cl-letf (((symbol-function #'switch-to-buffer-other-window) #'gatsby>switch-to-buffer-new-window))
                   (apply fn args))))
 
-  (advice-add #'aidermacs-switch-to-buffer :around
-              (defun gatsby>>aidermacs-open-in-side-bar (fn &rest args)
-                (cl-letf* ((config '((side . right) (slot . 0) (window-width . 0.25) (preserve-size . (t . nil))))
-                           ((symbol-function #'pop-to-buffer) (lambda (b) (display-buffer-in-side-window b config))))
-                  (apply fn args))))
-
-  (advice-add #'aidermacs-switch-to-buffer :after
-              (defun gatsby>>aidermacs-focus-and-insert (&rest _)
-                (select-window (get-buffer-window (aidermacs-get-buffer-name)))
-                (goto-char (point-max))
-                (evil-insert-state)))
-
   ;; allow non-vc project root
   ;; can come in handy in large projects
   (advice-add #'aidermacs-project-root :override
@@ -105,7 +112,9 @@
   ((:maps normal)
    ("SPC a" . #'gatsby>start-aider-session)
    ("`" . #'aidermacs-transient-menu)
-   (:maps aidermacs-comint-mode-map :states normal)
+   (:maps aidermacs-file-diff-selection-mode-map :states normal)
+   ("q" . #'aidermacs--file-diff-selection-quit)
+   (:maps aidermacs-vterm-mode-map :states normal)
    ("q" . #'delete-window)))
 
 (provide 'gatsby>ai)

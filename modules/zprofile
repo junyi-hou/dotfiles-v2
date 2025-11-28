@@ -1,5 +1,5 @@
 # TODO: this is not portable
-export EDITOR="/Applications/Emacs.app/Contents/MacOS/bin/emacsclient -c -a ''"
+# export EDITOR="/Applications/Emacs.app/Contents/MacOS/bin/emacsclient -c -a ''"
 
 # mac setting
 if [[ "$(uname)" == "Darwin" ]]; then
@@ -9,6 +9,10 @@ if [[ "$(uname)" == "Darwin" ]]; then
     killall Dock >/dev/null 2>&1
   fi
 fi
+
+# alias
+alias ls="ls -G"
+alias ll="ls -alGh"
 
 # source existing zprofile file backed up if exists
 if [ -f "$HOME/.zprofile.backup" ]; then
