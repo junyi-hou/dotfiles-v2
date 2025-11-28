@@ -6,6 +6,11 @@
 
 (require 'gatsby>>utility)
 
+;; TODO: migrate to termint + vterm?
+;; (use-package termint
+;;   :ensure (:host github :repo "milanglacier/termint.el")
+;;   :custom (termint-))
+
 (gatsby>use-internal-pacakge comint
   :config
   (gatsby>defcommand gatsby>comint-cls ()
@@ -117,7 +122,7 @@ at point-max."
               (e (region-end)))
           (gatsby>comint-eval-string (buffer-substring-no-properties b e))
           (evil-normal-state))
-      (let* ((format "^%s +\\(.\\)*\n" comment-start)
+      (let* ((cell-regexp (format "^%s +\\(.\\)*\n" comment-start))
              (b (save-excursion (or (and (not from-top)
                                          (re-search-backward cell-regexp nil 'noerror))
                                     (point-min))))
@@ -147,6 +152,7 @@ at point-max."
    (:maps comint-mode-map :states insert)
    ("<up>" . #'comint-previous-matching-input-from-input)
    ("<down>" . #'comint-next-matching-input-from-input)
+   ("<S-return>" . #'comint-accumulate)
    
    (:maps comint-mode-map :states normal)
    ("<" . #'comint-previous-prompt)
@@ -173,7 +179,7 @@ at point-max."
   (jupyter-repl-traceback ((t (:extend t :background "firebrick"))))
   :commands (gatsby>jupyter-managed-mode gatsby>jupyter-start-or-switch-to-repl)
   :autoload jupyter-launch-notebook
-  :custom 
+  :custom
   (jupyter-repl-allow-RET-when-busy t)
   (jupyter-repl-echo-eval-p t)
   (jupyter-repl-maximum-size 12000)
@@ -264,7 +270,7 @@ at point-max."
    (:maps jupyter-repl-mode-map :states (normal visual insert))
    ("C-c C-c" . #'gatsby>jupyter-interrupt-or-clean-input)
    ("C-c C-l" . #'jupyter-repl-clear-cells)
-   
+
    (:maps jupyter-repl-mode-map :states insert)
    ("<up>" . #'jupyter-repl-history-previous-matching)
    ("<down>" . #'jupyter-repl-history-next-matching)
