@@ -229,6 +229,7 @@
    (:maps magit-status-mode-map :states motion)
    ("+" . #'gatsby>magit-increase-number-of-commits)
    ("-" . #'gatsby>magit-decrease-number-of-commits)
+   ("d" . #'magit-discard)
    ("SPC R" . #'gatsby>magit-show-all-status)
    (:maps (magit-status-mode-map magit-diff-mode-map magit-log-mode-map) :states motion)
    (">" . #'magit-section-forward-sibling)
