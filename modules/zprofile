@@ -8,7 +8,7 @@ if [[ "$(uname)" == "Darwin" ]]; then
     export EDITOR="/Applications/Emacs.app/Contents/MacOS/bin/emacsclient -r -a ''"
 else
     # we are in Linux
-    export EDITOR="emacsclient -c -a ''"
+    export EDITOR="emacsclient -r -a ''"
 fi
 
 export PATH=$HOME/.local/bin:$PATH

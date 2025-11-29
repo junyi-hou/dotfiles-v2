@@ -5,6 +5,7 @@ fi
 # alias
 alias ls="ls -G"
 alias ll="ls -alGh"
+alias ff="$EDITOR"
 
 # Custom cd function: cd without args goes to git root, or home if already at root/not in repo
 function cd() {
