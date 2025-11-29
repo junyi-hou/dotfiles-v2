@@ -2,10 +2,9 @@ if [[ "$INSIDE_EMACS" = 'vterm' ]] && [[ -n "${EMACS_VTERM_PATH}" ]] && [[ -f "$
     source ''${EMACS_VTERM_PATH}/etc/emacs-vterm-zsh.sh
 fi
 
-# source existing zprofile file backed up if exists
-if [ -f "$HOME/.zsh.backup" ]; then
-    source "$HOME/.zsh.backup"
-fi
+# alias
+alias ls="ls -G"
+alias ll="ls -alGh"
 
 # Custom cd function: cd without args goes to git root, or home if already at root/not in repo
 function cd() {
@@ -17,20 +16,25 @@ function cd() {
             # Inside a git repo
             if [[ "$PWD" = "$git_root" ]]; then
                 # Already at git root, go home
-                builtin cd "$HOME"
+                builtin cd "$HOME" && ls
             else
                 # Not at git root, go to git root
-                builtin cd "$git_root"
+                builtin cd "$git_root" && ls
             fi
         else
             # Not in a git repo, go home
-            builtin cd "$HOME"
+            builtin cd "$HOME" && ls
         fi
     else
         # Arguments provided, use normal cd behavior
-        builtin cd "$@"
+        builtin cd "$@" && ls
     fi
 }
+
+# source existing zprofile file backed up if exists
+if [ -f "$HOME/.zshrc.backup" ]; then
+    source "$HOME/.zshrc.backup"
+fi
 
 # Local Variables:
 # mode: shell-script
