@@ -209,7 +209,8 @@ If there is a visible eshell window in the same PWD, switch to it instead of ope
   :ensure (:host github :repo "akermu/emacs-libvterm")
   :hook (evil-mode . (lambda () (gatsby>>put-mode-to-evil-state 'vterm-mode 'insert)))
   :custom
-  (vterm-shell "zsh")
+  ;; https://github.com/akermu/emacs-libvterm/issues/179
+  (vterm-shell "screen")
   (vterm-buffer-name-string "*vterm*: %s")
   (vterm-max-scrollback 10000)
   :config
