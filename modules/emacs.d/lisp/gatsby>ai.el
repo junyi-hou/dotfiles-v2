@@ -83,7 +83,7 @@
                 (smerge-start-session)
                 (message "Diff output inserted and smerge-mode enabled in buffer %S" 
                          buffer2))
-              (gatsby>switch-to-buffer-new-window buffer2)))
+              (display-buffer buffer2 'display-buffer-use-some-window)))
         ;; Cleanup temp files
         (delete-file a)
         (delete-file b))))
@@ -92,12 +92,6 @@
               :around (defun gatsby>>aidermacs-use-smerge (oldfun &rest r)
                         (cl-letf (((symbol-function #'ediff-buffers) #'gatsby>>ediff-to-smerge))
                           (apply oldfun r))))
-
-  ;; always create new window in aidermacs:
-  (advice-add #'aidermacs--show-file-selection-buffer :around
-              (defun gatsby>>aidermacs-open-in-new-window (fn &rest args)
-                (cl-letf (((symbol-function #'switch-to-buffer-other-window) #'gatsby>switch-to-buffer-new-window))
-                  (apply fn args))))
 
   ;; allow non-vc project root
   ;; can come in handy in large projects
