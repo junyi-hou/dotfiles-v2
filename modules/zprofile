@@ -1,5 +1,17 @@
-# TODO: this is not portable
-# export EDITOR="/Applications/Emacs.app/Contents/MacOS/bin/emacsclient -c -a ''"
+# source existing zprofile file backed up if exists
+if [ -f "$HOME/.zprofile.backup" ]; then
+    source "$HOME/.zprofile.backup"
+fi
+
+# If install according to the README, this will work
+if [[ "$(uname)" == "Darwin" ]]; then
+    export EDITOR="/Applications/Emacs.app/Contents/MacOS/bin/emacsclient -r -a ''"
+else
+    # we are in Linux
+    export EDITOR="emacsclient -c -a ''"
+fi
+
+export PATH=$HOME/.local/bin:$PATH
 
 # mac setting
 if [[ "$(uname)" == "Darwin" ]]; then
@@ -8,11 +20,6 @@ if [[ "$(uname)" == "Darwin" ]]; then
     defaults write com.apple.dock show-recents -bool false
     killall Dock >/dev/null 2>&1
   fi
-fi
-
-# source existing zprofile file backed up if exists
-if [ -f "$HOME/.zprofile.backup" ]; then
-    source "$HOME/.zprofile.backup"
 fi
 
 # Local Variables:
