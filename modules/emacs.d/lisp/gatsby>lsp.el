@@ -63,6 +63,7 @@ Insert the current selection when
   (eglot-parameter-hint-face ((t (:height 1.0))))
   :custom
   (eglot-server-programs nil)
+  (eglot-extend-to-xref t)
   :init
   (defun gatsby>>maybe-format-buffer ()
     (add-hook 'before-save-hook (defun gatsby>>maybe-format-before-save (&rest _)

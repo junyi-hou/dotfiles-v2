@@ -25,5 +25,10 @@
     (setq-local gatsby>comint-command "clj")
     (setq-local comment-start ";;")))
 
+;; This enables LSP to check codes in jar file
+(use-package jarchive
+  :ensure (:type git :repo "https://git.sr.ht/~dannyfreeman/jarchive")
+  :hook (elpaca-after-init . jarchive-mode))
+
 (provide 'gatsby>clojure)
 ;;; gatsby>clojure.el ends here
