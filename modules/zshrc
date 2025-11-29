@@ -8,6 +8,12 @@ alias ll="ls -alGh"
 
 # Custom cd function: cd without args goes to git root, or home if already at root/not in repo
 function cd() {
+    # If TERM is dumb, use builtin cd directly
+    if [[ "$TERM" = "dumb" ]]; then
+        builtin cd "$@"
+        return
+    fi
+
     if [[ $# -eq 0 ]]; then
         # No arguments provided
         local git_root=$(git rev-parse --show-toplevel 2>/dev/null)
