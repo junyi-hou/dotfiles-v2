@@ -9,7 +9,8 @@
 (use-package aidermacs
   :ensure (:host github :repo "MatthewZMD/aidermacs")
   :custom
-  (aidermacs-backend 'vterm)
+  ;; I actually like comint backend more
+  ;; (aidermacs-backend 'vterm)
   (aidermacs-program (expand-file-name ".venv/bin/aider" gatsby>dotfiles-repo-location))
   (aidermacs-default-model "openrouter/anthropic/claude-sonnet-4.5:floor")
   :init
