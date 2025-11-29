@@ -90,7 +90,7 @@
   (defun eshell/ls (&rest args)
     (if (executable-find "exa")
         (apply #'gatsby>eshell-alias `("exa" ,@args))
-      (apply #'gatsby>eshell-alias `("ls" ,@args))))
+      (apply #'gatsby>eshell-alias `("/bin/ls" "--color=always" ,@args))))
 
   (defun eshell/ll (&rest _)
     (eshell/ls "-alh"))
