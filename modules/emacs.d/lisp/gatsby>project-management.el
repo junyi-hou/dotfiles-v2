@@ -82,16 +82,19 @@
     
     (advice-add #'jupyter-run-repl :before #'gatsby>>update-jupyter-kernelspecs))
 
-  (with-eval-after-load 'eshell
-    (defun gatsby>>envrc-update-after-cd (&rest _)
-      "Update the current direnv environment after `eshell/cd'."
-      (let ((buf (current-buffer)))
-        (if (locate-dominating-file default-directory ".envrc")
-            (envrc--update)
-          (envrc--clear buf)
-          (setq envrc--status 'none))))
+  (defun gatsby>>envrc-update-after-cd (&rest _)
+    "Update the current direnv environment after `eshell/cd'."
+    (let ((buf (current-buffer)))
+      (if (locate-dominating-file default-directory ".envrc")
+          (envrc--update)
+        (envrc--clear buf)
+        (setq envrc--status 'none))))
 
+  (with-eval-after-load 'eshell
     (advice-add #'eshell/cd :after #'gatsby>>envrc-update-after-cd))
+
+  (with-eval-after-load 'vterm
+    (advice-add #'vterm--set-directory :after #'gatsby>>envrc-update-after-cd))
 
   ;; setup lighter on the status line
   (defun gatsby>>envrc-lighter ()
