@@ -226,11 +226,15 @@
   ((:maps normal)
    ("SPC g g" . #'magit-status)
    ("SPC g l" . #'magit-log-buffer-file)
+
    (:maps magit-status-mode-map :states motion)
    ("+" . #'gatsby>magit-increase-number-of-commits)
    ("-" . #'gatsby>magit-decrease-number-of-commits)
    ("d" . #'magit-discard)
+   ("s" . #'magit-stage)
+   ("u" . #'magit-unstage)
    ("SPC R" . #'gatsby>magit-show-all-status)
+
    (:maps (magit-status-mode-map magit-diff-mode-map magit-log-mode-map) :states motion)
    (">" . #'magit-section-forward-sibling)
    ("<" . #'magit-section-backward-sibling)
@@ -238,8 +242,10 @@
    ("zo" . #'magit-section-show)
    ("zc" . #'magit-section-hide)
    ("RET" . #'gatsby>magit-visit-thing-at-point)
+
    (:maps (magit-status-mode-map magit-diff-mode-map magit-log-mode-map magit-revision-mode-map) :states motion)
    ("SPC r" . #'magit-refresh-buffer)
+
    (:maps git-rebase-mode-map :states motion)
    ("p" . #'git-rebase-pick)
    ("e" . #'git-rebase-edit)

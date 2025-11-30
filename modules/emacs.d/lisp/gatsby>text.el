@@ -37,7 +37,8 @@
    'typst "https://github.com/uben0/tree-sitter-typst" "v0.11.0")
 
   ;; lsp
-  (add-to-list 'eglot-server-programs `(typst-ts-mode ,(expand-file-name ".tools/bin/tinymist" gatsby>dotfiles-repo-location)))
+  (with-eval-after-load 'eglot
+   (add-to-list 'eglot-server-programs `(typst-ts-mode "tinymist")))
 
   :config
   (defun gatsby>>typst-stop-watching (&rest _)
