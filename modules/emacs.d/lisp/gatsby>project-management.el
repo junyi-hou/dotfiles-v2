@@ -198,29 +198,31 @@
           ;; fallback - `magit-visit-thing'
           (t 'magit-visit-thing)))
 
-  (gatsby>defcommand gatsby>magit-show-all-status ()
-    (let ((magit-status-section-hook '(magit-insert-status-headers
-                                       magit-insert-merge-log
-                                       magit-insert-rebase-sequence
-                                       magit-insert-am-sequence
-                                       magit-insert-sequencer-sequence
-                                       magit-insert-bisect-output
-                                       magit-insert-bisect-rest
-                                       magit-insert-bisect-log
-                                       magit-insert-untracked-files
-                                       magit-insert-unstaged-changes
-                                       magit-insert-staged-changes
-                                       magit-insert-stashes
-                                       magit-insert-unpushed-to-pushremote
-                                       magit-insert-unpushed-to-upstream
-                                       magit-insert-unpulled-from-pushremote
-                                       magit-insert-unpulled-from-upstream
-                                       magit-insert-recent-commits))
-          (inhibit-read-only t)
-          (point (point)))
-      (erase-buffer)
-      (magit-status-refresh-buffer)
-      (goto-char (min (point-max) point))))
+  (gatsby>defcommand gatsby>magit-refresh-status (all-section)
+    (if (and all-section (eq major-mode 'magit-status-mode))
+        (let ((magit-status-section-hook '(magit-insert-status-headers
+                                           magit-insert-merge-log
+                                           magit-insert-rebase-sequence
+                                           magit-insert-am-sequence
+                                           magit-insert-sequencer-sequence
+                                           magit-insert-bisect-output
+                                           magit-insert-bisect-rest
+                                           magit-insert-bisect-log
+                                           magit-insert-untracked-files
+                                           magit-insert-unstaged-changes
+                                           magit-insert-staged-changes
+                                           magit-insert-stashes
+                                           magit-insert-unpushed-to-pushremote
+                                           magit-insert-unpushed-to-upstream
+                                           magit-insert-unpulled-from-pushremote
+                                           magit-insert-unpulled-from-upstream
+                                           magit-insert-recent-commits))
+              (inhibit-read-only t)
+              (point (point)))
+          (erase-buffer)
+          (magit-status-refresh-buffer)
+          (goto-char (min (point-max) point)))
+      (call-interactively #'magit-refresh-buffer)))
 
   :evil-bind
   ((:maps normal)
@@ -233,7 +235,9 @@
    ("d" . #'magit-discard)
    ("s" . #'magit-stage)
    ("u" . #'magit-unstage)
-   ("SPC R" . #'gatsby>magit-show-all-status)
+
+   (:maps magit-status-mode-map :states visual)
+   ("u" . #'magit-unstage)
 
    (:maps (magit-status-mode-map magit-diff-mode-map magit-log-mode-map) :states motion)
    (">" . #'magit-section-forward-sibling)
@@ -244,7 +248,7 @@
    ("RET" . #'gatsby>magit-visit-thing-at-point)
 
    (:maps (magit-status-mode-map magit-diff-mode-map magit-log-mode-map magit-revision-mode-map) :states motion)
-   ("SPC r" . #'magit-refresh-buffer)
+   ("SPC r" . #'gatsby>magit-refresh-status)
 
    (:maps git-rebase-mode-map :states motion)
    ("p" . #'git-rebase-pick)
