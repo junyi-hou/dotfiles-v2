@@ -84,7 +84,7 @@
                 (smerge-start-session)
                 (message "Diff output inserted and smerge-mode enabled in buffer %S" 
                          buffer2))
-              (display-buffer buffer2 'display-buffer-use-some-window)))
+              (switch-to-buffer-other-window buffer2)))
         ;; Cleanup temp files
         (delete-file a)
         (delete-file b))))
@@ -109,7 +109,7 @@
    ("`" . #'aidermacs-transient-menu)
    (:maps aidermacs-file-diff-selection-mode-map :states normal)
    ("q" . #'aidermacs--file-diff-selection-quit)
-   (:maps aidermacs-vterm-mode-map :states normal)
+   (:maps aidermacs-comint-mode-map :states normal)
    ("q" . #'delete-window)))
 
 (provide 'gatsby>ai)
