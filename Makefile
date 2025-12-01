@@ -1,13 +1,13 @@
 .PHONY: install uninstall update-secret
 
 install:
-	@python ./scripts/install.py
+	@python -m scripts.install
 
 uninstall:
-	@python ./scripts/uninstall.py
+	@python -m scripts.uninstall
 
 update-secret:
-	@python ./scripts/install.py -m passage
+	@python -m scripts.install -m passage
 
 test:
 	@pytest ./test_scripts

@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import cast
 from dataclasses import dataclass
 
-from _lib import logger, git_root, symlink, move, get_target_path, get_backup_path
+from ._lib import logger, git_root, symlink, move, get_target_path, get_backup_path
 
 
 AVAILABLE_MODULES: list[str] = [m.name for m in (git_root(__file__) / "modules").iterdir()]
