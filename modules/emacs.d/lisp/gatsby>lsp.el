@@ -165,7 +165,6 @@ Insert the current selection when
 ;; display flymake information in a childframe
 (use-package flymake-childframe
   :ensure (:host github :repo "junyi-hou/flymake-childframe")
-  :custom (flymake-childframe-prefix '((note . "i") (warning . "?") (error . "!")))
   :hook ((flymake eglot-managed-mode) . flymake-childframe-mode))
 
 (use-package eldoc-mouse
