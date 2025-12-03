@@ -235,6 +235,10 @@
    ("d" . #'magit-discard)
    ("s" . #'magit-stage)
    ("u" . #'magit-unstage)
+   ("p" . #'magit-push)
+
+   (:maps magit-hunk-section-map :states motion)
+   ("C-j" . #'windmove-down)
 
    (:maps magit-status-mode-map :states visual)
    ("u" . #'magit-unstage)
