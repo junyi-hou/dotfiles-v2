@@ -160,7 +160,7 @@ at point-max."
    ("<" . #'comint-previous-prompt)
    (">" . #'comint-next-prompt)
    ("A" . #'gatsby>comint-goto-last-prompt)
-   ("SPC . q" . #'kill-buffer-and-window)
+   ("SPC q" . #'kill-buffer-and-window)
    (:maps comint-mode-map :states (normal visual))
    ("H" . #'comint-bol)
 
