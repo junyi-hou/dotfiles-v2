@@ -156,6 +156,7 @@
   (consult--read consult--multi)
   :custom
   (consult-preview-key nil)
+  (consult-narrow-key "?")
   :config
   (gatsby>defcommand gatsby>consult-outline (initial)
     "Override `consult-outline' to enable optional initial INPUT."
@@ -243,7 +244,8 @@
    ("#" . #'consult-outline)
    (:maps visual)
    ("*" . #'gatsby>consult-search-visual-line)
-   ("#" . #'gatsby>consult-search-visual-outline)))
+   ("#" . #'gatsby>consult-search-visual-outline)
+   (:maps consult-narrow-map)))
 
 (provide 'gatsby>editing)
 ;;; gatsby>editing.el ends here

@@ -78,6 +78,19 @@ Insert the current selection when
   ((:maps (normal visual))
    ("SPC r a" . #'eglot-code-actions)))
 
+(use-package consult-eglot
+  :ensure (:host github :repo "mohkale/consult-eglot")
+  :config
+  (gatsby>defcommand gatsby>consult-symbols-or-line (prefix)
+    "Run `consult-lsp-file-symbols' if PREFIX, or `consult-line'."
+    (if prefix
+        (call-interactively #'consult-eglot-symbols)
+      (call-interactively #'consult-outline)))
+
+  :evil-bind
+  ((:maps (motion normal))
+   ([remap consult-outline] . #'gatsby>consult-symbols-or-line)))
+
 ;; template system
 (use-package tempel
   :ensure (:host github :repo "minad/tempel")
@@ -161,6 +174,14 @@ Insert the current selection when
 ;;  :ensure (:host github :repo "jdtsmith/eglot-booster")
 ;;  :custom (eglot-booster-io-only (>= emacs-major-version 30))
 ;;   :hook (elpaca-after-init . eglot-booster-mode))
+
+;; (add-to-list 'eglot-server-programs
+;;              `(python-ts-mode . ,(eglot-alternatives
+;;                 '("pylsp" "pyls" ("basedpyright-langserver" "--stdio")
+;;                   ("pyright-langserver" "--stdio")
+;;                   ("pyrefly" "lsp")
+;;                   "jedi-language-server" ("ruff" "server") "ruff-lsp"))
+;;              ))
 
 ;; display flymake information in a childframe
 (use-package flymake-childframe
