@@ -244,8 +244,7 @@
    ("#" . #'consult-outline)
    (:maps visual)
    ("*" . #'gatsby>consult-search-visual-line)
-   ("#" . #'gatsby>consult-search-visual-outline)
-   (:maps consult-narrow-map)))
+   ("#" . #'gatsby>consult-search-visual-outline)))
 
 (provide 'gatsby>editing)
 ;;; gatsby>editing.el ends here
