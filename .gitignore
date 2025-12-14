@@ -1,8 +1,5 @@
 .tools/
-.venv/
-.cargo/
-.rustup/
-.python-version
+.pixi/
 **/__pycache__/**
 **/.ipynb_checkpoints/**
 

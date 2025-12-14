@@ -1,3 +1,6 @@
+DOTFILES_ROOT=$(dirname $(dirname "$(readlink -f "${(%):-%N}")"))
+
+
 # source existing zprofile file backed up if exists
 if [ -f "$HOME/.zprofile.backup" ]; then
     source "$HOME/.zprofile.backup"
@@ -11,7 +14,7 @@ else
     export EDITOR="emacsclient -r -a ''"
 fi
 
-export PATH=$HOME/.local/bin:$PATH
+export PATH=$DOTFILES_ROOT/.pixi/envs/all/bin:/bin:$PATH
 
 # mac setting
 if [[ "$(uname)" == "Darwin" ]]; then
