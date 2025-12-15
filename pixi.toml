@@ -14,20 +14,18 @@ all = ["global"]
 [feature.local.dependencies]
 python = ">=3.12"
 pytest = "*"
+# aider-chat = "*" # TODO - this does not work
 basedpyright = "*"
 jupyter = "*"
 
 
 [feature.global.dependencies]
-# rust = ">=1.91.0"
 rage = "*"
 exa = "*"
 fd-find = "*"
 ripgrep = "*"
-aider-chat = "*"  # FIXME - aider is not working
 
 # lsp
 harper = "*"
 tinymist = "*"
 bash-language-server = "*"
-
