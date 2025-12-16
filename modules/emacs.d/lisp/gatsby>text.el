@@ -8,6 +8,7 @@
 (use-package markdown-ts-mode
   :ensure (:host github :repo "LionyxML/markdown-ts-mode")
   :mode ("\\.md\\'" . markdown-ts-mode)
+  :hook (markdown-ts-mode . eglot-ensure)
   :defer t
   :init
   ;; treesitter
@@ -16,7 +17,8 @@
   (gatsby>install-treesitter-grammar 'markdown-inline "https://github.com/tree-sitter-grammars/tree-sitter-markdown" "v0.4.1" "tree-sitter-markdown-inline/src")
 
   ;; lsp
-  
+  (with-eval-after-load 'eglot
+    (add-to-list 'eglot-server-programs '(markdown-ts-mode "iwes")))
   )
 
 (use-package typst-ts-mode
