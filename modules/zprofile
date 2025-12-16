@@ -14,7 +14,7 @@ else
     export EDITOR="emacsclient -r -a ''"
 fi
 
-export PATH=$DOTFILES_ROOT/.pixi/envs/all/bin:/bin:$PATH
+export PATH=$DOTFILES_ROOT/.pixi/envs/all/bin:$HOME/.cargo/bin:/bin:$PATH
 
 # mac setting
 if [[ "$(uname)" == "Darwin" ]]; then

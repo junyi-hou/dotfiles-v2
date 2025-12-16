@@ -14,6 +14,7 @@ all = ["global"]
 [feature.local.dependencies]
 python = ">=3.12"
 pytest = "*"
+rust = "*"
 # aider-chat = "*" # TODO - this does not work
 basedpyright = "*"
 jupyter = "*"
@@ -29,3 +30,6 @@ ripgrep = "*"
 harper = "*"
 tinymist = "*"
 bash-language-server = "*"
+
+[tasks]
+install-markdown-lsp = "cargo install iwe iwes"
