@@ -15,6 +15,7 @@
   :hook
   (prog-mode . corfu-mode)
   (corfu-mode . corfu-popupinfo-mode)
+  (corfu-mode . gatsby>>set-capf-order)
   :config
   (gatsby>defcommand gatsby>corfu-complete ()
     "Complete common parts of all the candidates, or insert the current selection.
@@ -31,9 +32,14 @@ Insert the current selection when
   (advice-add #'corfu-complete :override #'gatsby>corfu-complete)
 
   ;; If no completion is found, insert a tab:
-  ;; TODO: how to make sure that this is always the first in the `completion-at-point-functions' list?
   (defun gatsby>>insert-tab-if-no-compliaton-is-found ()
     (when (save-excursion (skip-chars-backward " \t") (bolp)) (insert-tab)) nil)
+
+  ;; make sure `gatsby>>insert-tab-if-no-compliaton-is-found' is always the first element in `capf'
+  (defun gatsby>>set-capf-order (&rest _)
+    (if-let ((tab (cl-find-if (lambda (it) (eq it #'gatsby>>insert-tab-if-no-compliaton-is-found)) completion-at-point-functions)))
+        (setq-local completion-at-point-functions `(gatsby>>insert-tab-if-no-compliaton-is-found ,@(cl-remove #'gatsby>>insert-tab-if-no-compliaton-is-found completion-at-point-functions)))
+      (setq-local completion-at-point-functions `(gatsby>>insert-tab-if-no-compliaton-is-found ,@completion-at-point-functions))))
 
   :evil-bind
   ((:maps insert)
@@ -73,7 +79,9 @@ Insert the current selection when
                                     (eglot-format-buffer)))
               nil
               t))
-  :hook (eglot-managed-mode . gatsby>>maybe-format-buffer)
+  :hook
+  (eglot-managed-mode . gatsby>>maybe-format-buffer)
+  (eglot-managed-mode . gatsby>>set-capf-order)
   :evil-bind
   ((:maps (normal visual))
    ("SPC r a" . #'eglot-code-actions)))
@@ -92,61 +100,61 @@ Insert the current selection when
    ([remap consult-outline] . #'gatsby>consult-symbols-or-line)))
 
 ;; template system
-(use-package tempel
-  :ensure (:host github :repo "minad/tempel")
-  :custom (tempel-path (no-littering-expand-etc-file-name "tempel/*.eld"))
-  :evil-bind
-  ((:maps tempel-map)
-   ("C-g" . #'tempel-abort)
-   ("M-j" . #'tempel-next)
-   ("M-k" . #'tempel-prev))
-  :hook (corfu-mode . gatsby>>enable-tempel)
-  :commands (tempel--templates)
-  :init
-  ;; TODO: how to make sure that this is always the first in the `completion-at-point-functions' list?
-  (defun gatsby>>enable-tempel ()
-    (setq-local completion-at-point-functions `(gatsby>tempel-capf ,@completion-at-point-functions)))
+;; (use-package tempel
+;;   :ensure (:host github :repo "minad/tempel")
+;;   :custom (tempel-path (no-littering-expand-etc-file-name "tempel/*.eld"))
+;;   :evil-bind
+;;   ((:maps tempel-map)
+;;    ("C-g" . #'tempel-abort)
+;;    ("M-j" . #'tempel-next)
+;;    ("M-k" . #'tempel-prev))
+;;   :hook (corfu-mode . gatsby>>enable-tempel)
+;;   :commands (tempel--templates)
+;;   :init
+;;   ;; TODO: how to make sure that this is always the first in the `completion-at-point-functions' list?
+;;   (defun gatsby>>enable-tempel ()
+;;     (setq-local completion-at-point-functions `(gatsby>tempel-capf ,@completion-at-point-functions)))
 
-  (defun gatsby>tempel-capf ()
-    "CAPF that only complete the snippet names (and do not expand). If there's exact match, expand"
-    (when-let ((bounds (bounds-of-thing-at-point 'symbol)))
-      (let* ((name (buffer-substring-no-properties
-                    (car bounds) (cdr bounds)))
-             (sym (intern-soft name))
-             (templates (tempel--templates)))
-        (if-let ((template (assq sym templates)))
-            ;; exact match - expand
-            (list (car bounds) (cdr bounds) (list template)
-                  :category 'tempel
-                  :exclusive 'no
-                  :exit-function (apply-partially #'tempel--exit templates nil))
-          (let ((template-names (mapcar #'car templates)))
-            (list (car bounds) (cdr bounds) template-names
-                  :category 'templ
-                  :company-kind (lambda (_) 'snippet)
-                  :exclusive 'no
-                  :company-doc-buffer
-                  (apply-partially #'tempel--info-buffer templates
-                                   (lambda (elts)
-                                     (insert (tempel--print-template elts))
-                                     (tempel--insert-doc elts)
-                                     (current-buffer)))
-                  :company-location
-                  (apply-partially #'tempel--info-buffer templates
-                                   (lambda (elts)
-                                     (pp (cl-loop for x in elts
-                                                  until (keywordp x) collect x)
-                                         (current-buffer))
-                                     (tempel--insert-doc elts)
-                                     (list (current-buffer))))
-                  :annotation-function
-                  (and tempel-complete-annotation
-                       (apply-partially #'tempel--annotate
-                                        templates tempel-complete-annotation " ")))))))))
+;;   (defun gatsby>tempel-capf ()
+;;     "CAPF that only complete the snippet names (and do not expand). If there's exact match, expand"
+;;     (when-let ((bounds (bounds-of-thing-at-point 'symbol)))
+;;       (let* ((name (buffer-substring-no-properties
+;;                     (car bounds) (cdr bounds)))
+;;              (sym (intern-soft name))
+;;              (templates (tempel--templates)))
+;;         (if-let ((template (assq sym templates)))
+;;             ;; exact match - expand
+;;             (list (car bounds) (cdr bounds) (list template)
+;;                   :category 'tempel
+;;                   :exclusive 'no
+;;                   :exit-function (apply-partially #'tempel--exit templates nil))
+;;           (let ((template-names (mapcar #'car templates)))
+;;             (list (car bounds) (cdr bounds) template-names
+;;                   :category 'templ
+;;                   :company-kind (lambda (_) 'snippet)
+;;                   :exclusive 'no
+;;                   :company-doc-buffer
+;;                   (apply-partially #'tempel--info-buffer templates
+;;                                    (lambda (elts)
+;;                                      (insert (tempel--print-template elts))
+;;                                      (tempel--insert-doc elts)
+;;                                      (current-buffer)))
+;;                   :company-location
+;;                   (apply-partially #'tempel--info-buffer templates
+;;                                    (lambda (elts)
+;;                                      (pp (cl-loop for x in elts
+;;                                                   until (keywordp x) collect x)
+;;                                          (current-buffer))
+;;                                      (tempel--insert-doc elts)
+;;                                      (list (current-buffer))))
+;;                   :annotation-function
+;;                   (and tempel-complete-annotation
+;;                        (apply-partially #'tempel--annotate
+;;                                         templates tempel-complete-annotation " ")))))))))
 
-(use-package eglot-tempel
-  :ensure (:host github :repo "fejfighter/eglot-tempel")
-  :hook (elpaca-after-init . eglot-tempel-mode))
+;; (use-package eglot-tempel
+;;   :ensure (:host github :repo "fejfighter/eglot-tempel")
+;;   :hook (elpaca-after-init . eglot-tempel-mode))
 
 ;; (use-package lspce
 ;;   ;; TODO: find a way to allow elpaca to accept `(expand-file-name ".cargo/bin/cargo" gatsby>dotfiles-repo-location)'
