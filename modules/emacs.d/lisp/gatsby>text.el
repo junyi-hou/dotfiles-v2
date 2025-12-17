@@ -18,7 +18,7 @@
 
   ;; lsp
   (with-eval-after-load 'eglot
-    (add-to-list 'eglot-server-programs '(markdown-ts-mode "iwes")))
+    (add-to-list 'eglot-server-programs '(markdown-ts-mode "markdown-oxide")))
   )
 
 (use-package typst-ts-mode

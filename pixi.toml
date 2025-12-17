@@ -30,6 +30,4 @@ ripgrep = "*"
 harper = "*"
 tinymist = "*"
 bash-language-server = "*"
-
-[tasks]
-install-markdown-lsp = "cargo install iwe iwes"
+markdown-oxide = "*"
