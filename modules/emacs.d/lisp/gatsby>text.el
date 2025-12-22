@@ -51,5 +51,64 @@
    ("SPC r r" . #'typst-ts-compile-and-preview)
    ("SPC r o" . #'typst-ts-preview)))
 
+(gatsby>use-internal-pacakge org
+  :defer t
+  :config
+
+  (defun gatsby>org-show-block (&optional element)
+    "Open folded elements at point."
+    (interactive)
+    (let* ((element (or element (org-element-at-point)))
+           (element-type (org-element-type element)))
+
+      ;; (message (format "current element type is %s" element-type))
+      (cond
+       ((eq element-type 'org-data) (message "No foldable element at point"))
+
+       ((memq element-type '(src-block special-block example-block export-block dynamic-block))
+        (save-excursion
+          (goto-char (org-element-begin element))
+          (org-fold-hide-block-toggle 'off)))
+
+       ((memq element-type '(drawer property-drawer))
+        (save-excursion
+          (goto-char (org-element-begin element))
+          (org-fold-hide-drawer-toggle 'off)))
+
+       ((memq element-type '(section headline)) (evil-open-fold))
+
+       (t (gatsby>org-show-block (org-element-parent element))))))
+
+  (defun gatsby>org-hide-block (&optional element)
+    "Hide/fold elements at point."
+    (interactive)
+    (let* ((element (or element (org-element-at-point)))
+           (element-type (org-element-type element)))
+      (message "current element is a %s" element-type)
+
+      (cond
+       ((eq element-type 'org-data) (message "No foldable element at point"))
+
+       ((memq element-type '(src-block special-block example-block export-block dynamic-block))
+        (save-excursion
+          (goto-char (org-element-begin element))
+          (org-fold-hide-block-toggle t)))
+
+       ((memq element-type '(drawer property-drawer))
+        (save-excursion
+          (goto-char (org-element-begin element))
+          (org-fold-hide-drawer-toggle t)))
+
+       ((memq element-type '(section headline)) (evil-close-fold))
+
+       (t (gatsby>org-hide-block (org-element-parent element))))))
+
+  :evil-bind
+  ((:maps org-mode-map :states (normal visual))
+   ("z o" . #'gatsby>org-show-block)
+   ("z c" . #'gatsby>org-hide-block)
+   ("<" . #'org-previous-visible-heading)
+   (">" . #'org-next-visible-heading)))
+
 (provide 'gatsby>text)
 ;;; gatsby>text.el ends here

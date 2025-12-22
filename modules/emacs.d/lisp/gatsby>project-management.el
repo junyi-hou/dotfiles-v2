@@ -126,12 +126,11 @@
 
 ;; This is a missing dependency in magit
 (use-package transient
-  :defer t
   :ensure (:host github :repo "magit/transient"))
 
 (use-package magit
   :ensure (:host github :repo "magit/magit")
-  :after transient
+  :demand t
   :hook ((evil-mode . (lambda () (gatsby>>put-mode-to-evil-state '(magit-status-mode
                                                                    magit-diff-mode
                                                                    magit-log-mode
@@ -247,8 +246,8 @@
    (">" . #'magit-section-forward-sibling)
    ("<" . #'magit-section-backward-sibling)
    ("`" . #'magit-dispatch)
-   ("zo" . #'magit-section-show)
-   ("zc" . #'magit-section-hide)
+   ("z o" . #'magit-section-show)
+   ("z c" . #'magit-section-hide)
    ("RET" . #'gatsby>magit-visit-thing-at-point)
 
    (:maps (magit-status-mode-map magit-diff-mode-map magit-log-mode-map magit-revision-mode-map) :states motion)

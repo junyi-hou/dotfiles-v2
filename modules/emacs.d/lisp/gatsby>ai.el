@@ -6,111 +6,110 @@
 
 (require 'gatsby>>utility)
 
-(use-package aidermacs
-  :ensure (:host github :repo "MatthewZMD/aidermacs")
+
+(use-package gptel
+  :ensure (:host github :repo "karthink/gptel")
   :custom
-  ;; I actually like comint backend more
-  ;; (aidermacs-backend 'vterm)
-  (aidermacs-program (expand-file-name ".venv/bin/aider" gatsby>dotfiles-repo-location))
-  (aidermacs-default-model "openrouter/anthropic/claude-sonnet-4.5:floor")
-  :init
-
-  ;; display chat window always in the side window
-  (add-to-list 'display-buffer-alist '("^\\*aidermacs:\\(.+?\\)\\*"
-                                       (display-buffer-in-side-window)
-                                       (side . right)
-                                       (slot . 0)
-                                       (window-width . 0.25)
-                                       (preserve-size . (t . nil))))
-
-  ;; display file action window always in the bottom
-  (add-to-list 'display-buffer-alist '((derived-mode . aidermacs-file-diff-selection-mode)
-                                       (display-buffer-in-side-window)
-                                       (side . bottom)
-                                       (slot . 1)
-                                       (window-height . 10)
-                                       (preserve-size . (nil . t))))
-
+  (gptel-model "anthropic/claude-sonnet-4.5")
+  (gptel-use-header-line nil)
+  (gptel-cache t)
+  (gptel-use-tools t)
+  (gptel-display-buffer-action '((side . right)
+                                 (slot . 0)
+                                 (window-width . 0.25)
+                                 (preserve-size . (t . nil))))
+  (gptel-default-mode 'org-mode)
+  :hook
+  (gptel-post-response . (lambda (&rest _) (evil-normal-state)))
   :config
+
   (defun gatsby>>get-ai-api-key ()
     "run passage to get the openai_api_key. Return nil if no key is found"
-    (let ((process-environment
-           (cons (format "PASSAGE_AGE=%s" (expand-file-name ".cargo/bin/rage" gatsby>dotfiles-repo-location))
-                 process-environment))
-          (output-buffer (generate-new-buffer "*cmd-output*")))
-      (unwind-protect
-          (when (eq 0 (call-process-shell-command
-                       (format "%s show openrouter-api" (expand-file-name ".tools/bin/passage" gatsby>dotfiles-repo-location)) nil output-buffer nil))
-            (prog1
-                (with-current-buffer output-buffer
-                  (string-trim (buffer-string)))
-              (kill-buffer output-buffer))))))
+    (thread-first "direnv exec %s passage show openrouter-api"
+                  (format (expand-file-name gatsby>dotfiles-repo-location))
+                  (shell-command-to-string)
+                  (string-trim)
+                  (string-split "\n")
+                  (last)
+                  (car)))
 
-  (gatsby>defcommand gatsby>start-aider-session (subtree-only-p)
-    (let ((api (format "openrouter=%s" (gatsby>>get-ai-api-key)))
-          (project (project-current)))
-      (unless api
-        (user-error "Valid API keys not found"))
+  (setq gptel-backend (gptel-make-openai "OpenRouter"
+                        :host "openrouter.ai"
+                        :endpoint "/api/v1/chat/completions"
+                        :stream t
+                        :key #'gatsby>>get-ai-api-key
+                        :models '(anthropic/claude-sonnet-4.5)))
 
-      (unless project
-        (user-error "Not inside a project"))
+  (defun gatsby>>display-gptel-window (fn &rest args)
+    (cl-letf (((symbol-function #'display-buffer)
+               (lambda (buffer-or-name &rest _)
+                 (display-buffer-in-side-window
+                  buffer-or-name
+                  '((side . right)
+                    (slot . 0)
+                    (window-width . 0.25))))))
+      (let ((buffer (apply fn args)))
+        (when buffer
+          (with-current-buffer buffer
+            (goto-char (point-max))
+            (evil-insert-state))
+          (when-let ((window (get-buffer-window buffer)))
+            (select-window window)))
+        buffer)))
 
-      (let* ((context-file (expand-file-name (expand-file-name "README.md" (project-root project))))
-             (aidermacs-extra-args (if (file-exists-p context-file) `(,@aidermacs-extra-args "--read" ,context-file) aidermacs-extra-args))
-             (aidermacs-extra-args `(,@aidermacs-extra-args "--api-key" ,api))
-             (aidermacs-extra-args (if subtree-only-p `(,@aidermacs-extra-args "--subtree-only") aidermacs-extra-args)))
-        (aidermacs-run))))
-
-  ;; until we have smerge backend
-  (defun gatsby>>ediff-to-smerge (buffer1 buffer2)
-    (let* ((content1 (with-current-buffer buffer1 (buffer-string)))
-           (content2 (with-current-buffer buffer2 (buffer-string)))
-           (a (make-temp-file "diff-buffer1-"))
-           (b (make-temp-file "diff-buffer2-"))
-           (out (make-temp-file "diff-buffer-out-")))
-      ;; Write contents to temp files for diff
-      (unwind-protect
-          (progn
-            (with-temp-file a
-              (insert content1))
-            (with-temp-file b
-              (insert content2))
-            ;; Run diff with unified format and get output
-            (let ((diff-output (shell-command-to-string (format "git merge-file -L %s -L B -L %s -p %s %s %s && cat %s" a b a out b out))))
-              ;; Put diff output in second buffer
-              (with-current-buffer buffer2
-                (erase-buffer)
-                (insert diff-output)
-                (smerge-start-session)
-                (message "Diff output inserted and smerge-mode enabled in buffer %S" 
-                         buffer2))
-              (switch-to-buffer-other-window buffer2)))
-        ;; Cleanup temp files
-        (delete-file a)
-        (delete-file b))))
-
-  (advice-add #'aidermacs--show-ediff-for-file
-              :around (defun gatsby>>aidermacs-use-smerge (oldfun &rest r)
-                        (cl-letf (((symbol-function #'ediff-buffers) #'gatsby>>ediff-to-smerge))
-                          (apply oldfun r))))
-
-  ;; allow non-vc project root
-  ;; can come in handy in large projects
-  (advice-add #'aidermacs-project-root :override
-              (lambda ()
-                (or (project-root (project-current))
-                    (when buffer-file-name
-                      (file-name-directory buffer-file-name))
-                    default-directory)))
+  (advice-add #'gptel :around #'gatsby>>display-gptel-window)
 
   :evil-bind
-  ((:maps normal)
-   ("SPC a" . #'gatsby>start-aider-session)
-   ("`" . #'aidermacs-transient-menu)
-   (:maps aidermacs-file-diff-selection-mode-map :states normal)
-   ("q" . #'aidermacs--file-diff-selection-quit)
-   (:maps aidermacs-comint-mode-map :states normal)
+  ((:maps (normal visual))
+   ("SPC a" . nil)
+   ("SPC a a" . #'gptel)
+   ("SPC a r" . #'gptel-rewrite)
+   ("SPC a C-g" . #'gptel-abort)
+   ("`" . #'gptel-menu)
+   (:maps gptel-mode-map)
+   ("M-RET" . #'gptel-send)
+   (:maps gptel-mode-map :states normal)
    ("q" . #'delete-window)))
+
+;; tools
+(use-package gptel-agent
+  :ensure (:host github :repo "karthink/gptel-agent" :files (:defaults "agents"))
+  :config
+  (gptel-agent-update)
+
+  (gatsby>defcommand gatsby>gptel-maybe-agent (agent)
+    (if agent
+        (let ((current-prefix-arg nil))
+         (call-interactively #'gptel-agent))
+      (call-interactively #'gptel)))
+
+  :evil-bind
+  ((:maps (normal visual))
+   ([remap gptel] . #'gatsby>gptel-maybe-agent)))
+
+;; coding agent
+(use-package macher
+  :ensure (:host github :repo "kmontag/macher")
+  :config
+  (macher-install)
+
+  (add-to-list
+   'display-buffer-alist
+   '("\\*macher:.*\\*"
+     (display-buffer-in-side-window)
+     (side . right)
+     (slot . 0)
+     (window-width . 0.25)
+     (preserve-size . (t . nil))))
+
+  :evil-bind
+  ((:maps (normal visual))
+   ("SPC a i" . #'macher-implement)
+   ("SPC a q" . #'macher-discuss)
+   (:maps diff-mode-map :states normal)
+   ("A" . #'diff-apply-hunk)
+   ("r" . #'macher-revise)))
+
 
 (provide 'gatsby>ai)
 ;;; gatsby>ai.el ends here
