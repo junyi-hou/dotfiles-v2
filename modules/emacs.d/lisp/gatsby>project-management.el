@@ -246,6 +246,8 @@
    (">" . #'magit-section-forward-sibling)
    ("<" . #'magit-section-backward-sibling)
    ("`" . #'magit-dispatch)
+   ;; this gets shadowed
+   ("C-j" . #'windmove-down)
    ("z o" . #'magit-section-show)
    ("z c" . #'magit-section-hide)
    ("RET" . #'gatsby>magit-visit-thing-at-point)

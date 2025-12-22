@@ -45,10 +45,10 @@
     (split-window-vertically) (evil-window-down 1))
 
   (gatsby>defcommand gatsby>evil-visual-tab ()
-    "Indent region if in visual-line-mode, otherwise select contains inside a pair of tags via `evil-jump-item'"
+    "Indent region if in visual-line-mode, otherwise expand the selections via `er/expand-region'"
     (if (eq evil-visual-selection 'line)
         (indent-region (region-beginning) (region-end))
-      (evil-jump-item)))
+      (call-interactively #'er/expand-region)))
 
   (gatsby>defcommand gatsby>switch-to-message ()
     (gatsby>switch-to-buffer-new-window (get-buffer-create "*Messages*")))

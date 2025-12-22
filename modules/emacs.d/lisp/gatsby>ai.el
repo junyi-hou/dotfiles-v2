@@ -107,7 +107,8 @@
    ("SPC a i" . #'macher-implement)
    ("SPC a q" . #'macher-discuss)
    (:maps diff-mode-map :states normal)
-   ("A" . #'diff-apply-hunk)
+   ("a" . #'diff-apply-hunk)
+   ("q" . #'kill-buffer-and-window)
    ("r" . #'macher-revise)))
 
 
