@@ -12,6 +12,12 @@
   (vc-handled-backends '(Git))
   (tramp-use-scp-direct-remote-copying t)
   (tramp-copy-size-limit (* 1024 1024))
+  (tramp-chunksize 500)
+  (tramp-ssh-controlmaster-options
+   (concat
+    "-o ControlPath=/tmp/ssh-ControlPath-%%r@%%h:%%p "
+    "-o ControlMaster=auto -o ControlPersist=yes"))
+  (tramp-use-connection-share t)
   (tramp-verbose 2)
   ;; enable envrc in tramp
   (envrc-remote t)
