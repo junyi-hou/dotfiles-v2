@@ -132,7 +132,7 @@ at point-max."
         (gatsby>comint-eval-string (buffer-substring-no-properties b e)))))
 
   (gatsby>defcommand gatsby>comint-insert-cell-separator (markdown)
-    (insert (format "\n%s +" comment-start))
+    (insert (format "\n%s +" (string-trim comment-start)))
     (when markdown (insert " [markdown]"))
     (insert "\n")
     (when markdown
@@ -198,7 +198,7 @@ at point-max."
     :keymap gatsby>jupyter-managed-mode-map)
 
   (gatsby>defcommand gatsby>jupyter-insert-cell-separator (markdown)
-    (insert (format "\n%s +" comment-start))
+    (insert (format "\n%s +" (string-trim comment-start)))
     (when markdown (insert " [markdown]"))
     (insert "\n")
     (when markdown
