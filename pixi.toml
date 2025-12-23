@@ -15,8 +15,8 @@ all = ["global"]
 python = ">=3.12"
 pytest = "*"
 rust = "*"
-# aider-chat = "*" # TODO - this does not work
-basedpyright = "*"
+ty = "*"
+ruff = "*"
 jupyter = "*"
 
 
@@ -25,9 +25,13 @@ rage = "*"
 exa = "*"
 fd-find = "*"
 ripgrep = "*"
+pip = "*"
 
 # lsp
 harper = "*"
 tinymist = "*"
 bash-language-server = "*"
 markdown-oxide = "*"
+
+[tasks]
+install-rass = "pixi run --environment all 'pip install rassumfrassum'"

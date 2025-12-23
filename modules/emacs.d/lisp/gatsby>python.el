@@ -24,7 +24,7 @@
 
   ;; lsp
   (with-eval-after-load 'eglot
-   (add-to-list 'eglot-server-programs '(python-ts-mode "basedpyright-langserver" "--stdio")))
+   (add-to-list 'eglot-server-programs '(python-ts-mode "rass" "python")))
 
   :evil-bind
   ((:maps python-ts-mode-map :states visual)
