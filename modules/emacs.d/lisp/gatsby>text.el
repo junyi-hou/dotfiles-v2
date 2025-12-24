@@ -53,8 +53,8 @@
 
 (gatsby>use-internal-pacakge org
   :defer t
+  :hook (org-mode . corfu-mode)
   :config
-
   (defun gatsby>org-show-block (&optional element)
     "Open folded elements at point."
     (interactive)

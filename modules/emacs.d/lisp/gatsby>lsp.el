@@ -156,14 +156,6 @@ Insert the current selection when
 ;;   :ensure (:host github :repo "fejfighter/eglot-tempel")
 ;;   :hook (elpaca-after-init . eglot-tempel-mode))
 
-;; (use-package lspce
-;;   ;; TODO: find a way to allow elpaca to accept `(expand-file-name ".cargo/bin/cargo" gatsby>dotfiles-repo-location)'
-;;   ;; this won't work now since elpaca does
-;;   ;; `emacs -Q' when building
-;;   :ensure (:host github :repo "zbelial/lspce"
-;;                  :files (:defaults)
-;;                  :pre-build (("/User/dad/Projects/dotfiles/.cargo/bin/cargo" "build" "--release"))))
-
 (gatsby>use-internal-pacakge xref
   :demand t
   :custom
@@ -172,6 +164,7 @@ Insert the current selection when
   (xref-show-xrefs-function #'consult-xref)
   :evil-bind
   ((:maps (normal visual motion))
+   ("SPC r" . nil)
    ("SPC r l" . #'xref-find-definitions)
    ("SPC r L" . #'xref-find-references)
    ("SPC r b" . #'xref-go-back)

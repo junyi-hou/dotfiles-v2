@@ -128,6 +128,9 @@
 (use-package transient
   :ensure (:host github :repo "magit/transient"))
 
+;; TODO: replace magit with vc
+;; ref: https://github.com/jixiuf/vmacs/blob/master/config/emacs/lazy/vcgit.el
+;; and https://github.com/jixiuf/vmacs/blob/master/config/emacs/lazy/lazy-version-control.el
 (use-package magit
   :ensure (:host github :repo "magit/magit")
   :demand t
