@@ -31,5 +31,9 @@
    ("SPC h k" . #'helpful-key)
    ("SPC h v" . #'helpful-variable)))
 
+(use-package prettier-elisp
+  :ensure (:host github :repo "KarimAziev/prettier-elisp")
+  :hook (emacs-lisp-mode . prettier-elisp-buffer-mode))
+
 (provide 'gatsby>elisp)
 ;;; gatsby>elisp.el ends here
