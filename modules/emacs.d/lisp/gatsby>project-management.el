@@ -281,7 +281,7 @@
   (gatsby>diff-hunk-heading-face ((t (:extend t
                                       :bold t
                                       :foreground "black"
-                                      :background ,(doom-color 'magenta)))))
+                                      :background "pink"))))
   :hook
   (diff-mode . gatsby>>setup-diff-hunk-highlighting)
   :config
