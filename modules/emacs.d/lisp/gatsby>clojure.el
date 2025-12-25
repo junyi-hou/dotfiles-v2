@@ -23,7 +23,29 @@
 
   (defun gatsby>>clojure-setup-repl ()
     (setq-local gatsby>comint-command "clj")
-    (setq-local comment-start ";;")))
+    (setq-local comment-start ";;"))
+
+  :config
+  (gatsby>defcommand gatsby>clojure-run-test ()
+    (let ((default-directory (or
+                              (and (project-current) (project-root (project-current)))
+                              default-directory)))
+      (message "running tests...")
+      ;; assume the project is initialized using `neil new`
+      (compile "clj -T:build test")))
+  :evil-bind
+  ((:maps clojure-ts-mode-map :states normal)
+   ("SPC r t" . #'gatsby>clojure-run-test)))
+
+;; TODO: use this or cider for better completion, etc to have better completion/doc supports
+;; (use-package inf-clojure
+;;   :ensure (:host github :repo "clojure-emacs/inf-clojure")
+;;   :custom
+;;   (inf-clojure-custom-startup "clojure -M:compliment")
+;;   (inf-clojure-custom-repl-type 'clojure)
+;;   :init
+;;   (inf-clojure-update-feature 'clojure 'completion "(compliment.core/completions \"%s\")")
+;;   )
 
 ;; This enables LSP to check codes in jar file
 (use-package jarchive
