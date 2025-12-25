@@ -11,15 +11,11 @@
   (vc-follow-symlinks t)
   :config
   ;; Create a new project type whose roots are defined in `gatsby>project-list'.
-  
   (defvar gatsby>project-list '()
     "List of project root directories for custom project detection.")
-
   (cl-defstruct gatsby>project root)
-
   (cl-defmethod project-root ((project gatsby>project))
     (gatsby>project-root project))
-
   (defun gatsby>project-try (dir)
     "Check if DIR is a subfolder of any paths defined in `gatsby>project-list'."
     (when gatsby>project-list
@@ -30,16 +26,15 @@
                                 (string-prefix-p expanded-project expanded-dir))
                        (make-gatsby>project :root expanded-project))))
                  gatsby>project-list))))
-
   (add-hook 'project-find-functions #'gatsby>project-try -10))
 
-(gatsby>use-internal-pacakge smerge-mode
-  :evil-bind
-  ((:maps (normal visual))
-   ("SPC ]" . #'smerge-next)
-   ("SPC [" . #'smerge-prev)
-   ("SPC m" . #'smerge-keep-current)
-   ("SPC M" . #'smerge-keep-all)))
+;; (gatsby>use-internal-pacakge smerge-mode
+;;   :evil-bind
+;;   ((:maps (normal visual))
+;;    ("SPC ]" . #'smerge-next)
+;;    ("SPC [" . #'smerge-prev)
+;;    ("SPC m" . #'smerge-keep-current)
+;;    ("SPC M" . #'smerge-keep-all)))
 
 ;; (use-package projtree
 ;;  :ensure (:host github :repo "petergardfjall/emacs-projtree")
@@ -79,7 +74,7 @@
     (defun gatsby>>update-jupyter-kernelspecs (&rest _)
       "Update kernelspecs before running any REPL."
       (jupyter-available-kernelspecs 'refresh))
-    
+
     (advice-add #'jupyter-run-repl :before #'gatsby>>update-jupyter-kernelspecs))
 
   (defun gatsby>>envrc-update-after-cd (&rest _)
@@ -123,26 +118,29 @@
    ("SPC n a" . #'envrc-allow)
    ("SPC n l" . #'gatsby>envrc-log-buffer)))
 
-
 ;; This is a missing dependency in magit
 (use-package transient
-  :ensure (:host github :repo "magit/transient"))
+  :ensure (:host github
+           :repo "magit/transient"))
 
 ;; TODO: replace magit with vc
 ;; ref: https://github.com/jixiuf/vmacs/blob/master/config/emacs/lazy/vcgit.el
 ;; and https://github.com/jixiuf/vmacs/blob/master/config/emacs/lazy/lazy-version-control.el
 (use-package magit
-  :ensure (:host github :repo "magit/magit")
+  :ensure (:host github
+           :repo "magit/magit")
   :demand t
-  :hook ((evil-mode . (lambda () (gatsby>>put-mode-to-evil-state '(magit-status-mode
-                                                                   magit-diff-mode
-                                                                   magit-log-mode
-                                                                   magit-revision-mode
-                                                                   magit-revision-mode
-                                                                   magit-process-mode
-                                                                   git-rebase-mode)
-                                                                 'motion)))
-         (evil-mode . (lambda () (gatsby>>put-mode-to-evil-state 'git-commit-mode 'insert))))
+  :hook ((evil-mode . (lambda ()
+                        (gatsby>>put-mode-to-evil-state '(magit-status-mode
+                                                          magit-diff-mode
+                                                          magit-log-mode
+                                                          magit-revision-mode
+                                                          magit-revision-mode
+                                                          magit-process-mode
+                                                          git-rebase-mode)
+                                                        'motion)))
+         (evil-mode . (lambda ()
+                        (gatsby>>put-mode-to-evil-state 'git-commit-mode 'insert))))
   :custom
   (magit-status-section-hook '(magit-insert-status-headers
                                magit-insert-untracked-files
@@ -158,29 +156,28 @@
     (if increase
         (setq-local magit-log-section-commit-count (+ magit-log-section-commit-count n))
       (setq-local magit-log-section-commit-count (- magit-log-section-commit-count n)))
-
     (let ((inhibit-read-only t)
-          (magit-section-initial-visibility-alist `(,@magit-section-initial-visibility-alist (recent . show)))
+          (magit-section-initial-visibility-alist
+           `(,@magit-section-initial-visibility-alist
+             (recent . show)))
           (point (point)))
       (erase-buffer)
       (magit-status-refresh-buffer)
       (goto-char (min (point-max) point))))
-
   (defun gatsby>magit-increase-number-of-commits (&optional n)
     "Increase the current shown number of commits by N.
   If N is not given, increase by 1"
     (interactive "p")
     (gatsby>>magit-change-number-of-commits n t))
-
   (defun gatsby>magit-decrease-number-of-commits (&optional n)
     "Decrease the current shown number of commits by N.
   If N is not given, increase by 1"
     (interactive "p")
     (gatsby>>magit-change-number-of-commits n nil))
-
   (gatsby>defcommand gatsby>magit-visit-thing-at-point ()
     "Get file at point in magit buffers."
-    (cond ((magit-section-match '([file] [hunk]))
+    (cond ((magit-section-match '([file]
+                                  [hunk]))
            (let ((file (magit-file-at-point t)))
              (unless file
                (error "No file at point"))
@@ -199,7 +196,6 @@
           ;;  (call-interactively #'forge-visit-topic))
           ;; fallback - `magit-visit-thing'
           (t 'magit-visit-thing)))
-
   (gatsby>defcommand gatsby>magit-refresh-status (all-section)
     (if (and all-section (eq major-mode 'magit-status-mode))
         (let ((magit-status-section-hook '(magit-insert-status-headers
@@ -225,27 +221,26 @@
           (magit-status-refresh-buffer)
           (goto-char (min (point-max) point)))
       (call-interactively #'magit-refresh-buffer)))
-
   :evil-bind
   ((:maps normal)
    ("SPC g g" . #'magit-status)
    ("SPC g l" . #'magit-log-buffer-file)
-
-   (:maps magit-status-mode-map :states motion)
+   (:maps magit-status-mode-map
+    :states motion)
    ("+" . #'gatsby>magit-increase-number-of-commits)
    ("-" . #'gatsby>magit-decrease-number-of-commits)
    ("d" . #'magit-discard)
    ("s" . #'magit-stage)
    ("u" . #'magit-unstage)
    ("p" . #'magit-push)
-
-   (:maps magit-hunk-section-map :states motion)
+   (:maps magit-hunk-section-map
+    :states motion)
    ("C-j" . #'windmove-down)
-
-   (:maps magit-status-mode-map :states visual)
+   (:maps magit-status-mode-map
+    :states visual)
    ("u" . #'magit-unstage)
-
-   (:maps (magit-status-mode-map magit-diff-mode-map magit-log-mode-map) :states motion)
+   (:maps (magit-status-mode-map magit-diff-mode-map magit-log-mode-map)
+    :states motion)
    (">" . #'magit-section-forward-sibling)
    ("<" . #'magit-section-backward-sibling)
    ("`" . #'magit-dispatch)
@@ -254,11 +249,12 @@
    ("z o" . #'magit-section-show)
    ("z c" . #'magit-section-hide)
    ("RET" . #'gatsby>magit-visit-thing-at-point)
-
-   (:maps (magit-status-mode-map magit-diff-mode-map magit-log-mode-map magit-revision-mode-map) :states motion)
+   (:maps (magit-status-mode-map magit-diff-mode-map magit-log-mode-map
+                                 magit-revision-mode-map)
+    :states motion)
    ("SPC r" . #'gatsby>magit-refresh-status)
-
-   (:maps git-rebase-mode-map :states motion)
+   (:maps git-rebase-mode-map
+    :states motion)
    ("p" . #'git-rebase-pick)
    ("e" . #'git-rebase-edit)
    ("l" . #'git-rebase-label)
@@ -268,6 +264,76 @@
    ("f" . #'git-rebase-fixup)
    ("M-j" . #'git-rebase-move-line-down)
    ("M-k" . #'git-rebase-move-line-up)))
+
+(gatsby>use-internal-pacakge diff-mode
+  :defer t
+  :custom-face
+  (gatsby>diff-dim-face ((((class color)
+                           (background light))
+                          :extend t
+                          :foreground "grey50"
+                          :background "grey95")
+                         (((class color)
+                           (background dark))
+                          :extend t
+                          :foreground "grey70"
+                          :background "grey20")))
+  (gatsby>diff-hunk-heading-face ((t (:extend t
+                                      :bold t
+                                      :foreground "black"
+                                      :background ,(doom-color 'magenta)))))
+  :hook
+  (diff-mode . gatsby>>setup-diff-hunk-highlighting)
+  :config
+  (advice-add #'diff-apply-hunk :after #'diff-kill-applied-hunks)
+  (defun gatsby>>highlight-current-diff-hunk ()
+    (when (eq major-mode 'diff-mode)
+      ;; Remove existing overlays
+      (remove-overlays (point-min)
+                       (point-max) 'gatsby>diff-dim-face t)
+      (remove-overlays (point-min)
+                       (point-max) 'gatsby>diff-hunk-heading-face t)
+      ;; Get bounds of current hunk
+      (let ((hunk-bounds (ignore-errors (diff-bounds-of-hunk))))
+        (when hunk-bounds
+          (let ((hunk-start (car hunk-bounds))
+                (hunk-end (cadr hunk-bounds)))
+            ;; Create overlay before current hunk
+            (when (> hunk-start (point-min))
+              (let ((ov (make-overlay (point-min) hunk-start)))
+                (overlay-put ov 'font-lock-face 'gatsby>diff-dim-face)
+                (overlay-put ov 'priority 2)
+                (overlay-put ov 'evaporate t)
+                (overlay-put ov 'gatsby>diff-dim-face t)))
+            ;; Create overlay after current hunk
+            (when (< hunk-end (point-max))
+              (let ((ov (make-overlay hunk-end (point-max))))
+                (overlay-put ov 'font-lock-face 'gatsby>diff-dim-face)
+                (overlay-put ov 'priority 2)
+                (overlay-put ov 'evaporate t)
+                (overlay-put ov 'gatsby>diff-dim-face t)))
+            ;; Highlight the hunk header
+            (save-excursion
+              (goto-char hunk-start)
+              (when (re-search-forward diff-hunk-header-re hunk-end t)
+                (let ((header-start (match-beginning 0))
+                      (header-end (1+ (match-end 0))))
+                  (let ((ov (make-overlay header-start header-end)))
+                    (overlay-put ov 'font-lock-face 'gatsby>diff-hunk-heading-face)
+                    (overlay-put ov 'priority 9)
+                    (overlay-put ov 'evaporate t)
+                    (overlay-put ov 'gatsby>diff-hunk-heading-face t))))))))))
+  (defun gatsby>>setup-diff-hunk-highlighting ()
+    (add-hook 'post-command-hook #'gatsby>>highlight-current-diff-hunk nil t))
+  :evil-bind
+  ((:maps diff-mode-map
+    :states normal)
+   (">" . #'diff-hunk-next)
+   ("<" . #'diff-hunk-prev)
+   ("a" . #'diff-apply-hunk)
+   ("s" . #'diff-split-hunk)
+   ("A" . #'diff-apply-buffer)
+   ("q" . #'kill-buffer-and-window)))
 
 (provide 'gatsby>project-management)
 ;;; gatsby>project-management.el ends here

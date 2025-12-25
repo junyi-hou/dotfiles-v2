@@ -19,6 +19,7 @@
                                  (window-width . 0.25)
                                  (preserve-size . (t . nil))))
   (gptel-default-mode 'org-mode)
+  (gptel-prompt-prefix-alist '((org-mode . "* ")))
   :hook
   (gptel-post-response . (lambda (&rest _) (evil-normal-state)))
   :config
@@ -68,8 +69,6 @@
   ((:maps (normal visual))
    ("SPC a" . nil)
    ("SPC a a" . #'gptel)
-   ("SPC a r" . #'gptel-rewrite)
-   ("SPC a C-g" . #'gptel-abort)
    ("`" . #'gptel-menu)
    (:maps gptel-mode-map)
    ("M-RET" . #'gptel-send)
@@ -101,10 +100,6 @@
    ("SPC a i" . #'macher-implement)
    ("SPC a q" . #'macher-discuss)
    (:maps diff-mode-map :states normal)
-   ("a" . #'diff-apply-hunk)
-   ("s" . #'diff-split-hunk)
-   ("A" . #'diff-apply-buffer)
-   ("q" . #'kill-buffer-and-window)
    ("r" . #'macher-revise)))
 
 
