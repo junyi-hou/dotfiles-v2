@@ -8,7 +8,9 @@
 
 ;; completion
 (use-package corfu
-  :ensure (:host github :repo "emacs-straight/corfu" :files ("*" "extensions/*.el" (:exclude ".git")))
+  :ensure (:host github
+           :repo "emacs-straight/corfu"
+           :files ("*" "extensions/*.el" (:exclude ".git")))
   :custom
   (corfu-cycle t)
   (corfu-preselect 'prompt)
@@ -23,24 +25,26 @@ Insert the current selection when
 1. there is only one candidate;
 2. last command is `gatsby>corfu-complete';
 3. last command is `corfu-next'or `corfu-previous'."
-    (if (memq last-command '(gatsby>corfu-complete corfu-complete corfu-next corfu-previous))
+    (if (memq last-command '(gatsby>corfu-complete corfu-complete corfu-next
+                             corfu-previous))
         (let ((corfu--index (max 0 corfu--index)))
-              (corfu-insert))
+          (corfu-insert))
       (corfu-expand)))
-
   ;; for some reason I cannot bind <TAB> to any different variables, let's just override that function
   (advice-add #'corfu-complete :override #'gatsby>corfu-complete)
-
   ;; If no completion is found, insert a tab:
   (defun gatsby>>insert-tab-if-no-compliaton-is-found ()
-    (when (save-excursion (skip-chars-backward " \t") (bolp)) (insert-tab)) nil)
-
+    (when (save-excursion
+            (skip-chars-backward " \t")
+            (bolp))
+      (insert-tab)) nil)
   ;; make sure `gatsby>>insert-tab-if-no-compliaton-is-found' is always the first element in `capf'
   (defun gatsby>>set-capf-order (&rest _)
-    (if-let ((tab (cl-find-if (lambda (it) (eq it #'gatsby>>insert-tab-if-no-compliaton-is-found)) completion-at-point-functions)))
+    (if-let ((tab (cl-find-if (lambda (it)
+                                (eq it #'gatsby>>insert-tab-if-no-compliaton-is-found))
+                              completion-at-point-functions)))
         (setq-local completion-at-point-functions `(gatsby>>insert-tab-if-no-compliaton-is-found ,@(cl-remove #'gatsby>>insert-tab-if-no-compliaton-is-found completion-at-point-functions)))
       (setq-local completion-at-point-functions `(gatsby>>insert-tab-if-no-compliaton-is-found ,@completion-at-point-functions))))
-
   :evil-bind
   ((:maps insert)
    ("<tab>" . #'completion-at-point)
@@ -56,7 +60,8 @@ Insert the current selection when
    ("<esc>" . #'corfu-popupinfo-toggle)))
 
 (use-package orderless
-  :ensure (:host github :repo "oantolin/orderless")
+  :ensure (:host github
+           :repo "oantolin/orderless")
   :custom
   (orderless-matching-styles '(orderless-prefixes orderless-literal orderless-regexp))
   (completion-styles '(orderless basic))
@@ -73,28 +78,32 @@ Insert the current selection when
   :init
   (setq eglot-server-programs nil)
   (defun gatsby>>maybe-format-buffer ()
-    (add-hook 'before-save-hook (defun gatsby>>maybe-format-before-save (&rest _)
-                                  (when (and (eglot-current-server)
-                                             (eglot-server-capable :documentFormattingProvider))
-                                    (eglot-format-buffer)))
+    (add-hook 'before-save-hook
+              (defun gatsby>>maybe-format-before-save (&rest _)
+                (when (and (eglot-current-server)
+                           (eglot-server-capable
+                            :documentFormattingProvider))
+                  (eglot-format-buffer)))
               nil
               t))
   :hook
   (eglot-managed-mode . gatsby>>maybe-format-buffer)
   (eglot-managed-mode . gatsby>>set-capf-order)
   :evil-bind
-  ((:maps (normal visual))
+  ((:maps (normal visual motion))
+   ("SPC" . nil)
+   ("SPC r" . nil)
    ("SPC r a" . #'eglot-code-actions)))
 
 (use-package consult-eglot
-  :ensure (:host github :repo "mohkale/consult-eglot")
+  :ensure (:host github
+           :repo "mohkale/consult-eglot")
   :config
   (gatsby>defcommand gatsby>consult-symbols-or-line (prefix)
     "Run `consult-lsp-file-symbols' if PREFIX, or `consult-line'."
     (if prefix
         (call-interactively #'consult-eglot-symbols)
       (call-interactively #'consult-outline)))
-
   :evil-bind
   ((:maps (motion normal))
    ([remap consult-outline] . #'gatsby>consult-symbols-or-line)))
@@ -164,6 +173,7 @@ Insert the current selection when
   (xref-show-xrefs-function #'consult-xref)
   :evil-bind
   ((:maps (normal visual motion))
+   ("SPC" . nil)
    ("SPC r" . nil)
    ("SPC r l" . #'xref-find-definitions)
    ("SPC r L" . #'xref-find-references)
@@ -186,18 +196,19 @@ Insert the current selection when
 
 ;; display flymake information in a childframe
 (use-package flymake-childframe
-  :ensure (:host github :repo "junyi-hou/flymake-childframe")
+  :ensure (:host github
+           :repo "junyi-hou/flymake-childframe")
   :hook ((flymake eglot-managed-mode) . flymake-childframe-mode))
 
 (use-package eldoc-mouse
-  :ensure (:host github :repo "huangfeiyu/eldoc-mouse")
+  :ensure (:host github
+           :repo "huangfeiyu/eldoc-mouse")
   :config
   (gatsby>defcommand gatsby>eldoc-pop ()
     "Use alternative poshandler, since the package did not provide this option."
     (cl-letf (((symbol-function #'posframe-poshandler-point-bottom-left-corner-upward)
                #'posframe-poshandler-point-bottom-left-corner))
       (call-interactively #'eldoc-mouse-pop-doc-at-cursor)))
-
   ;; enable transiant map
   ;; commands
   (defmacro gatsby>>eldoc-transiant-command (fn form)
@@ -206,20 +217,17 @@ Insert the current selection when
     `(gatsby>defcommand ,fn ()
        (let* ((frame
                (with-current-buffer (get-buffer-create eldoc-mouse-posframe-buffer-name)
-                 posframe--frame))
+                posframe--frame))
               (window
                (get-buffer-window
                 eldoc-mouse-posframe-buffer-name
                 frame)))
-         (with-selected-window window
-           ,form))))
-
+        (with-selected-window window
+         ,form))))
   (gatsby>>eldoc-transiant-command gatsby>eldoc-scroll-up
     (scroll-down (max 1 (/ (1- (window-height (selected-window))) 2))))
-
   (gatsby>>eldoc-transiant-command gatsby>eldoc-scroll-down
     (scroll-up (max 1 (/ (1- (window-height (selected-window))) 2))))
-
   (defconst gatsby>eldoc-transiant-map
     (let ((map (make-sparse-keymap)))
       (suppress-keymap map t)
@@ -228,26 +236,21 @@ Insert the current selection when
       (define-key map (kbd "C-u") #'gatsby>eldoc-scroll-up)
       (define-key map (kbd "C-d") #'gatsby>eldoc-scroll-down)
       map))
-
   (defvar gatsby>>eldoc-restore-keymap-fn nil
     "Controlling when transient map is enabled")
-
   (defun gatsby>>eldoc-enable-transiant-map (&rest _)
     (with-current-buffer (get-buffer-create eldoc-mouse-posframe-buffer-name)
       (setq-local gatsby>>eldoc-restore-keymap-fn
                   (set-transient-map
                    gatsby>eldoc-transiant-map t #'eldoc-mouse--hide-posframe))))
-
   (defun gatsby>>eldoc-disable-transiant-map (&rest _)
     (with-current-buffer (get-buffer-create eldoc-mouse-posframe-buffer-name)
       (let ((fn gatsby>>eldoc-restore-keymap-fn))
         (setq-local gatsby>>eldoc-restore-keymap-fn nil)
         (when (functionp fn)
-         (funcall fn)))))
-
+          (funcall fn)))))
   (advice-add #'eldoc-mouse--pop-doc :after #'gatsby>>eldoc-enable-transiant-map)
   (advice-add #'eldoc-mouse--hide-posframe :after #'gatsby>>eldoc-disable-transiant-map)
-
   :evil-bind
   ((:maps (normal visual motion))
    ("SPC r h" . #'gatsby>eldoc-pop)))
