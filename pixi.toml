@@ -32,6 +32,3 @@ harper = "*"
 tinymist = "*"
 bash-language-server = "*"
 markdown-oxide = "*"
-
-[tasks]
-install-rass = "pixi run --environment all 'pip install git+https://github.com/junyi-hou/rassumfrassum'"
