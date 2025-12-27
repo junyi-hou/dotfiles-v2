@@ -1,42 +1,42 @@
-if [[ "$INSIDE_EMACS" = 'vterm' ]] && [[ -n "${EMACS_VTERM_PATH}" ]] && [[ -f "${EMACS_VTERM_PATH}/etc/emacs-vterm-zsh.sh" ]]; then
-    source ''${EMACS_VTERM_PATH}/etc/emacs-vterm-zsh.sh
-fi
+# if [[ "$INSIDE_EMACS" = 'vterm' ]] && [[ -n "${EMACS_VTERM_PATH}" ]] && [[ -f "${EMACS_VTERM_PATH}/etc/emacs-vterm-zsh.sh" ]]; then
+#     source ''${EMACS_VTERM_PATH}/etc/emacs-vterm-zsh.sh
+# fi
 
 # alias
 alias ls="ls -G"
 alias ll="ls -alGh"
 alias ff="$EDITOR"
 
-# Custom cd function: cd without args goes to git root, or home if already at root/not in repo
-function cd() {
-    # If TERM is dumb, use builtin cd directly
-    if [[ "$TERM" = "dumb" ]]; then
-        builtin cd "$@"
-        return
-    fi
+# # Custom cd function: cd without args goes to git root, or home if already at root/not in repo
+# function cd() {
+#     # If TERM is dumb, use builtin cd directly
+#     if [[ "$TERM" = "dumb" ]]; then
+#         builtin cd "$@"
+#         return
+#     fi
 
-    if [[ $# -eq 0 ]]; then
-        # No arguments provided
-        local git_root=$(git rev-parse --show-toplevel 2>/dev/null)
+#     if [[ $# -eq 0 ]]; then
+#         # No arguments provided
+#         local git_root=$(git rev-parse --show-toplevel 2>/dev/null)
 
-        if [[ -n "$git_root" ]]; then
-            # Inside a git repo
-            if [[ "$PWD" = "$git_root" ]]; then
-                # Already at git root, go home
-                builtin cd "$HOME" && ls
-            else
-                # Not at git root, go to git root
-                builtin cd "$git_root" && ls
-            fi
-        else
-            # Not in a git repo, go home
-            builtin cd "$HOME" && ls
-        fi
-    else
-        # Arguments provided, use normal cd behavior
-        builtin cd "$@" && ls
-    fi
-}
+#         if [[ -n "$git_root" ]]; then
+#             # Inside a git repo
+#             if [[ "$PWD" = "$git_root" ]]; then
+#                 # Already at git root, go home
+#                 builtin cd "$HOME" && ls
+#             else
+#                 # Not at git root, go to git root
+#                 builtin cd "$git_root" && ls
+#             fi
+#         else
+#             # Not in a git repo, go home
+#             builtin cd "$HOME" && ls
+#         fi
+#     else
+#         # Arguments provided, use normal cd behavior
+#         builtin cd "$@" && ls
+#     fi
+# }
 
 # source existing zprofile file backed up if exists
 if [ -f "$HOME/.zshrc.backup" ]; then

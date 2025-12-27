@@ -6,10 +6,13 @@
 
 (require 'gatsby>>utility)
 
-;; TODO: migrate to termint + vterm?
+;; TODO: for vterm backend, need to use direnv exec DIR REPL-CMD to define the repl if it is only available locally
+;; TODO: link session with projects?
+;; TODO: find a way to unifying the termint--send-X commands so that we can use a macro to allow users to customize the keymap
 ;; (use-package termint
-;;   :ensure (:host github :repo "milanglacier/termint.el")
-;;   :custom (termint-))
+;;   :ensure (:host github :repo "junyi-hou/termint.el")
+;;   :custom (termint-backend 'vterm)
+;;   )
 
 (gatsby>use-internal-pacakge comint
   :config
