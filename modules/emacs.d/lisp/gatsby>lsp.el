@@ -90,10 +90,11 @@ Insert the current selection when
   (eglot-managed-mode . gatsby>>maybe-format-buffer)
   (eglot-managed-mode . gatsby>>set-capf-order)
   :evil-bind
-  ((:maps (normal visual motion))
-   ("SPC" . nil)
-   ("SPC r" . nil)
-   ("SPC r a" . #'eglot-code-actions)))
+  ;; ((:maps (normal visual motion))
+  ;;  ("SPC" . nil)
+  ;;  ("SPC r" . nil)
+  ;;  ("SPC r a" . #'eglot-code-actions))
+  )
 
 (use-package consult-eglot
   :ensure (:host github
@@ -171,14 +172,15 @@ Insert the current selection when
   (xref-prompt-for-identifier nil)
   (xref-show-definitions-function #'consult-xref)
   (xref-show-xrefs-function #'consult-xref)
-  :evil-bind
-  ((:maps (normal visual motion))
-   ("SPC" . nil)
-   ("SPC r" . nil)
-   ("SPC r l" . #'xref-find-definitions)
-   ("SPC r L" . #'xref-find-references)
-   ("SPC r b" . #'xref-go-back)
-   ("SPC r f" . #'xref-go-forward)))
+  ;; :evil-bind
+  ;; ((:maps (normal visual motion))
+  ;;  ("SPC" . nil)
+  ;;  ("SPC r" . nil)
+  ;;  ("SPC r l" . #'xref-find-definitions)
+  ;;  ("SPC r L" . #'xref-find-references)
+  ;;  ("SPC r b" . #'xref-go-back)
+  ;;  ("SPC r f" . #'xref-go-forward))
+  )
 
 ;; ;; TODO: until I figure out a way to install emacs-lsp-booster reliably
 ;; (use-package eglot-booster

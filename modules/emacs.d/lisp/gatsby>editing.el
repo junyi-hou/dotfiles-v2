@@ -90,7 +90,14 @@
    ("SPC o m" . #'gatsby>switch-to-message)
    ("SPC o s" . #'gatsby>eshell-open-or-switch)
    (:maps visual)
-   ("<tab>" . #'gatsby>evil-visual-tab)))
+   ("<tab>" . #'gatsby>evil-visual-tab)
+   ;; FIXME: `with-eval-after-load' does not work with xref and eglot for some reasons
+   (:maps (normal visual))
+   ("SPC r a" . #'eglot-code-actions)
+   ("SPC r l" . #'xref-find-definitions)
+   ("SPC r L" . #'xref-find-references)
+   ("SPC r b" . #'xref-go-back)
+   ("SPC r f" . #'xref-go-forward)))
 
 (use-package expand-region
   :ensure (expand-region
