@@ -67,21 +67,29 @@ Insert the current selection when
   (completion-category-overrides '((file (styles partial-completion)))))
 
 (use-package lsp-mode
-  :ensure (:host git
+  :ensure (:host github
            :repo "emacs-lsp/lsp-mode")
-  ;; :preface
-  ;; (setq lsp-use-plists t)
+  :preface
+  (setq lsp-use-plists t)
   :custom-face
   (lsp-face-highlight-read ((t :inherit underline)))
   (lsp-face-highlight-write ((t :inherit underline)))
   :custom
   ;; increase data read from subrocess
   (read-process-output-max (* 1024 1024))
+  ;; lsp functionalities
+  (lsp-diagnostics-provider :flymake)
+  (lsp-lens-enable nil)
+  (lsp-modeline-diagnostics-enable nil)
+  (lsp-modeline-workspace-status-enable nil)
+  (lsp-modeline-code-actions-enable nil)
   (lsp-headerline-breadcrumb-enable nil)
   (lsp-signature-render-documentation t)
   (lsp-signature-auto-activate nil)
   (lsp-enable-file-watchers nil)
   (lsp-enable-snippet nil)
+  (lsp-auto-guess-root t)
+  ;; UI
   :evil-bind
   ((:maps (normal visual))
    ("SPC r a" . #'lsp-execute-code-action)
