@@ -1,6 +1,5 @@
 DOTFILES_ROOT=$(dirname $(dirname "$(readlink -f "${(%):-%N}")"))
 
-
 # source existing zprofile file backed up if exists
 if [ -f "$HOME/.zprofile.backup" ]; then
     source "$HOME/.zprofile.backup"
