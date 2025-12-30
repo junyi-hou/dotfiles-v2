@@ -7,28 +7,30 @@ channels = ["conda-forge"]
 platforms = ["osx-arm64", "linux-64"]
 
 [environments]
-dev = ["global", "local"]
+dev = ["local"]
 all = ["global"]
 
 
 [feature.local.dependencies]
 python = ">=3.12"
 pytest = "*"
-rust = "*"
 ty = "*"
 ruff = "*"
 jupyter = "*"
 
 
 [feature.global.dependencies]
+python = "==3.12"
 rage = "*"
-exa = "*"
+eza = "*"
 fd-find = "*"
 ripgrep = "*"
-pip = "*"
 
 # lsp
 harper = "*"
 tinymist = "*"
 bash-language-server = "*"
 markdown-oxide = "*"
+
+[feature.global.pypi-dependencies]
+aider-chat = ">=0.86.0"
