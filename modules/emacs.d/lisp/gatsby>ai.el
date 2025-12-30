@@ -34,6 +34,8 @@
                                                (gatsby>>get-ai-api-key)))))
       (apply fn args)))
   (advice-add #'aider-run-aider :around #'gatsby>>aider-with-api)
+  ;; TODO:
+  ;; create an org-mode based intermediate layer
   :evil-bind
   ((:maps normal)
    ("SPC a a" . #'aider-run-aider)

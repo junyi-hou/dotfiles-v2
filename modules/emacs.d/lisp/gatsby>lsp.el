@@ -89,7 +89,20 @@ Insert the current selection when
   (lsp-enable-file-watchers nil)
   (lsp-enable-snippet nil)
   (lsp-auto-guess-root t)
-  ;; UI
+  :config
+  (gatsby>defcommand gatsby>lsp-toggle-format-before-save (&optional on)
+    "Toggle LSP format-before-save. With prefix arg ON, enable if positive."
+    (let ((enable (if on
+                      (> (prefix-numeric-value on) 0)
+                    (not (memq #'lsp-format-buffer before-save-hook)))))
+      (if enable
+          (when (lsp-feature? "textDocument/formatting")
+            (add-hook 'before-save-hook #'lsp-format-buffer nil t)
+            (message "LSP format-before-save enabled"))
+        (remove-hook 'before-save-hook #'lsp-format-buffer t)
+        (message "LSP format-before-save disabled"))))
+  :hook
+  (lsp-managed-mode . gatsby>lsp-toggle-format-before-save)
   :evil-bind
   ((:maps (normal visual))
    ("SPC r a" . #'lsp-execute-code-action)
