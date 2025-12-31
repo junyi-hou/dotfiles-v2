@@ -10,10 +10,15 @@
 ;; Only work if the config is installed correctly according to the instruction in
 ;; `README.md'.  Display a warning if cannot find the repo location, in which case some
 ;; functionalities will not be available
-(let ((repo-location (locate-dominating-file (file-truename (expand-file-name "init.el" user-emacs-directory)) ".git")))
+(let ((repo-location
+       (locate-dominating-file
+        (file-truename (expand-file-name "init.el" user-emacs-directory)) ".git")))
   (if repo-location
-      (defconst gatsby>dotfiles-repo-location repo-location "The git root of the dotfile repo")
-    (display-warning 'Dotfiles "Unable to find dotfiles repo location. Did you install the configuration using `make install'?")))
+      (defconst gatsby>dotfiles-repo-location repo-location
+        "The git root of the dotfile repo")
+    (display-warning
+     'Dotfiles
+     "Unable to find dotfiles repo location. Did you install the configuration using `make install'?")))
 
 
 (require 'gatsby>use-package)

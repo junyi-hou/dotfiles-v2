@@ -7,31 +7,36 @@
 (require 'gatsby>>utility)
 
 (use-package aider
-  :ensure (:host github
-           :repo "tninja/aider.el")
+  :ensure (:host github :repo "tninja/aider.el")
   :custom
-  (aider-args '("--model" "openrouter/anthropic/claude-sonnet-4.5:floor"
-                "--no-auto-commits" "--no-auto-accept-architect"))
+  (aider-args
+   '("--model"
+     "openrouter/anthropic/claude-sonnet-4.5:floor"
+     "--no-auto-commits"
+     "--no-auto-accept-architect"))
   :init
-  (add-to-list 'display-buffer-alist '("^\\*aider:\\(.+?\\)\\*"
-                                       (display-buffer-in-side-window)
-                                       (side . right)
-                                       (slot . 0)
-                                       (window-width . 0.25)
-                                       (preserve-size . (t . nil))))
+  (add-to-list
+   'display-buffer-alist
+   '("^\\*aider:\\(.+?\\)\\*"
+     (display-buffer-in-side-window)
+     (side . right)
+     (slot . 0)
+     (window-width . 0.25)
+     (preserve-size . (t . nil))))
   :config
   (defun gatsby>>get-ai-api-key ()
     "run passage to get the openai_api_key. Return nil if no key is found"
-    (thread-first "direnv exec %s passage show openrouter-api"
-                  (format (expand-file-name gatsby>dotfiles-repo-location))
-                  (shell-command-to-string)
-                  (string-trim)
-                  (string-split "\n")
-                  (last)
-                  (car)))
+    (thread-first
+     "direnv exec %s passage show openrouter-api"
+     (format (expand-file-name gatsby>dotfiles-repo-location))
+     (shell-command-to-string)
+     (string-trim)
+     (string-split "\n")
+     (last)
+     (car)))
   (defun gatsby>>aider-with-api (fn &rest args)
-    (let ((aider-args `(,@aider-args "--api" ,(format "openrouter=%s"
-                                               (gatsby>>get-ai-api-key)))))
+    (let ((aider-args
+           `(,@aider-args "--api" ,(format "openrouter=%s" (gatsby>>get-ai-api-key)))))
       (apply fn args)))
   (advice-add #'aider-run-aider :around #'gatsby>>aider-with-api)
   ;; TODO:
@@ -43,12 +48,10 @@
    (:maps (normal visual))
    ("SPC a i" . #'aider-implement-todo)
    ("SPC a q" . #'aider-ask-question)
-   (:maps aider-comint-mode-map
-    :states normal)
+   (:maps aider-comint-mode-map :states normal)
    ("SPC" . nil)
    ("q" . #'delete-window)
-   (:maps aider-comint-mode-map
-    :states insert)
+   (:maps aider-comint-mode-map :states insert)
    ("<return>" . #'comint-accumulate)
    ("M-<return>" . #'comint-send-input)))
 

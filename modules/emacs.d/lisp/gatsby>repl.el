@@ -18,7 +18,11 @@
   :config
   (gatsby>defcommand gatsby>comint-cls ()
     "clear current REPL buffer."
-    (let ((last-line (save-excursion (goto-char (point-max)) (beginning-of-line) (point))))
+    (let ((last-line
+           (save-excursion
+             (goto-char (point-max))
+             (beginning-of-line)
+             (point))))
       (set-window-start (selected-window) last-line)
       (call-interactively #'evil-scroll-line-up)))
 
@@ -61,14 +65,19 @@ If BUFFER is nil, use `gatsby>comint-buffer'."
     (when (gatsby>>comint-is-running code-buffer)
       (user-error "An existing REPL is running"))
 
-    (let* ((default-directory (if-let ((project (project-current)))
-                                  (project-root project)
-                                default-directory))
-           (repl-buffer (get-buffer-create (format "*%s: %s*" cmd (thread-first default-directory
-                                                                                directory-file-name
-                                                                                file-name-base)))))
+    (let* ((default-directory
+            (if-let ((project (project-current)))
+              (project-root project)
+              default-directory))
+           (repl-buffer
+            (get-buffer-create
+             (format "*%s: %s*"
+                     cmd
+                     (thread-first
+                      default-directory directory-file-name file-name-base)))))
       (make-comint-in-buffer "clojure-REPL" repl-buffer cmd)
-      (with-current-buffer code-buffer (setq-local gatsby>comint-buffer repl-buffer))
+      (with-current-buffer code-buffer
+        (setq-local gatsby>comint-buffer repl-buffer))
       (add-to-list 'gatsby>comint-buffer-list repl-buffer)
       (pop-to-buffer repl-buffer)))
 
@@ -78,26 +87,36 @@ If BUFFER is nil, use `gatsby>comint-buffer'."
 If the prefix argument CONNECT is non nil, connect the current code buffer to an
 existing comint REPL."
     (cond
-     (connect (let* ((code-buffer (current-buffer))
-                     (updated-comint-list (cl-remove-if-not #'gatsby>>comint-is-running gatsby>comint-buffer-list))
-                     (repl-buffer (completing-read "connect to: " (mapcar #'buffer-name updated-comint-list))))
-                (setq gatsby>comint-buffer-list updated-comint-list)
-                (setq-local gatsby>comint-buffer (get-buffer repl-buffer))
-                (pop-to-buffer repl-buffer)))
+     (connect
+      (let* ((code-buffer (current-buffer))
+             (updated-comint-list
+              (cl-remove-if-not #'gatsby>>comint-is-running gatsby>comint-buffer-list))
+             (repl-buffer
+              (completing-read
+               "connect to: " (mapcar #'buffer-name updated-comint-list))))
+        (setq gatsby>comint-buffer-list updated-comint-list)
+        (setq-local gatsby>comint-buffer (get-buffer repl-buffer))
+        (pop-to-buffer repl-buffer)))
 
-     ((gatsby>>comint-is-running) (pop-to-buffer gatsby>comint-buffer))
+     ((gatsby>>comint-is-running)
+      (pop-to-buffer gatsby>comint-buffer))
 
      ;; use the same REPL for files in the same project
-     ((let* ((updated-comint-list (cl-remove-if-not #'gatsby>>comint-is-running gatsby>comint-buffer-list))
-             (repl-buffer (cl-find-if (lambda (comint-buffer)
-                                        (file-equal-p
-                                         (with-current-buffer comint-buffer default-directory)
-                                         default-directory))
-                                      updated-comint-list)))
+     ((let* ((updated-comint-list
+              (cl-remove-if-not #'gatsby>>comint-is-running gatsby>comint-buffer-list))
+             (repl-buffer
+              (cl-find-if
+               (lambda (comint-buffer)
+                 (file-equal-p
+                  (with-current-buffer comint-buffer
+                    default-directory)
+                  default-directory))
+               updated-comint-list)))
         (setq-local gatsby>comint-buffer repl-buffer))
       (pop-to-buffer gatsby>comint-buffer))
 
-     (t (gatsby>start-comint gatsby>comint-command (current-buffer)))))
+     (t
+      (gatsby>start-comint gatsby>comint-command (current-buffer)))))
 
   (defun gatsby>comint-eval-string (string)
     "Send STRING to the comint process associated with `gatsby>comint-buffer',
@@ -128,18 +147,23 @@ at point-max."
           (gatsby>comint-eval-string (buffer-substring-no-properties b e))
           (evil-normal-state))
       (let* ((cell-regexp (format "^%s +\\(.\\)*\n" comment-start))
-             (b (save-excursion (or (and (not from-top)
-                                         (re-search-backward cell-regexp nil 'noerror))
-                                    (point-min))))
-             (e (save-excursion (or (re-search-forward cell-regexp nil 'noerror) (point-max)))))
+             (b
+              (save-excursion
+                (or (and (not from-top) (re-search-backward cell-regexp nil 'noerror))
+                    (point-min))))
+             (e
+              (save-excursion
+                (or (re-search-forward cell-regexp nil 'noerror) (point-max)))))
         (gatsby>comint-eval-string (buffer-substring-no-properties b e)))))
 
   (gatsby>defcommand gatsby>comint-insert-cell-separator (markdown)
     (insert (format "\n%s +" (string-trim comment-start)))
-    (when markdown (insert " [markdown]"))
+    (when markdown
+      (insert " [markdown]"))
     (insert "\n")
     (when markdown
-      (insert "\"\"\"\"\"\"") (backward-char 3)))
+      (insert "\"\"\"\"\"\"")
+      (backward-char 3)))
 
   (gatsby>defcommand gatsby>comint-next-cell ()
     (let ((cell-regexp (format "^%s +\\(.\\)*\n" comment-start)))
@@ -153,12 +177,12 @@ at point-max."
   ((:maps comint-mode-map :states (normal visual insert))
    ("C-c C-l" . #'gatsby>comint-cls)
    ("C-c C-c" . #'comint-interrupt-subjob)
-   
+
    (:maps comint-mode-map :states insert)
    ("<up>" . #'comint-previous-matching-input-from-input)
    ("<down>" . #'comint-next-matching-input-from-input)
    ("<S-return>" . #'comint-accumulate)
-   
+
    (:maps comint-mode-map :states normal)
    ("<" . #'comint-previous-prompt)
    (">" . #'comint-next-prompt)
@@ -180,8 +204,7 @@ at point-max."
 
 (use-package jupyter
   :ensure (:host github :repo "nnicandro/emacs-jupyter")
-  :custom-face
-  (jupyter-repl-traceback ((t (:extend t :background "firebrick"))))
+  :custom-face (jupyter-repl-traceback ((t (:extend t :background "firebrick"))))
   :commands (gatsby>jupyter-managed-mode gatsby>jupyter-start-or-switch-to-repl)
   :autoload jupyter-launch-notebook
   :custom
@@ -191,8 +214,7 @@ at point-max."
   (jupyter-repl-history-maximum-length 5000)
   (jupyter-use-zmq nil)
   :hook (jupyter-repl-mode . corfu-mode)
-  :init
-  (defvar gatsby>jupyter-managed-mode-map (make-sparse-keymap))
+  :init (defvar gatsby>jupyter-managed-mode-map (make-sparse-keymap))
 
   (define-minor-mode gatsby>jupyter-managed-mode
     "Minor mode that provides keybinds and commands to major-modes that support jupyter repl."
@@ -202,10 +224,12 @@ at point-max."
 
   (gatsby>defcommand gatsby>jupyter-insert-cell-separator (markdown)
     (insert (format "\n%s +" (string-trim comment-start)))
-    (when markdown (insert " [markdown]"))
+    (when markdown
+      (insert " [markdown]"))
     (insert "\n")
     (when markdown
-      (insert "\"\"\"\"\"\"") (backward-char 3)))
+      (insert "\"\"\"\"\"\"")
+      (backward-char 3)))
 
   (gatsby>defcommand gatsby>jupyter-next-cell ()
     (let ((cell-regexp (format "^%s +\\(.\\)*\n" comment-start)))
@@ -223,7 +247,15 @@ at point-max."
            (jupytext (executable-find "jupytext"))
            (command (concat jupytext " --set-kernel - --to ipynb " file)))
       (when run
-        (setq command (s-join " " `(,command "--pipe-fmt" "ipynb" "--pipe" "'jupyter nbconvert --to ipynb --execute --allow-errors --stdin --stdout'"))))
+        (setq
+         command
+         (s-join
+          " "
+          `(,command
+            "--pipe-fmt"
+            "ipynb"
+            "--pipe"
+            "'jupyter nbconvert --to ipynb --execute --allow-errors --stdin --stdout'"))))
       (compile command)))
 
   (gatsby>defcommand gatsby>jupyter-eval-region-or-cell (from-top)
@@ -233,10 +265,13 @@ at point-max."
           (jupyter-eval-string (buffer-substring-no-properties b e))
           (evil-normal-state))
       (let* ((format "^%s +\\(.\\)*\n" comment-start)
-             (b (save-excursion (or (and (not from-top)
-                                         (re-search-backward cell-regexp nil 'noerror))
-                                    (point-min))))
-             (e (save-excursion (or (re-search-forward cell-regexp nil 'noerror) (point-max)))))
+             (b
+              (save-excursion
+                (or (and (not from-top) (re-search-backward cell-regexp nil 'noerror))
+                    (point-min))))
+             (e
+              (save-excursion
+                (or (re-search-forward cell-regexp nil 'noerror) (point-max)))))
         (jupyter-eval-string (buffer-substring-no-properties b e)))))
 
   (gatsby>defcommand gatsby>jupyter-start-or-switch-to-repl (connect)
@@ -261,7 +296,7 @@ at point-max."
   (gatsby>defcommand gatsby>jupyter-interrupt-or-clean-input ()
     (if-let ((client (jupyter-repl--get-client))
              (_ (jupyter-kernel-busy-p client)))
-        (jupyter-repl-interrupt-kernel client)
+      (jupyter-repl-interrupt-kernel client)
       (call-interactively #'jupyter-repl-clear-input)))
 
   :evil-bind

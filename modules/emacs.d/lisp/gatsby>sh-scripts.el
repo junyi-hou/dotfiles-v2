@@ -9,11 +9,14 @@
   :mode ("\\.[z]sh" . bash-ts-mode)
   :hook (bash-ts-mode . eglot-ensure)
   :init
-  (gatsby>install-treesitter-grammar 'bash "https://github.com/tree-sitter/tree-sitter-bash" "v0.23.3")
+  (gatsby>install-treesitter-grammar
+   'bash "https://github.com/tree-sitter/tree-sitter-bash"
+   "v0.23.3")
   (add-to-list 'major-mode-remap-alist '(sh-mode . bash-ts-mode))
 
   (with-eval-after-load 'eglot
-    (add-to-list 'eglot-server-programs '(bash-ts-mode "bash-language-server" "start"))))
+    (add-to-list
+     'eglot-server-programs '(bash-ts-mode "bash-language-server" "start"))))
 
 (provide 'gatsby>sh-scripts)
 ;;; gatsby>sh-scripts.el ends here

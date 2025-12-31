@@ -18,15 +18,15 @@
     (setq-local tab-width 4))
   ;; tree-sitter
   (gatsby>install-treesitter-grammar
-   'python "https://github.com/tree-sitter/tree-sitter-python" "v0.23.6")
+   'python "https://github.com/tree-sitter/tree-sitter-python"
+   "v0.23.6")
   (add-to-list 'major-mode-remap-alist '(python-mode . python-ts-mode))
   ;; lsp
   (defun gatsby>>python-enable-lsp (&rest _)
     (let ((lsp-enabled-clients '(ty ruff)))
       (lsp-deferred)))
   :evil-bind
-  ((:maps python-ts-mode-map
-    :states visual)
+  ((:maps python-ts-mode-map :states visual)
    ("<" . #'python-indent-shift-left)
    (">" . #'python-indent-shift-right)))
 

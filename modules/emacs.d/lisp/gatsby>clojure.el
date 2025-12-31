@@ -7,8 +7,7 @@
 (require 'gatsby>>utility)
 
 (use-package clojure-ts-mode
-  :ensure (:host github
-           :repo "clojure-emacs/clojure-ts-mode")
+  :ensure (:host github :repo "clojure-emacs/clojure-ts-mode")
   :mode
   ("\\.clj\\'" . clojure-ts-mode)
   ("\\.edn\\'" . clojure-ts-mode)
@@ -27,17 +26,13 @@
     (setq-local comment-start ";;"))
   :config
   (gatsby>defcommand gatsby>clojure-run-test ()
-    (let ((default-directory (or
-                              (and (project-current)
-                                   (project-root (project-current)))
-                              default-directory)))
+    (let ((default-directory
+           (or (and (project-current) (project-root (project-current)))
+               default-directory)))
       (message "running tests...")
       ;; assume the project is initialized using `neil new`
       (compile "clj -T:build test")))
-  :evil-bind
-  ((:maps clojure-ts-mode-map
-    :states normal)
-   ("SPC r t" . #'gatsby>clojure-run-test)))
+  :evil-bind ((:maps clojure-ts-mode-map :states normal) ("SPC r t" . #'gatsby>clojure-run-test)))
 
 ;; TODO: use this or cider for better completion, etc to have better completion/doc supports
 ;; (use-package inf-clojure
@@ -51,8 +46,7 @@
 
 ;; This enables LSP to check codes in jar file
 (use-package jarchive
-  :ensure (:type git
-           :repo "https://git.sr.ht/~dannyfreeman/jarchive")
+  :ensure (:type git :repo "https://git.sr.ht/~dannyfreeman/jarchive")
   :hook (elpaca-after-init . jarchive-mode))
 
 (provide 'gatsby>clojure)

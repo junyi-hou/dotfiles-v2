@@ -17,7 +17,10 @@
 (defmacro gatsby>use-internal-pacakge (name &rest args)
   "So I don't need to type `:ensure nil' every time."
   (declare (indent 1))
-  `(use-package ,name :ensure nil ,@args))
+  `(use-package ,name
+     :ensure
+     nil
+     ,@args))
 
 (defmacro gatsby>defcommand (name args &rest body)
   "Define an interactive command with NAME, ARGS, and BODY.
@@ -27,13 +30,16 @@ Usage:
   (gatsby>defcommand foo (sth) ...) -> (defun foo (sth) (interactive \"P\") ...)
   (gatsby>defcommand foo (:x f) ...) -> (defun foo (x) (interactive (list f) ...))
 "
-  (declare (doc-string 3)
-           (indent defun)
-           (debug (&define name lambda-list
-                           [&optional stringp]
-                           ("interactive" [&rest form])
-                           def-body)))
-  (let ((docstring (if (stringp (car body)) (prog1 (car body) (setq body (cdr body))) ""))
+  (declare
+   (doc-string 3) (indent defun)
+   (debug
+    (&define
+     name lambda-list [&optional stringp] ("interactive" [&rest form]) def-body)))
+  (let ((docstring
+         (if (stringp (car body))
+             (prog1 (car body)
+               (setq body (cdr body)))
+           ""))
         (interactive-form
          (pcase args
            (`(beg end) `(interactive "r"))
@@ -44,9 +50,16 @@ Usage:
            ((and plist (guard (plistp plist)))
             (let ((keys '())
                   (values '()))
-              (cl-loop for (k v) on plist by #'cddr do
-                       (push (intern (substring (symbol-name k) 1)) keys)
-                       (push v values))
+              (cl-loop
+               for
+               (k v)
+               on
+               plist
+               by
+               #'cddr
+               do
+               (push (intern (substring (symbol-name k) 1)) keys)
+               (push v values))
               (setq args (nreverse keys))
               `(interactive (list ,@values))))
            (_ (user-error "[gatsby>defcommdn] malformed argument list")))))
@@ -56,12 +69,10 @@ Usage:
        ,@body)))
 
 ;; replacing treesit-auto
-(defun gatsby>install-treesitter-grammar
-    (lang url &optional revision source-dir)
+(defun gatsby>install-treesitter-grammar (lang url &optional revision source-dir)
   "Install treesitter grammar for LANG at URL.
 Optionally use REVISION and alternative SOURCE-DIR."
-  (add-to-list 'treesit-language-source-alist
-               `(,lang . (,url ,revision ,source-dir)))
+  (add-to-list 'treesit-language-source-alist `(,lang . (,url ,revision ,source-dir)))
   (unless (treesit-ready-p lang t)
     (treesit-install-language-grammar lang)))
 
@@ -78,9 +89,11 @@ before saving to the cache file."
   (unless (and (file-exists-p cache-file) (file-writable-p cache-file))
     (shell-command (concat "touch " (shell-quote-argument cache-file))))
 
-  (let ((items (with-temp-buffer
-                 (insert-file-contents cache-file)
-                 (when (> (length (buffer-string)) 0) (car (read-from-string (buffer-string))))))
+  (let ((items
+         (with-temp-buffer
+           (insert-file-contents cache-file)
+           (when (> (length (buffer-string)) 0)
+             (car (read-from-string (buffer-string))))))
         (inhibit-message t))
     ;; write
     (if new-item
@@ -88,11 +101,13 @@ before saving to the cache file."
           (insert ";;; -*- coding: utf-8 -*-\n")
           (let ((print-length nil)
                 (print-level nil))
-            (pp (thread-last `(,@items ,new-item)
-                             (cl-remove-duplicates)
-                             (cl-remove-if-not #'identity)
-                             ((lambda (n list) (last list n)) max-length))
-                (current-buffer)))
+            (pp
+             (thread-last
+              `(,@items ,new-item)
+              (cl-remove-duplicates)
+              (cl-remove-if-not #'identity)
+              ((lambda (n list) (last list n)) max-length))
+             (current-buffer)))
           ;; Don't use write-file; we don't want this buffer to visit it.
           (write-region (point-min) (point-max) cache-file))
 
@@ -103,10 +118,10 @@ before saving to the cache file."
   "Switch to buffer, reusing existing window if visible, otherwise create new window.
 If BUFFER-OR-NAME is already visible in a window, switch to that window.
 Otherwise, always create a new window by splitting."
-  (interactive
-   (list (read-buffer "Switch to buffer in other window: "
-                      (other-buffer (current-buffer))
-                      nil)))
+  (interactive (list
+                (read-buffer "Switch to buffer in other window: "
+                             (other-buffer (current-buffer))
+                             nil)))
   (let* ((buffer (window-normalize-buffer-to-switch-to buffer-or-name))
          (window (get-buffer-window buffer 'visible)))
     (if window
@@ -135,16 +150,15 @@ The optional argument TEST specifies the hash table's test function
 (e.g., 'eq, 'eql, or 'equal). Defaults to 'equal."
   (when plist
     (let ((table (make-hash-table :test (or test #'equal))))
-      (cl-loop for (key value) on plist by #'cddr do
-               (let* ((processed-value
-                       ;; Heuristic: Is the value a plist that should be converted?
-                       (if (and (listp value)
-                                (> (length value) 0)
-                                (cl-evenp (length value)))
-                           (gatsby>plist-to-hash-table-recursive value test)
-                         value))
-                      (key-string (substring (symbol-name key) 1)))
-                 (puthash key-string processed-value table)))
+      (cl-loop
+       for (key value) on plist by #'cddr do
+       (let* ((processed-value
+               ;; Heuristic: Is the value a plist that should be converted?
+               (if (and (listp value) (> (length value) 0) (cl-evenp (length value)))
+                   (gatsby>plist-to-hash-table-recursive value test)
+                 value))
+              (key-string (substring (symbol-name key) 1)))
+         (puthash key-string processed-value table)))
       table)))
 
 ;; putting modes in evil-STATE-state-modes

@@ -33,7 +33,9 @@
 (defconst gatsby>>evil-states '(normal motion visual emacs insert operator replace)
   "A list of valid states in evil.")
 
-(defconst gatsby>>evil-states-maps (mapcar (lambda (state) (intern (format "evil-%s-state-map" state))) gatsby>>evil-states)
+(defconst gatsby>>evil-states-maps
+  (mapcar
+   (lambda (state) (intern (format "evil-%s-state-map" state))) gatsby>>evil-states)
   "A list of valid states in evil.")
 
 (defun gatsby>>maybe-evil-state-to-keymap (map)
@@ -46,12 +48,8 @@
 (defun gatsby>>evil-bind-config-p (item)
   "Return true if `item' is a plist with one or both of the following keys: `:maps' & `:states'"
   (pcase item
-  ((or `(:maps ,_)
-       `(:states ,_)
-       `(:maps ,_ :states ,_)
-       `(:states ,_ :maps ,_))
-   t)
-  (_ nil)))
+    ((or `(:maps ,_) `(:states ,_) `(:maps ,_ :states ,_) `(:states ,_ :maps ,_)) t)
+    (_ nil)))
 
 (defun gatsby>>ensure-list (var)
   "I only need to care about three possibilities: nil, a symbol of a list of symbols"
@@ -64,8 +62,9 @@
 
     (unless (gatsby>>evil-bind-config-p config)
       ;; no config block found,use default
-      (setq block `((:maps global-map) ,@(car block))
-            config '(:maps global-map)))
+      (setq
+       block `((:maps global-map) ,@ (car block))
+       config '(:maps global-map)))
 
     (let ((maps (gatsby>>ensure-list (plist-get config :maps)))
           (states (gatsby>>ensure-list (plist-get config :states))))
@@ -73,46 +72,56 @@
       ;; handle short-handed maps
       (if maps
           (setq maps (mapcar #'gatsby>>maybe-evil-state-to-keymap maps))
-        (setq maps (mapcar #'gatsby>>maybe-evil-state-to-keymap states)
-              states nil))
+        (setq
+         maps (mapcar #'gatsby>>maybe-evil-state-to-keymap states)
+         states nil))
 
-      (thread-last maps
+      (thread-last
+       maps
+       (mapcar
+        (lambda (map)
+          `(:block
+            (quote ,states) ,map ,@
+            (apply #'append
                    (mapcar
-                    (lambda (map)
-                      `(:block
-                        (quote ,states)
-                        ,map
-                        ,@(apply #'append
-                                 (mapcar
-                                  (lambda (cons) `(,(let ((key (car cons))) (if (stringp key) (kbd key) key)) ,(cdr cons)))
-                                  (cdr block))))))
-                   (cl-reduce #'append)))))
+                    (lambda (cons)
+                      `(,(let ((key (car cons)))
+                           (if (stringp key)
+                               (kbd key)
+                             key))
+                        ,(cdr cons)))
+                    (cdr block))))))
+       (cl-reduce #'append)))))
 
 (defun use-package-normalize/:evil-bind (name keyword args)
-  (thread-last args
-               car
-               (use-package-split-when #'gatsby>>evil-bind-config-p)
-               (mapcar #'gatsby>>normalize-block)
-               (cl-reduce #'append)))
+  (thread-last
+   args
+   car
+   (use-package-split-when #'gatsby>>evil-bind-config-p)
+   (mapcar #'gatsby>>normalize-block)
+   (cl-reduce #'append)))
 
 (defun use-package-handler/:evil-bind (name _keyword args rest state)
   (use-package-concat
    (use-package-process-keywords name rest state)
    `((with-eval-after-load 'evil
-       ,@(mapcar #'(lambda (block) `(evil-define-key ,@block))
-                 (thread-last args
-                              (use-package-split-list-at-keys :block)
-                              (cl-remove-if-not #'identity)))))))
+       ,@
+       (mapcar
+        #'(lambda (block) `(evil-define-key ,@block))
+        (thread-last
+         args
+         (use-package-split-list-at-keys :block)
+         (cl-remove-if-not #'identity)))))))
 
 (defalias 'use-package-autoloads/:evil-bind 'use-package-autoloads-mode)
 
-(setq use-package-keywords (cl-loop for item in use-package-keywords
-                                    if (eq item :bind-keymap*)
-                                    collect :bind-keymap* and collect :evil-bind
-                                    else
-                                    ;; don't add duplicates
-                                    unless (eq item :evil-bind)
-                                    collect item))
+(setq use-package-keywords
+      (cl-loop
+       for item in use-package-keywords if (eq item :bind-keymap*) collect
+       :bind-keymap* and collect
+       :evil-bind else
+       ;; don't add duplicates
+       unless (eq item :evil-bind) collect item))
 
 (provide 'gatsby>use-package)
 ;;; gatsby>use-package.el ends here
