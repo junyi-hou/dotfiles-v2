@@ -2,28 +2,17 @@
 
 ;;; Commentary:
 
-;; NOTE:
-;; As of 2025-12-31, I have tried the following AI-assists coding setups
-;; - gptel
-;; - aider/aidermacs
-;; - claude-code, claude-code-ide
-;; None of them work well with large monorepo on a remote machine
-;; - gptel's issue is tramp - since the agent is run locally, and need to read context using tramp
-;; - aider/aidermacs - does not work well with large monorepo
-;; - claude-code(-ide) - can't run it against remote files
-
-;; TODO:
-;; I'll take a look at https://github.com/tninja/ai-code-interface.el, which is made by the author of aider.el
-;; (and does work with remote server) and see if it works with claude
-;; I'll also take a look at https://eca.dev - which provides aider-like features
-
-;; for now, I'll use
-;; - gptel for local useage
-;; - vterm + claude for remote useage
-
 ;;; Code:
 
 (require 'gatsby>>utility)
+
+;; TODO wait for this to have tramp support
+;; https://github.com/xenodium/agent-shell/issues/122
+;; this requires installing claude-code and claude-code-acp (wrapper)
+;;
+;; (use-package agent-shell
+;;   :ensure (:host github :repo "xenodium/agent-shell"))
+
 
 (use-package eca
   :ensure (:host github :repo "editor-code-assistant/eca-emacs" :files ("*.el"))
@@ -78,6 +67,7 @@ on the remote system instead of locally."
    ("<" . #'eca-chat-go-to-prev-expandable-block)
    (">" . #'eca-chat-go-to-next-expandable-block)
    ("`" . #'eca-transient-menu)
+   ("q" . #'delete-window)
    (:maps eca-chat-mode-map :states insert)
    ("<return>" . #'eca-chat--key-pressed-newline)
    ("S-<return>" . #'markdown-insert-list-item)
