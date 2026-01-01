@@ -2,58 +2,77 @@
 
 ;;; Commentary:
 
+;; NOTE:
+;; As of 2025-12-31, I have tried the following AI-assists coding setups
+;; - gptel
+;; - aider/aidermacs
+;; - claude-code, claude-code-ide
+;; None of them work well with large monorepo on a remote machine
+;; - gptel's issue is tramp - since the agent is run locally, and need to read context using tramp
+;; - aider/aidermacs - does not work well with large monorepo
+;; - claude-code(-ide) - can't run it against remote files
+
+;; TODO:
+;; I'll take a look at https://github.com/tninja/ai-code-interface.el, which is made by the author of aider.el
+;; (and does work with remote server) and see if it works with claude
+;; I'll also take a look at https://eca.dev - which provides aider-like features
+
+;; for now, I'll use
+;; - gptel for local useage
+;; - vterm + claude for remote useage
+
 ;;; Code:
 
 (require 'gatsby>>utility)
 
-(use-package aider
-  :ensure (:host github :repo "tninja/aider.el")
-  :custom
-  (aider-args
-   '("--model"
-     "openrouter/anthropic/claude-sonnet-4.5:floor"
-     "--no-auto-commits"
-     "--no-auto-accept-architect"))
-  :init
-  (add-to-list
-   'display-buffer-alist
-   '("^\\*aider:\\(.+?\\)\\*"
-     (display-buffer-in-side-window)
-     (side . right)
-     (slot . 0)
-     (window-width . 0.25)
-     (preserve-size . (t . nil))))
-  :config
-  (defun gatsby>>get-ai-api-key ()
-    "run passage to get the openai_api_key. Return nil if no key is found"
-    (thread-first
-     "direnv exec %s passage show openrouter-api"
-     (format (expand-file-name gatsby>dotfiles-repo-location))
-     (shell-command-to-string)
-     (string-trim)
-     (string-split "\n")
-     (last)
-     (car)))
-  (defun gatsby>>aider-with-api (fn &rest args)
-    (let ((aider-args
-           `(,@aider-args "--api" ,(format "openrouter=%s" (gatsby>>get-ai-api-key)))))
-      (apply fn args)))
-  (advice-add #'aider-run-aider :around #'gatsby>>aider-with-api)
-  ;; TODO:
-  ;; create an org-mode based intermediate layer
-  :evil-bind
-  ((:maps normal)
-   ("SPC a a" . #'aider-run-aider)
-   ("`" . #'aider-transient-menu)
-   (:maps (normal visual))
-   ("SPC a i" . #'aider-implement-todo)
-   ("SPC a q" . #'aider-ask-question)
-   (:maps aider-comint-mode-map :states normal)
-   ("SPC" . nil)
-   ("q" . #'delete-window)
-   (:maps aider-comint-mode-map :states insert)
-   ("<return>" . #'comint-accumulate)
-   ("M-<return>" . #'comint-send-input)))
+;; (use-package aider
+;;   :ensure (:host github :repo "tninja/aider.el")
+;;   :custom
+;;   (aider-args
+;;    '("--model"
+;;      "openrouter/anthropic/claude-sonnet-4.5:floor"
+;;      "--no-auto-commits"
+;;      "--no-auto-accept-architect"))
+;;   :init
+;;   (add-to-list
+;;    'display-buffer-alist
+;;    '("^\\*aider:\\(.+?\\)\\*"
+;;      (display-buffer-in-side-window)
+;;      (side . right)
+;;      (slot . 0)
+;;      (window-width . 0.25)
+;;      (preserve-size . (t . nil))))
+;;   :config
+;;   (defun gatsby>>get-ai-api-key ()
+;;     "run passage to get the openai_api_key. Return nil if no key is found"
+;;     (thread-first
+;;      "direnv exec %s passage show openrouter-api"
+;;      (format (expand-file-name gatsby>dotfiles-repo-location))
+;;      (shell-command-to-string)
+;;      (string-trim)
+;;      (string-split "\n")
+;;      (last)
+;;      (car)))
+;;   (defun gatsby>>aider-with-api (fn &rest args)
+;;     (let ((aider-args
+;;            `(,@aider-args "--api" ,(format "openrouter=%s" (gatsby>>get-ai-api-key)))))
+;;       (apply fn args)))
+;;   (advice-add #'aider-run-aider :around #'gatsby>>aider-with-api)
+;;   ;; TODO:
+;;   ;; create an org-mode based intermediate layer
+;;   :evil-bind
+;;   ((:maps normal)
+;;    ("SPC a a" . #'aider-run-aider)
+;;    ("`" . #'aider-transient-menu)
+;;    (:maps (normal visual))
+;;    ("SPC a i" . #'aider-implement-todo)
+;;    ("SPC a q" . #'aider-ask-question)
+;;    (:maps aider-comint-mode-map :states normal)
+;;    ("SPC" . nil)
+;;    ("q" . #'delete-window)
+;;    (:maps aider-comint-mode-map :states insert)
+;;    ("<return>" . #'comint-accumulate)
+;;    ("M-<return>" . #'comint-send-input)))
 
 ;; (use-package gptel
 ;;   :ensure (:host github
