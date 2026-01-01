@@ -28,7 +28,9 @@
 (use-package eca
   :ensure (:host github :repo "editor-code-assistant/eca-emacs" :files ("*.el"))
   :hook (eca-chat-mode . corfu-mode)
-  :custom (eca-rewrite-diff-tool 'simple-diff)
+  :custom
+  (eca-rewrite-diff-tool 'simple-diff)
+  (eca-chat-window-width 0.25)
   :init
   (defun gatsby>>get-ai-api-key ()
     "run passage to get the openai_api_key. Return nil if no key is found"
