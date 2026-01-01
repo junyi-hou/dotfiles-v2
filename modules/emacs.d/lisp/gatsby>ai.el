@@ -28,6 +28,7 @@
 (use-package eca
   :ensure (:host github :repo "editor-code-assistant/eca-emacs" :files ("*.el"))
   :hook (eca-chat-mode . corfu-mode)
+  :custom (eca-rewrite-diff-tool 'simple-diff)
   :init
   (defun gatsby>>get-ai-api-key ()
     "run passage to get the openai_api_key. Return nil if no key is found"
@@ -68,6 +69,8 @@ on the remote system instead of locally."
   ((:maps normal)
    ("SPC a a" . #'eca)
    ("SPC a f" . #'eca-chat-select)
+   (:maps visual)
+   ("SPC a w" . #'eca-rewrite)
    (:maps eca-chat-mode-map :states normal)
    ("<tab>" . #'eca-chat--key-pressed-tab)
    ("<" . #'eca-chat-go-to-prev-expandable-block)
