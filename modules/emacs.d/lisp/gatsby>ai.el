@@ -25,12 +25,66 @@
 
 (require 'gatsby>>utility)
 
+(use-package eca
+  :ensure (:host github :repo "editor-code-assistant/eca-emacs" :files ("*.el"))
+  :hook (eca-chat-mode . corfu-mode)
+  :init
+  (defun gatsby>>get-ai-api-key ()
+    "run passage to get the openai_api_key. Return nil if no key is found"
+    (thread-first
+     "direnv exec %s passage show openrouter-api"
+     (format (expand-file-name gatsby>dotfiles-repo-location))
+     (shell-command-to-string)
+     (string-trim)
+     (string-split "\n")
+     (last)
+     (car)))
+
+  (defun gatsby>>add-api-key-to-eca-config (fn &rest args)
+    (with-environment-variables (("OPENROUTER_API_KEY" (gatsby>>get-ai-api-key)))
+      (apply fn args)))
+
+  (advice-add #'eca :around #'gatsby>>add-api-key-to-eca-config)
+
+  (defun gatsby>>eca-server-command-tramp-aware (fn &rest args)
+    "Make eca-process--server-command TRAMP-aware.
+If the current project is on a remote host, look for the eca binary
+on the remote system instead of locally."
+    (if (file-remote-p default-directory)
+        ;; Remote project: look for eca on remote system
+        (let ((remote-eca (executable-find "eca" t)))
+          (if remote-eca
+              (list :decision 'system :command (list remote-eca "server"))
+            (user-error
+             "eca not found on remote system. Please install eca on the remote host")))
+      ;; Local project: use default behavior
+      (apply fn args)))
+
+  (advice-add
+   #'eca-process--server-command
+   :around #'gatsby>>eca-server-command-tramp-aware)
+
+  :evil-bind
+  ((:maps normal)
+   ("SPC a a" . #'eca)
+   ("SPC a f" . #'eca-chat-select)
+   (:maps eca-chat-mode-map :states normal)
+   ("<tab>" . #'eca-chat--key-pressed-tab)
+   ("<" . #'eca-chat-go-to-prev-expandable-block)
+   (">" . #'eca-chat-go-to-next-expandable-block)
+   ("`" . #'eca-transient-menu)
+   (:maps eca-chat-mode-map :states insert)
+   ("<return>" . #'eca-chat--key-pressed-newline)
+   ("S-<return>" . #'markdown-insert-list-item)
+   ("M-<return>" . #'eca-chat--key-pressed-return)))
+
+
 ;; (use-package aider
 ;;   :ensure (:host github :repo "tninja/aider.el")
 ;;   :custom
 ;;   (aider-args
 ;;    '("--model"
-;;      "openrouter/anthropic/claude-sonnet-4.5:floor"
+;;      "openrouter/"
 ;;      "--no-auto-commits"
 ;;      "--no-auto-accept-architect"))
 ;;   :init
