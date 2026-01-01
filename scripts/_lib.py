@@ -92,9 +92,10 @@ def move(src: Path, dst: Path, dry_run: bool) -> None:
         dry_run (bool): Simulation mode flag
     """
     if dry_run:
-        logger.info(f"[dry run] moving {src} to {dst}")
+        logger.debug(f"[dry run] moving {src} to {dst}")
         return
 
+    logger.debug(f"moving {src} to {dst}")
     _ = shutil.move(src, dst)
     return
 
@@ -111,9 +112,10 @@ def remove_file(path: Path, dry_run: bool) -> None:
         dry_run (bool): Simulation mode flag
     """
     if dry_run:
-        logger.info(f"[dry run] removing {path}")
+        logger.debug(f"[dry run] removing {path}")
         return
 
+    logger.debug(f"removing {path}")
     _ = path.unlink()
     return
 
@@ -132,9 +134,10 @@ def symlink(from_: Path, to: Path, dry_run: bool) -> None:
         dry_run (bool): Simulation mode flag
     """
     if dry_run:
-        logger.info(f"[dry run] installing {from_} to {to}")
+        logger.debug(f"[dry run] installing {from_} to {to}")
         return
 
+    logger.debug(f"installing {from_} to {to}")
     to.symlink_to(from_)
     return
 

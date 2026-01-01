@@ -33,12 +33,12 @@ def install(module: str | Path, *, dry_run: bool = True) -> None:
     install_path = get_target_path(relative_path)
     backup_path = get_backup_path(install_path)
 
-    logger.info(f"Installing {relative_path} ...")
+    logger.debug(f"Installing {relative_path} ...")
 
     if install_path.exists():
 
-        if install_path.resolve() == module.resolve() and not dry_run:
-            logger.info(f"{relative_path} already installed, skipping")
+        if install_path.resolve() == module.resolve():
+            logger.debug(f"{relative_path} already installed, skipping")
             return
 
         if not install_path.is_dir():
@@ -47,12 +47,11 @@ def install(module: str | Path, *, dry_run: bool = True) -> None:
 
     if module.is_file():
         symlink(module, install_path, dry_run)
-        if not dry_run:
-            logger.info(f"Module {relative_path} installed!")
+        logger.info(f"Module {relative_path} installed!")
 
     elif module.is_dir():
         if dry_run:
-            logger.info(f"Would create directory {install_path}")
+            logger.debug(f"Would create directory {install_path}")
         else:
             install_path.mkdir(parents=True, exist_ok=True)
         logger.debug(f"Recursively installing {module} ...")
@@ -91,6 +90,10 @@ def main() -> int:
 
     args = parser.parse_args()
     args = cast(Arguments, cast(object, args))
+
+    # Automatically enable verbose mode when dry_run is enabled
+    if args.dry_run:
+        args.verbose = True
 
     if args.verbose:
         logger.setLevel(logging.DEBUG)

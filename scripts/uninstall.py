@@ -33,15 +33,16 @@ def uninstall(module: str | Path, *, dry_run: bool = True) -> None:
     install_path = get_target_path(relative_path)
     backup_path = get_backup_path(install_path)
 
-    logger.info(f"Uninstalling {relative_path} ...")
+    logger.debug(f"Uninstalling {relative_path} ...")
     
     if module.is_file():
         # if module is file, install_path must be symlink
         # make sure that install_path is what we have installed!
         if install_path.is_symlink() and install_path.resolve() == module:
             remove_file(install_path, dry_run)
-        elif not dry_run:
-            logger.info(f"{relative_path} was not installed by us, leave it there...")
+            logger.info(f"Module {relative_path} uninstalled!")
+        else:
+            logger.debug(f"{relative_path} was not installed by us, leave it there...")
 
     elif module.is_dir():
         # go into install_path
@@ -58,9 +59,6 @@ def uninstall(module: str | Path, *, dry_run: bool = True) -> None:
     if backup_path.exists():
         logger.debug(f"Backup file found, restoring {relative_path} ...")
         move(backup_path, install_path, dry_run)
-
-    if not dry_run:
-        logger.info(f"Module {relative_path} uninstalled!")
 
 
 def main() -> int:
@@ -92,6 +90,10 @@ def main() -> int:
 
     args, _ = parser.parse_known_args()
     args = cast(Arguments, cast(object, args))
+
+    # Automatically enable verbose mode when dry_run is enabled
+    if args.dry_run:
+        args.verbose = True
 
     if args.verbose:
         logger.setLevel(logging.DEBUG)
