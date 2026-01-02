@@ -6,12 +6,26 @@
 
 (require 'gatsby>>utility)
 
-;; TODO wait for this to have tramp support
-;; https://github.com/xenodium/agent-shell/issues/122
-;; this requires installing claude-code and claude-code-acp (wrapper)
-;;
+;; TODO
+;; there are a few things lacking
+;; - remote support (https://github.com/xenodium/agent-shell/issues/122)
+;; - completion (https://github.com/xenodium/agent-shell/issues/60)
+;; for now let's use eca which provide better user-experience
 ;; (use-package agent-shell
-;;   :ensure (:host github :repo "xenodium/agent-shell"))
+;;   :ensure (:host github :repo "xenodium/agent-shell")
+;;   :hook (agent-shell-mode . corfu-mode)
+;;   :custom
+;;   (agent-shell-anthropic-claude-environment
+;;    (agent-shell-make-environment-variables
+;;     "ANTHROPIC_BASE_URL"
+;;     "https://openrouter.ai/api"
+;;     "ANTHROPIC_AUTH_TOKEN"
+;;     (gatsby>>get-ai-api-key)
+;;     "ANTHROPIC_API_KEY"
+;;     ""))
+;;   (agent-shell-display-action
+;;    '(display-buffer-in-side-window (side . right) (window-width . 0.25) (slot . 0)))
+;;   (agent-shell-file-completion-enabled t))
 
 
 (use-package eca

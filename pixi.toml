@@ -25,6 +25,7 @@ rage = "*"
 eza = "*"
 fd-find = "*"
 ripgrep = "*"
+nodejs = "*"  # for acp
 
 # lsp
 harper = "*"
