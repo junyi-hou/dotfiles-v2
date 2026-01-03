@@ -31,7 +31,9 @@ nodejs = "*"  # for acp
 harper = "*"
 tinymist = "*"
 bash-language-server = "*"
+yaml-language-server = "*"
 markdown-oxide = "*"
+taplo = "*"
 
 [feature.global.pypi-dependencies]
 aider-chat = ">=0.86.0"

@@ -12,18 +12,20 @@
   ("\\.clj\\'" . clojure-ts-mode)
   ("\\.edn\\'" . clojure-ts-mode)
   :hook
-  (clojure-ts-mode . gatsby>>clojure-enable-lsp)
+  (clojure-ts-mode . eglot-ensure)
   (clojure-ts-mode . gatsby>comint-managed-mode)
-  (clojure-ts-mode . gatsby>>clojure-setup-repl)
+  (clojure-ts-mode . gatsby>>clojure-setup-local-var)
   :init
   ;; do not need to setup treesitter - it is taken care of by the mode itself
   ;; lsp
-  (defun gatsby>>clojure-enable-lsp (&rest _)
-    (let ((lsp-enabled-clients '(clojure)))
-      (lsp-deferred)))
-  (defun gatsby>>clojure-setup-repl ()
+  (with-eval-after-load 'eglot
+    (add-to-list 'eglot-server-programs '(clojure-ts-mode "clojure-lsp" "listen")))
+
+  (defun gatsby>>clojure-setup-local-var ()
     (setq-local gatsby>comint-command "clj")
-    (setq-local comment-start ";;"))
+    (setq-local comment-start ";;")
+    (setq-local tab-width 2))
+
   :config
   (gatsby>defcommand gatsby>clojure-run-test ()
     (let ((default-directory

@@ -8,7 +8,9 @@
 (use-package markdown-ts-mode
   :ensure (:host github :repo "LionyxML/markdown-ts-mode")
   :mode ("\\.md\\'" . markdown-ts-mode)
-  ;; :hook (markdown-ts-mode . eglot-ensure)
+  :hook
+  (markdown-ts-mode . eglot-ensure)
+  (markdown-ts-mode . corfu-mode)
   :defer t
   :init
   ;; treesitter
@@ -18,9 +20,14 @@
   (gatsby>install-treesitter-grammar
    'markdown-inline "https://github.com/tree-sitter-grammars/tree-sitter-markdown"
    "v0.4.1" "tree-sitter-markdown-inline/src")
+
   ;; lsp
-  (with-eval-after-load 'eglot
-    (add-to-list 'eglot-server-programs '(markdown-ts-mode "markdown-oxide"))))
+  ;; TODO: this breaks capf
+  ;; (with-eval-after-load 'eglot
+  ;;   (add-to-list 'eglot-server-programs '(markdown-ts-mode "markdown-oxide")))
+  :config
+  ;; this provides useful commands like `markdown-insert-link'
+  (require 'markdown-mode))
 
 (use-package typst-ts-mode
   :ensure (:host sourcehut :repo "meow_king/typst-ts-mode")
@@ -38,12 +45,15 @@
   ;; tree-sitter
   (gatsby>install-treesitter-grammar 'typst "https://github.com/uben0/tree-sitter-typst"
                                      "v0.11.0")
+
   ;; lsp
   (with-eval-after-load 'eglot
-    (add-to-list 'eglot-server-programs `(typst-ts-mode "tinymist")))
+    (add-to-list 'eglot-server-programs '(typst-ts-mode "tinymist" "lsp")))
+
   :config
   (defun gatsby>>typst-stop-watching (&rest _)
     (add-hook 'kill-buffer-hook #'typst-ts-watch-stop nil t))
+
   :evil-bind
   ((:maps typst-ts-mode-map :states normal)
    ("SPC r r" . #'typst-ts-compile-and-preview)
@@ -76,6 +86,7 @@
         (evil-open-fold))
        (t
         (gatsby>org-show-block (org-element-parent element))))))
+
   (defun gatsby>org-hide-block (&optional element)
     "Hide/fold elements at point."
     (interactive)
@@ -99,6 +110,7 @@
         (evil-close-fold))
        (t
         (gatsby>org-hide-block (org-element-parent element))))))
+
   :evil-bind
   ((:maps org-mode-map :states (normal visual))
    ("z o" . #'gatsby>org-show-block)

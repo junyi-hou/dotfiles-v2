@@ -57,6 +57,21 @@
   (gatsby>defcommand gatsby>kill-buffer ()
     (kill-buffer (current-buffer)))
 
+  (defun gatsby>insert-tab ()
+    "Insert a tab when there's only blank char in front"
+    (when (save-excursion
+            (skip-chars-backward " \t")
+            (bolp))
+      (insert-tab)
+      t))
+
+  (defcustom gatsby>tab-commands '(gatsby>insert-tab completion-at-point)
+    "A list of function called without argument"
+    :type '(repeat symbol))
+
+  (gatsby>defcommand gatsby>indent-or-complete ()
+    (run-hook-with-args-until-success 'gatsby>tab-commands))
+
   (evil-define-command gatsby>normal-or-motion-state
     ()
     "Switch to normal or motion state without recording current command."
@@ -99,7 +114,9 @@
    ("SPC o m" . #'gatsby>switch-to-message)
    ("SPC o s" . #'gatsby>eshell-open-or-switch)
    (:maps visual)
-   ("<tab>" . #'gatsby>evil-visual-tab)))
+   ("<tab>" . #'gatsby>evil-visual-tab)
+   (:maps insert)
+   ("<tab>" . #'gatsby>indent-or-complete)))
 
 (use-package expand-region
   :ensure (expand-region :host github :repo "magnars/expand-region.el")

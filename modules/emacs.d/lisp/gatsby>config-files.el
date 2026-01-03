@@ -17,14 +17,13 @@
   (add-to-list 'major-mode-remap-alist '(yaml-mode . yaml-ts-mode))
 
   ;; lsp
-  ;; TODO - use local yaml-language-server
-  (gatsby>defcommand gatsby>start-yamlls ()
-    (let ((eglot-server-programs '((yaml-ts-mode "yaml-lanugage-server" "--stdio"))))
-      (eglot-ensure)))
+  (with-eval-after-load 'eglot
+    (add-to-list 'eglot-server-programs '(yaml-ts-mode "yaml-lanugage-server" "--stdio")))
 
   :hook
   (yaml-ts-mode . display-line-numbers-mode) ;; turn on line-number
   (yaml-ts-mode . indent-bars-mode)
+  (yaml-ts-mode . eglot-ensure)
   (yaml-ts-mode . gatsby>>yaml-set-indent-width))
 
 (gatsby>use-internal-pacakge json-ts-mode
@@ -40,7 +39,7 @@
 
 ;; protofub-ts-mode upstream is down as of 2025-10-13
 ;; (use-package protobuf-ts-mode
-;;   :ensure (:host github :repo "/protobuf-ts")
+;;   :ensure (:host github :repo "emacsattic/protobuf-ts")
 ;;   :mode ("\\.proto\\'" . protobuf-ts-mode)
 ;;   :init
 ;;   ;; use the treywood fork of the protobuf syntex
@@ -51,7 +50,12 @@
   :init
   (gatsby>install-treesitter-grammar
    'toml "https://github.com/tree-sitter/tree-sitter-toml")
-  (add-to-list 'major-mode-remap-alist '(conf-toml-mode . toml-ts-mode)))
+  (add-to-list 'major-mode-remap-alist '(conf-toml-mode . toml-ts-mode))
+
+  ;; lsp
+  (with-eval-after-load 'eglot
+    (add-to-list 'eglot-server-programs '(toml-ts-mode "taplo" "lsp" "stdio")))
+  :hook (toml-ts-mode . eglot-ensure))
 
 (provide 'gatsby>config-files)
 ;;; gatsby>config-files.el ends here
