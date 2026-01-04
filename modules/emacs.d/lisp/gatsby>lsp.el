@@ -149,8 +149,24 @@
     (setq gatsby>tab-commands
           '(gatsby>insert-tab gatsby>tempel-expand completion-at-point)))
 
+  (defun gatsby>tempel-capf ()
+    "Auto complete the current templates"
+    (when-let* ((templates
+                 (thread-last
+                  (tempel--templates) (mapcar #'car) (mapcar #'symbol-name)))
+                (bounds (bounds-of-thing-at-point 'symbol)))
+      (list
+       (car bounds)
+       (cdr bounds)
+       templates
+       :exclusive 'no
+       :company-kind (lambda (_) 'snippet))))
+
+  (add-to-list 'completion-at-point-functions #'gatsby>tempel-capf)
+
   :evil-bind
   ((:maps tempel-map)
+   ("<tab>" . #'gatsby>indent-or-complete)
    ("C-g" . #'tempel-abort)
    ("M-j" . #'tempel-next)
    ("M-k" . #'tempel-prev)))
