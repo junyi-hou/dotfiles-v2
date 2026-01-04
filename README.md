@@ -14,9 +14,11 @@ Then install homebrew:
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
-Build Emacs-mac from [the source](https://github.com/jdtsmith/emacs-mac):
+Build Emacs-mac from [the source](https://github.com/jdtsmith/emacs-mac) (TODO: switch to the `emacs-mac-gnu_master_exp` branch?):
 ```
-brew install gcc pkgconf texinfo autoconf tree-sitter libgccjit librsvg
+brew install gcc pkgconf texinfo autoconf libgccjit librsvg
+brew install tree-sitter@0.25
+brew link tree-sitter@0.25
 brew install cmake libtool  # to compile vterm module
 
 cd ~ && mkdir -p tmp && cd ~/tmp
