@@ -8,11 +8,7 @@
 
 ;; completion
 (use-package corfu
-  :ensure
-  (:host
-   github
-   :repo "emacs-straight/corfu"
-   :files ("*" "extensions/*.el" (:exclude ".git")))
+  :ensure (:host github :repo "minad/corfu" :files ("*" "extensions/*.el" (:exclude ".git")))
   :custom
   (corfu-cycle t)
   (corfu-preselect 'prompt)
