@@ -22,21 +22,19 @@
   :config
   (gatsby>defcommand gatsby>corfu-complete ()
     "Complete common parts of all the candidates, or insert the current selection.
-Insert the current selection when
-1. there is only one candidate;
-2. last command is `gatsby>corfu-complete';
-3. last command is `corfu-next'or `corfu-previous'."
+  Insert the current selection when
+  1. there is only one candidate;
+  2. last command is `gatsby>corfu-complete';
+  3. last command is `corfu-next'or `corfu-previous'."
     (if (memq
          last-command '(gatsby>corfu-complete corfu-complete corfu-next corfu-previous))
         (let ((corfu--index (max 0 corfu--index)))
           (corfu-insert))
       (corfu-expand)))
 
-  ;; for some reason I cannot bind <TAB> to any different variables, let's just override that function
-  (advice-add #'corfu-complete :override #'gatsby>corfu-complete)
-
   :evil-bind
   ((:maps corfu-map)
+   ([remap gatsby>indent-or-complete] . #'gatsby>corfu-complete)
    ("M-j" . #'corfu-next)
    ("M-i" . #'corfu-info-documentation)
    ("M-k" . #'corfu-previous)
