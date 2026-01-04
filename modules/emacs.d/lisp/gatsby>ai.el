@@ -78,6 +78,8 @@ on the remote system instead of locally."
    ("SPC a w" . #'eca-rewrite)
    (:maps eca-chat-mode-map :states normal)
    ("<tab>" . #'eca-chat--key-pressed-tab)
+   ("z o" . #'eca-chat-toggle-expandable-block)
+   ("z c" . #'eca-chat-toggle-expandable-block)
    ("<" . #'eca-chat-go-to-prev-expandable-block)
    (">" . #'eca-chat-go-to-next-expandable-block)
    ("`" . #'eca-transient-menu)
