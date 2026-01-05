@@ -255,6 +255,19 @@ current candidate"
    (:maps minibuffer-mode-map)
    ("C-k" . #'windmove-up)))
 
+(use-package lolipop
+  ;; TODO: this requires emacs-31 (master)
+  ;; when https://github.com/emacs-mirror/emacs/commit/48b80a gets merge in
+  ;; https://github.com/jdtsmith/emacs-mac/tree/emacs-mac-gnu_master_exp
+  :if (and (eq system-type 'darwin) (functionp #'window-cursor-info))
+  :ensure
+  (:host
+   github
+   :repo "RadioNoiseE/lolipop"
+   :pre-build (("make clean") ("make"))
+   :files ("lolipop-mode.el" "lolipop-core.dylib"))
+  :hook (elpaca-after-init . lolipop-mode))
+
 
 (provide 'gatsby>ui)
 ;;; gatsby>ui.el ends here
