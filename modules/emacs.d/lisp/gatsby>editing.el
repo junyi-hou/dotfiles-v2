@@ -172,7 +172,7 @@
       (consult--read
        cands
        :prompt "Go to heading: "
-       :annotate (consult--line-prefix)
+       :annotate (consult--line-fontify)
        :category 'consult-location
        :sort nil
        :require-match t
