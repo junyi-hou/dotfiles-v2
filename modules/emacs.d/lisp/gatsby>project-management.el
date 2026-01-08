@@ -272,62 +272,81 @@
 (gatsby>use-internal-pacakge diff-mode
   :defer t
   :custom-face
-  (gatsby>diff-dim-face
-   ((((class color) (background light))
+  (gatsby>diff-context ((t :extend t :background "#212121" :foreground "#8e9999")))
+  (gatsby>diff-context-hl ((t :extend t :background "#3E3E3E" :foreground "#EEFFFF")))
+  (gatsby>diff-added-hl
+   ((t :extend t :weight bold :background "#414836" :foreground ,(doom-color 'green))))
+  (gatsby>diff-removed-hl
+   ((t :extend t :weight bold :background "#5f4545" :foreground ,(doom-color 'red))))
+  (gatsby>diff-hunk-heading-hl
+   ((t
      :extend t
-     :foreground "grey50"
-     :background "grey95")
-    (((class color) (background dark))
-     :extend t
-     :foreground "grey70"
-     :background "grey20")))
-  (gatsby>diff-hunk-heading-face
-   ((t (:extend t :bold t :foreground "black" :background "pink"))))
-  :hook (diff-mode . gatsby>>setup-diff-hunk-highlighting)
+     :weight bold
+     :background ,(doom-color 'violet)
+     :foreground ,(doom-color 'bg))))
+  :custom
+  (diff-font-lock-prettify t)
+  (diff-font-lock-syntax nil)
+  :hook
+  (diff-mode . outline-minor-mode)
+  (diff-mode . gatsby>>diff-setup-hunk-highlighting)
+  (diff-mode . gatsby>diff-highlight-current-hunk)
   :config
 
   (advice-add #'diff-apply-hunk :after #'diff-kill-applied-hunks)
 
-  (defun gatsby>>highlight-current-diff-hunk ()
-    (when (eq major-mode 'diff-mode)
-      ;; Remove existing overlays
-      (remove-overlays (point-min) (point-max) 'gatsby>diff-dim-face t)
-      (remove-overlays (point-min) (point-max) 'gatsby>diff-hunk-heading-face t)
-      ;; Get bounds of current hunk
-      (let ((hunk-bounds
-             (ignore-errors
-               (diff-bounds-of-hunk))))
-        (when hunk-bounds
-          (let ((hunk-start (car hunk-bounds))
-                (hunk-end (cadr hunk-bounds)))
-            ;; Create overlay before current hunk
-            (when (> hunk-start (point-min))
-              (let ((ov (make-overlay (point-min) hunk-start)))
-                (overlay-put ov 'font-lock-face 'gatsby>diff-dim-face)
-                (overlay-put ov 'priority 2)
-                (overlay-put ov 'evaporate t)
-                (overlay-put ov 'gatsby>diff-dim-face t)))
-            ;; Create overlay after current hunk
-            (when (< hunk-end (point-max))
-              (let ((ov (make-overlay hunk-end (point-max))))
-                (overlay-put ov 'font-lock-face 'gatsby>diff-dim-face)
-                (overlay-put ov 'priority 2)
-                (overlay-put ov 'evaporate t)
-                (overlay-put ov 'gatsby>diff-dim-face t)))
-            ;; Highlight the hunk header
-            (save-excursion
-              (goto-char hunk-start)
-              (when (re-search-forward diff-hunk-header-re hunk-end t)
-                (let ((header-start (match-beginning 0))
-                      (header-end (1+ (match-end 0))))
-                  (let ((ov (make-overlay header-start header-end)))
-                    (overlay-put ov 'font-lock-face 'gatsby>diff-hunk-heading-face)
-                    (overlay-put ov 'priority 9)
-                    (overlay-put ov 'evaporate t)
-                    (overlay-put ov 'gatsby>diff-hunk-heading-face t))))))))))
+  ;; mimic magit faces
+  (defun gatsby>>diff-apply-overlay (ov face &optional priority)
+    (overlay-put ov 'font-lock-face face)
+    (overlay-put ov 'priority (or priority 1))
+    (overlay-put ov 'evaproate t)
+    (overlay-put ov 'gatsby>diff-overlay t))
 
-  (defun gatsby>>setup-diff-hunk-highlighting ()
-    (add-hook 'post-command-hook #'gatsby>>highlight-current-diff-hunk nil t))
+  (defun gatsby>>diff-dim-region (beg end)
+    "Apply `gatsby>diff-context' face overlay to BEG and END"
+    (let ((ov (make-overlay beg end)))
+      (gatsby>>diff-apply-overlay ov 'gatsby>diff-context)))
+
+  (defun gatsby>>diff-highligh-current-hunk (beg end)
+    "Apply `gatsby>diff-context-hl', `gatsby>diff-removed-hl' and `gatsby>diff-added-hl' face between BEG and END."
+    (save-excursion
+      (goto-char beg)
+      (while (< (point) end)
+        (let ((line-start (line-beginning-position))
+              (line-end (1+ (line-end-position))))
+          (when (< line-start end)
+            (let ((face
+                   (cond
+                    ((looking-at "^\\+")
+                     'gatsby>diff-added-hl)
+                    ((looking-at "^-")
+                     'gatsby>diff-removed-hl)
+                    ((looking-at diff-hunk-header-re-unified)
+                     'gatsby>diff-hunk-heading-hl)
+                    (t
+                     'gatsby>diff-context-hl))))
+              (let ((ov (make-overlay line-start line-end)))
+                (gatsby>>diff-apply-overlay ov face)))))
+        (forward-line 1))))
+
+  (defun gatsby>diff-highlight-current-hunk ()
+    (remove-overlays (point-min) (point-max) 'gatsby>diff-overlay t)
+    (let ((hunk-bounds
+           (ignore-errors
+             (diff-bounds-of-hunk)))
+          (file-bounds
+           (ignore-errors
+             (diff-bounds-of-file))))
+      (if hunk-bounds
+          (pcase-let ((`(,beg ,end) hunk-bounds)
+                      (`(,file-header _) file-bounds))
+            (gatsby>>diff-dim-region (point-min) (1- beg))
+            (gatsby>>diff-dim-region (1+ end) (point-max))
+            (gatsby>>diff-highligh-current-hunk beg end))
+        (gatsby>>diff-dim-region (point-min) (point-max)))))
+
+  (defun gatsby>>diff-setup-hunk-highlighting ()
+    (add-hook 'post-command-hook #'gatsby>diff-highlight-current-hunk nil t))
 
   :evil-bind
   ((:maps diff-mode-map :states normal)
