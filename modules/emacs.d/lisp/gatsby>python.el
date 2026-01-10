@@ -6,7 +6,7 @@
 
 (require 'gatsby>>utility)
 
-(gatsby>use-internal-pacakge python
+(gatsby>use-internal-package python
   :mode ("\\.py\\'" . python-ts-mode)
   :custom (python-indent-offset 4)
   :hook

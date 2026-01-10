@@ -122,10 +122,10 @@
   (indent-bars-color-by-depth nil)
   (indent-bars-display-on-blank-lines nil))
 
-(gatsby>use-internal-pacakge paren
+(gatsby>use-internal-package paren
   :hook (elpaca-after-init . show-paren-mode))
 
-(gatsby>use-internal-pacakge display-line-numbers
+(gatsby>use-internal-package display-line-numbers
   :custom
   (display-line-numbers-width-start t)
   (display-line-numbers-type 'visual)

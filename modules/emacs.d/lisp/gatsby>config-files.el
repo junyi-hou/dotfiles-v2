@@ -4,7 +4,7 @@
 
 ;;; Code:
 
-(gatsby>use-internal-pacakge yaml-ts-mode
+(gatsby>use-internal-package yaml-ts-mode
   :mode ("\\.ya?ml\\'" . yaml-ts-mode)
   :init
 
@@ -26,7 +26,7 @@
   (yaml-ts-mode . eglot-ensure)
   (yaml-ts-mode . gatsby>>yaml-set-indent-width))
 
-(gatsby>use-internal-pacakge json-ts-mode
+(gatsby>use-internal-package json-ts-mode
   :mode ("\\.json\\'" . json-ts-mode)
   :init
   (defun gatsby>>json-add-formatting-hook ()
@@ -45,7 +45,7 @@
 ;;   ;; use the treywood fork of the protobuf syntex
 ;;  (gatsby>install-treesitter-grammar 'proto "https://github.com/mitchellh/tree-sitter-proto"))
 
-(gatsby>use-internal-pacakge toml-ts-mode
+(gatsby>use-internal-package toml-ts-mode
   :mode ("\\.toml\\'" . toml-ts-mode)
   :init
   (gatsby>install-treesitter-grammar

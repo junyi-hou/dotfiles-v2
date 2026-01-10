@@ -5,7 +5,7 @@
 ;;; Code:
 (require gatsby>>utility)
 
-(gatsby>use-internal-pacakge sh-script
+(gatsby>use-internal-package sh-script
   :mode ("\\.[z]sh" . bash-ts-mode)
   :hook (bash-ts-mode . eglot-ensure)
   :init

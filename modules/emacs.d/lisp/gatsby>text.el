@@ -59,7 +59,7 @@
    ("SPC r r" . #'typst-ts-compile-and-preview)
    ("SPC r o" . #'typst-ts-preview)))
 
-(gatsby>use-internal-pacakge org
+(gatsby>use-internal-package org
   :defer t
   :hook (org-mode . corfu-mode)
   :config

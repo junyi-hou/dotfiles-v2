@@ -10,7 +10,7 @@
   (require 'cl-lib)
   (require 'subr-x))
 
-(gatsby>use-internal-pacakge eshell
+(gatsby>use-internal-package eshell
   :hook
   (eshell-first-time-mode . gatsby>eshell-setup)
   (eshell-first-time-mode . gatsby>eshell-setkey)

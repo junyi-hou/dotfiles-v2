@@ -6,7 +6,7 @@
 
 (require 'gatsby>>utility)
 
-(gatsby>use-internal-pacakge elisp-mode
+(gatsby>use-internal-package elisp-mode
   :init
   (defun gatsby>>lisp-set-tab-width (&rest _)
     (setq-local tab-width 2))

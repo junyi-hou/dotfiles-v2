@@ -14,7 +14,7 @@
   (require 'subr-x)
   (require 'treesit))
 
-(defmacro gatsby>use-internal-pacakge (name &rest args)
+(defmacro gatsby>use-internal-package (name &rest args)
   "So I don't need to type `:ensure nil' every time."
   (declare (indent 1))
   `(use-package ,name

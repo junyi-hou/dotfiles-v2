@@ -6,7 +6,7 @@
 
 (require 'gatsby>>utility)
 
-(gatsby>use-internal-pacakge project
+(gatsby>use-internal-package project
   :custom (vc-follow-symlinks t)
   :config
   ;; Create a new project type whose roots are defined in `gatsby>project-list'.
@@ -28,7 +28,7 @@
          gatsby>project-list))))
   (add-hook 'project-find-functions #'gatsby>project-try -10))
 
-;; (gatsby>use-internal-pacakge smerge-mode
+;; (gatsby>use-internal-package smerge-mode
 ;;   :evil-bind
 ;;   ((:maps (normal visual))
 ;;    ("SPC ]" . #'smerge-next)
@@ -269,7 +269,7 @@
    ("M-j" . #'git-rebase-move-line-down)
    ("M-k" . #'git-rebase-move-line-up)))
 
-(gatsby>use-internal-pacakge diff-mode
+(gatsby>use-internal-package diff-mode
   :defer t
   :custom-face
   (gatsby>diff-context ((t :extend t :background "#212121" :foreground "#8e9999")))
@@ -356,6 +356,21 @@
    ("s" . #'diff-split-hunk)
    ("A" . #'diff-apply-buffer)
    ("q" . #'kill-buffer-and-window)))
+
+(gatsby>use-internal-package vc-dir
+  :config
+  (gatsby>defcommand gatsby>vc-status ()
+    (vc-dir (project-root (project-current))))
+  :evil-bind
+  ((:map normal)
+   ("SPC g g" . #'gatsby>vc-status)
+   (:map vc-dir-mode-map)
+   ("j" . #'vc-dir-next-line)
+   ("k" . #'vc-dir-previous-line)
+   ("<RET>" . #'vc-diff)))
+
+(gatsby>use-internal-package vc
+  :evil-bind ((:map normal) ("SPC g l" . #'vc-print-log)))
 
 (provide 'gatsby>project-management)
 ;;; gatsby>project-management.el ends here

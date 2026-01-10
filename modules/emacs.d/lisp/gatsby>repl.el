@@ -14,7 +14,7 @@
 ;;   :custom (termint-backend 'vterm)
 ;;   )
 
-(gatsby>use-internal-pacakge comint
+(gatsby>use-internal-package comint
   :config
   (gatsby>defcommand gatsby>comint-cls ()
     "clear current REPL buffer."

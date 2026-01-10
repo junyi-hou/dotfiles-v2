@@ -149,14 +149,14 @@
   :after evil
   :hook (elpaca-after-init . global-evil-surround-mode))
 
-(gatsby>use-internal-pacakge elec-pair
+(gatsby>use-internal-package elec-pair
   :hook (elpaca-after-init . electric-pair-mode))
 
 (use-package ws-butler
   :ensure (:host github :repo "lewang/ws-butler" :branch "master")
   :hook (elpaca-after-init . ws-butler-global-mode))
 
-(gatsby>use-internal-pacakge subword
+(gatsby>use-internal-package subword
   :hook (elpaca-after-init . global-subword-mode))
 
 (use-package consult

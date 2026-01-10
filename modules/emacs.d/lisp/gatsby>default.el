@@ -101,7 +101,7 @@ the first call.  Delete the auto-inserted comment for the second call.  Otherwis
 
   (advice-add #'newline :around #'gatsby>>newline))
 
-(gatsby>use-internal-pacakge server
+(gatsby>use-internal-package server
   :hook (elpaca-after-init . gatsby>>start-server)
   :config
   (defun gatsby>>start-server (&rest _)
@@ -115,7 +115,7 @@ the first call.  Delete the auto-inserted comment for the second call.  Otherwis
   :custom (axis-db-location (concat (no-littering-expand-var-file-name "axis-data.sqlite")))
   :hook (elpaca-after-init . global-axis-mode))
 
-(gatsby>use-internal-pacakge compile
+(gatsby>use-internal-package compile
   :init
   (require 'ansi-color)
   (defun gatsby>>colorize-compilation-buffer ()
@@ -161,20 +161,20 @@ the first call.  Delete the auto-inserted comment for the second call.  Otherwis
   ((:maps compilation-shell-minor-mode-map :states normal)
    ("q" . #'gatsby>compilation-delete-buffer-if-process-finished)))
 
-(gatsby>use-internal-pacakge autorevert
+(gatsby>use-internal-package autorevert
   :hook (elpaca-after-init . global-auto-revert-mode))
 
-(gatsby>use-internal-pacakge recentf
+(gatsby>use-internal-package recentf
   :hook (elpaca-after-init . recentf-mode))
 
-(gatsby>use-internal-pacakge saveplace
+(gatsby>use-internal-package saveplace
   :hook (elpaca-after-init . save-place-mode)
   :custom (save-place-file (expand-file-name "save-place.el" no-littering-var-directory)))
 
-(gatsby>use-internal-pacakge savehist
+(gatsby>use-internal-package savehist
   :hook (elpaca-after-init . savehist-mode))
 
-(gatsby>use-internal-pacakge simple
+(gatsby>use-internal-package simple
   :init
   (setq-default
    tab-width 4
@@ -203,15 +203,15 @@ the first call.  Delete the auto-inserted comment for the second call.  Otherwis
    ("q" . #'delete-window)
    ("C-c C-l" . #'gatsby>message-cls)))
 
-(gatsby>use-internal-pacakge backtrace
+(gatsby>use-internal-package backtrace
   :hook (evil-mode . (lambda () (gatsby>>put-mode-to-evil-state 'backtrace-mode 'motion)))
   :evil-bind ((:maps backtrace-mode-map :states (normal motion)) ("q" . #'kill-buffer-and-window)))
 
-(gatsby>use-internal-pacakge debug
+(gatsby>use-internal-package debug
   :hook (evil-mode . (lambda () (gatsby>>put-mode-to-evil-state 'debugger-mode 'motion)))
   :evil-bind ((:maps debugger-mode-map :states (normal motion)) ("q" . #'debugger-quit)))
 
-(gatsby>use-internal-pacakge recentf
+(gatsby>use-internal-package recentf
   :hook (elpaca-after-init . recentf-mode))
 
 

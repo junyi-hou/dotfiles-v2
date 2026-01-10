@@ -4,7 +4,7 @@
 
 ;;; Code:
 
-(gatsby>use-internal-pacakge tramp
+(gatsby>use-internal-package tramp
   :defer t
   :custom
   (remote-file-name-inhibit-locks t)
