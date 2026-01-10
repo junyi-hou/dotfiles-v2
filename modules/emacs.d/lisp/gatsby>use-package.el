@@ -113,7 +113,24 @@
          (use-package-split-list-at-keys :block)
          (cl-remove-if-not #'identity)))))))
 
-(defalias 'use-package-autoloads/:evil-bind 'use-package-autoloads-mode)
+(defun use-package-autoloads/:evil-bind (name _keyword args)
+  "Generate autoloads for commands bound in :evil-bind.
+Extract all command symbols from ARGS and generate autoload declarations."
+  (let ((commands
+         ;; format: off
+         (cl-loop for arg in args
+                  ;; Skip configuration plists like (:map ...) or (:states ...)
+                  unless (gatsby>>evil-bind-config-p arg)
+                  when (and (listp arg)
+                            (eq (car arg) :block))
+                  append (cl-loop for item in (cdddr arg)
+                                  for i from 0
+                                  when (and (cl-oddp i)
+                                            (symbolp item)
+                                            (not (keywordp item)))
+                                  collect item))))
+    ;; format: on
+    (cl-remove-duplicates (delq nil commands))))
 
 (setq use-package-keywords
       (cl-loop
