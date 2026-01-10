@@ -182,12 +182,15 @@
        :initial initial
        :state (consult--jump-state))))
   (advice-add #'consult-outline :override #'gatsby>consult-outline)
+
   (gatsby>defcommand gatsby>consult-search-visual-line (beg end)
     (evil-exit-visual-state)
     (consult-line (buffer-substring-no-properties beg end)))
+
   (gatsby>defcommand gatsby>consult-search-visual-outline (beg end)
     (evil-exit-visual-state)
     (consult-outline (buffer-substring-no-properties beg end)))
+
   ;; enable automatic preview
   (consult-customize
    consult-line
@@ -198,6 +201,7 @@
    gatsby>consult-search-visual-outline
    :preview-key 'any)
   ;; during `/' or `?' search, <C-Return> will start a consult search
+
   (gatsby>defcommand gatsby>consult-line-from-evil (arg)
     "Take current search string and run `consult-line' on it.
   If ARG is non-nil, run `consult-outline' instead."
@@ -209,8 +213,10 @@
              #'consult-line)))
       (run-at-time 0 nil fn str)
       (abort-recursive-edit)))
+
   ;; save consult search in `search-ring' as well
   (defvar-local gatsby>>consult-current-input nil)
+
   (defun gatsby>>consult-add-current-input-to-search-ring (&rest _)
     "Add the current input to the front of `search-ring' so evil search can pick it up.
 
@@ -220,6 +226,7 @@
                              (minibuffer-contents-no-properties))
                          t)
     (setq-local gatsby>>consult-current-input nil))
+
   (defun gatsby>>consult-tempoarily-add-to-minibuffer-hooks (fn &rest args)
     (cl-letf*
         ((minibuffer-exit-hook
@@ -236,12 +243,15 @@
             (when (vertico--match-p (minibuffer-contents-no-properties))
               (exit-minibuffer)))))
       (apply fn args)))
+
   (advice-add
    #'consult-line
    :around #'gatsby>>consult-tempoarily-add-to-minibuffer-hooks)
+
   (advice-add
    #'consult-outline
    :around #'gatsby>>consult-tempoarily-add-to-minibuffer-hooks)
+
   :evil-bind
   ((:maps (motion normal))
    ([remap switch-to-buffer] . #'consult-buffer)
@@ -256,7 +266,3 @@
 
 (provide 'gatsby>editing)
 ;;; gatsby>editing.el ends here
-
-;; Local variables:
-;; elisp-autofmt-load-packages-local: ("use-package" "use-package-core" "gatsby>>utility" "evil-macros" "evil-common")
-;; end:
