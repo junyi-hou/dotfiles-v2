@@ -16,15 +16,6 @@
 
 (gatsby>use-internal-package comint
   :config
-  (gatsby>defcommand gatsby>comint-cls ()
-    "clear current REPL buffer."
-    (let ((last-line
-           (save-excursion
-             (goto-char (point-max))
-             (beginning-of-line)
-             (point))))
-      (set-window-start (selected-window) last-line)
-      (call-interactively #'evil-scroll-line-up)))
 
   (gatsby>defcommand gatsby>comint-goto-last-prompt ()
     "clear current REPL buffer."
@@ -175,7 +166,7 @@ at point-max."
 
   :evil-bind
   ((:maps comint-mode-map :states (normal visual insert))
-   ("C-c C-l" . #'gatsby>comint-cls)
+   ("C-c C-l" . #'comint-clear-buffer)
    ("C-c C-c" . #'comint-interrupt-subjob)
 
    (:maps comint-mode-map :states insert)
