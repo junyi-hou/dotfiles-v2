@@ -119,10 +119,17 @@
 
       ;; copy over the files
       (dolist (file (directory-files-recursively template "^[^.]"))
-        (if (equal "envrc" (file-name-base file))
-            (copy-file file (file-name-concat destination ".envrc") 1)
+        (cond
+         ((equal "envrc" (file-name-base file))
+          (copy-file file (file-name-concat destination ".envrc") 1))
+         ((equal "gitignore" (file-name-base file))
+          (let ((gitignore (file-name-concat destination ".gitignore")))
+            (if (file-exists-p gitignore)
+                (shell-command (format "cat %s >> %s" file gitignore))
+              (copy-file file gitignore))))
+         (t
           (copy-file file (file-name-concat destination (file-name-nondirectory file))
-                     1)))
+                     1))))
 
       (let ((default-directory destination))
         (envrc-allow))))
