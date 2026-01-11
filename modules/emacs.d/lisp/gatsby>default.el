@@ -214,6 +214,49 @@ the first call.  Delete the auto-inserted comment for the second call.  Otherwis
 (gatsby>use-internal-package recentf
   :hook (elpaca-after-init . recentf-mode))
 
+(gatsby>use-internal-package window
+  :config
+  (defun gatsby>>balance-windows-ignore-side (orig-fun &rest args)
+    "Advice for `balance-windows' to exclude side windows from balancing.
+Side windows are temporarily deleted and then restored after balancing."
+    (let ((side-window-states nil))
+      ;; Collect side window information before deleting
+      (dolist (win (window-list))
+        (when-let ((side (window-parameter win 'window-side)))
+          (push (list
+                 :side side
+                 :slot (window-parameter win 'window-slot)
+                 :buffer (window-buffer win)
+                 :width (window-width win)
+                 :height (window-height win))
+                side-window-states)))
+      ;; Delete side windows
+      (dolist (win (window-list))
+        (when (window-parameter win 'window-side)
+          (delete-window win)))
+      ;; Balance the remaining windows
+      (unwind-protect
+          (apply orig-fun args)
+        ;; Restore side windows
+        (dolist (state side-window-states)
+          (let ((win
+                 (display-buffer-in-side-window
+                  (plist-get state :buffer)
+                  `((side . ,(plist-get state :side))
+                    (slot . ,(plist-get state :slot))))))
+            (set-window-dedicated-p win t)
+            ;; Explicitly resize to original dimensions
+            (let ((side (plist-get state :side)))
+              (cond
+               ((memq side '(left right))
+                (window-resize win (- (plist-get state :width) (window-width win)) t t))
+               ((memq side '(top bottom))
+                (window-resize win (- (plist-get state :height) (window-height win))
+                               nil
+                               t)))))))))
+
+  (advice-add #'balance-windows :around #'gatsby>>balance-windows-ignore-side))
+
 
 (provide 'gatsby>default)
 ;;; gatsby>default.el ends here
