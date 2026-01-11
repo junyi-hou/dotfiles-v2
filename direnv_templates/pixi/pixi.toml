@@ -1,0 +1,12 @@
+[workspace]
+name = "[PROJECT-NAME]"
+version = "0.0.1"
+description = "Standard pixi environment for python"
+
+channels = ["conda-forge"]
+platforms = ["osx-arm64", "linux-64", "linux-aarch64"]
+
+[dependencies]
+ty = "*"
+ruff = "*"
+jupyter = "*"

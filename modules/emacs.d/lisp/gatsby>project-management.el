@@ -92,6 +92,41 @@
   (with-eval-after-load 'vterm
     (advice-add #'vterm--set-directory :after #'gatsby>>envrc-update-after-cd))
 
+  (gatsby>defcommand gatsby>envrc-init-from-template (ask)
+    "Initialize a direnv location in `default-directory'.
+     If the prefix argument ASK is non-nil, prompt for the direnv location instead."
+    (let ((destination
+           (if ask
+               (read-file-name "Create .envrc at: "
+                               nil
+                               default-directory
+                               nil
+                               nil
+                               #'file-directory-p)
+             default-directory))
+          (template
+           (completing-read
+            "Choose templates: "
+            (directory-files (file-name-concat gatsby>dotfiles-repo-location
+                                               "direnv_templates")
+                             t "^[^.]"))))
+      ;; rule out corner cases:
+      (unless (file-exists-p destination)
+        (make-directory destination t))
+
+      (when (and (file-exists-p destination) (not (file-directory-p destination)))
+        (user-error "%s is an existing file" destination))
+
+      ;; copy over the files
+      (dolist (file (directory-files-recursively template "^[^.]"))
+        (if (equal "envrc" (file-name-base file))
+            (copy-file file (file-name-concat destination ".envrc") 1)
+          (copy-file file (file-name-concat destination (file-name-nondirectory file))
+                     1)))
+
+      (let ((default-directory destination))
+        (envrc-allow))))
+
   ;; setup lighter on the status line
   ;; (defun gatsby>>envrc-lighter ()
   ;;   "`envrc--lighter' with mouse hover showing current root directory"
@@ -115,6 +150,7 @@
 
   :evil-bind
   ((:maps normal)
+   ("SPC n i" . #'gatsby>envrc-init-from-template)
    ("SPC n n" . #'envrc-reload)
    ("SPC n a" . #'envrc-allow)
    ("SPC n l" . #'gatsby>envrc-log-buffer)))
@@ -357,6 +393,7 @@
   :config
   (gatsby>defcommand gatsby>vc-status ()
     (vc-dir (project-root (project-current))))
+
   :evil-bind
   ((:map normal)
    ("SPC g g" . #'gatsby>vc-status)
@@ -366,7 +403,42 @@
    ("<RET>" . #'vc-diff)))
 
 (gatsby>use-internal-package vc
-  :evil-bind ((:map normal) ("SPC g l" . #'vc-print-log)))
+  :config
+
+  (defun gatsby>git-ref-log ()
+    "Show git reflog in a new buffer with ANSI colors and custom keybindings."
+    (interactive)
+    (let* ((root (vc-root-dir))
+           (buffer (get-buffer-create "*vc-git-reflog*")))
+      (with-current-buffer buffer
+        (setq-local vc-git-reflog-root root)
+        (let ((inhibit-read-only t))
+          (erase-buffer)
+          (vc-git-command
+           buffer
+           nil
+           nil
+           "reflog"
+           "--color=always"
+           "--pretty=format:%C(yellow)%h%Creset %C(auto)%d%Creset %Cgreen%gd%Creset %s %Cblue(%cr)%Creset")
+          (goto-char (point-min))
+          (ansi-color-apply-on-region (point-min) (point-max)))
+
+        (let ((map (make-sparse-keymap)))
+          (evil-define-key nil map (kbd "/") #'isearch-forward)
+          (evil-define-key nil map (kbd "p") #'previous-line)
+          (evil-define-key nil map (kbd "n") #'next-line)
+          (evil-define-key nil map (kbd "q") #'kill-buffer-and-window)
+          (use-local-map map))
+
+        (evil-emacs-state)
+
+        (setq buffer-read-only t)
+        (setq mode-name "Git-Reflog")
+        (setq major-mode 'special-mode))
+      (pop-to-buffer buffer)))
+
+  :evil-bind ((:maps normal) ("SPC g l" . #'vc-print-log)))
 
 (provide 'gatsby>project-management)
 ;;; gatsby>project-management.el ends here
