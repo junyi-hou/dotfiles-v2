@@ -5,13 +5,16 @@
 ;; Code:
 (require 'gatsby>>utility)
 
+(use-package markdown-mode
+  :ensure (:host github :repo "jrblevin/markdown-mode"))
+
 (use-package markdown-ts-mode
   :ensure (:host github :repo "LionyxML/markdown-ts-mode")
   :mode ("\\.md\\'" . markdown-ts-mode)
   :hook
   (markdown-ts-mode . eglot-ensure)
   (markdown-ts-mode . corfu-mode)
-  :defer t
+  :after markdown-mode
   :init
   ;; treesitter
   (gatsby>install-treesitter-grammar
