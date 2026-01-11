@@ -3,6 +3,9 @@
 **/__pycache__/**
 **/.ipynb_checkpoints/**
 
+# emacs source file
+emacs-mac/
+
 # age identity/key file
 modules/passage/identities
 

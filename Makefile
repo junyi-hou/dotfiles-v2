@@ -1,4 +1,4 @@
-.PHONY: install uninstall update-secret
+.PHONY: install uninstall update-secret build
 
 install:
 	@python -m scripts.install
@@ -11,3 +11,6 @@ update-secret:
 
 test:
 	@pytest ./test_scripts
+
+build:
+	@bash ./scripts/install.emacs-macos.sh
