@@ -12,7 +12,8 @@
   ;; Create a new project type whose roots are defined in `gatsby>project-list'.
   (defvar gatsby>project-list '()
     "List of project root directories for custom project detection.")
-  (cl-defstruct gatsby>project root)
+  (cl-defstruct gatsby>project
+    root)
   (cl-defmethod project-root ((project gatsby>project))
     (gatsby>project-root project))
   (defun gatsby>project-try (dir)
@@ -270,20 +271,15 @@
    ("M-k" . #'git-rebase-move-line-up)))
 
 (gatsby>use-internal-package diff-mode
-  :defer t
   :custom-face
   (gatsby>diff-context ((t :extend t :background "#212121" :foreground "#8e9999")))
   (gatsby>diff-context-hl ((t :extend t :background "#3E3E3E" :foreground "#EEFFFF")))
   (gatsby>diff-added-hl
-   ((t :extend t :weight bold :background "#414836" :foreground ,(doom-color 'green))))
+   ((t :extend t :weight bold :background "#414836" :foreground "#c2e88d")))
   (gatsby>diff-removed-hl
-   ((t :extend t :weight bold :background "#5f4545" :foreground ,(doom-color 'red))))
+   ((t :extend t :weight bold :background "#5f4545" :foreground "#f57373")))
   (gatsby>diff-hunk-heading-hl
-   ((t
-     :extend t
-     :weight bold
-     :background ,(doom-color 'violet)
-     :foreground ,(doom-color 'bg))))
+   ((t :extend t :weight bold :background "#bb80b3" :foreground "#212121")))
   :custom
   (diff-font-lock-prettify t)
   (diff-font-lock-syntax nil)
