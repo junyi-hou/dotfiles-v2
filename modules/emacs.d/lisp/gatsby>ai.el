@@ -14,7 +14,9 @@
 (use-package agent-shell
   :ensure (:host github :repo "xenodium/agent-shell")
   :hook (agent-shell-mode . corfu-mode)
+  :custom-face (header-line ((t :inherit default)))
   :custom
+  (agent-shell-header-style 'text)
   (agent-shell-display-action
    '(display-buffer-in-side-window (side . right) (window-width . 0.25) (slot . 0)))
   (agent-shell-file-completion-enabled t)
@@ -40,6 +42,25 @@
          "ANTHROPIC_API_KEY"
          ""))
 
+  (gatsby>defcommand gatsby>claude-code-toggle (force-new)
+    (let* ((project-root (and (project-current) (project-root (project-current))))
+           (current-client
+            (thread-last
+             (buffer-list)
+             (seq-filter #'buffer-live-p)
+             (seq-filter (lambda (b) (string-prefix-p "Claude Code " (buffer-name b))))
+             (cl-find-if
+              (lambda (b)
+                (with-current-buffer b
+                  (file-equal-p
+                   default-directory
+                   (and (project-current) (project-root (project-current))))))))))
+      (if (or force-new (not current-client))
+          (call-interactively #'agent-shell-anthropic-start-claude-code)
+        (display-buffer current-client agent-shell-display-action)
+        (switch-to-buffer-other-window current-client)
+        (evil-insert-state))))
+
   ;; ;; tramp integration
   ;; ;; first, mimic `agent-shell--resolve-devcontainer-path'
   ;; (defun agent-shell--resolve-tramp-path (path)
@@ -56,69 +77,15 @@
   ;; (setq
   ;;  ;; agent-shell-path-resolver-function #'agent-shell--resolve-tramp-path
   ;;  agent-shell-header-style 'text)
-  )
-
-(use-package eca
-  :ensure (:host github :repo "editor-code-assistant/eca-emacs" :files ("*.el"))
-  :hook (eca-chat-mode . corfu-mode)
-  :custom
-  (eca-rewrite-diff-tool 'simple-diff)
-  (eca-chat-window-width 0.25)
-  :custom-face (header-line ((t :inherit default)))
-  :init
-  (defun gatsby>>get-ai-api-key ()
-    "run passage to get the openai_api_key. Return nil if no key is found"
-    (thread-first
-     "direnv exec %s passage show openrouter-api"
-     (format (expand-file-name gatsby>dotfiles-repo-location))
-     (shell-command-to-string)
-     (string-trim)
-     (string-split "\n")
-     (last)
-     (car)))
-
-  (defun gatsby>>add-api-key-to-eca-config (fn &rest args)
-    (with-environment-variables (("OPENROUTER_API_KEY" (gatsby>>get-ai-api-key)))
-      (apply fn args)))
-
-  (advice-add #'eca :around #'gatsby>>add-api-key-to-eca-config)
-
-  (defun gatsby>>eca-server-command-tramp-aware (fn &rest args)
-    "Make eca-process--server-command TRAMP-aware.
-If the current project is on a remote host, look for the eca binary
-on the remote system instead of locally."
-    (if (file-remote-p default-directory)
-        ;; Remote project: look for eca on remote system
-        (let ((remote-eca (executable-find "eca" t)))
-          (if remote-eca
-              (list :decision 'system :command (list remote-eca "server"))
-            (user-error
-             "eca not found on remote system. Please install eca on the remote host")))
-      ;; Local project: use default behavior
-      (apply fn args)))
-
-  (advice-add
-   #'eca-process--server-command
-   :around #'gatsby>>eca-server-command-tramp-aware)
-
   :evil-bind
   ((:maps normal)
-   ("SPC a a" . #'eca)
-   ("SPC a f" . #'eca-chat-select)
-   (:maps visual)
-   ("SPC a w" . #'eca-rewrite)
-   (:maps eca-chat-mode-map :states normal)
-   ("<tab>" . #'eca-chat--key-pressed-tab)
-   ("z o" . #'eca-chat-toggle-expandable-block)
-   ("z c" . #'eca-chat-toggle-expandable-block)
-   ("<" . #'eca-chat-go-to-prev-expandable-block)
-   (">" . #'eca-chat-go-to-next-expandable-block)
-   ("`" . #'eca-transient-menu)
+   ("SPC a a" . #'gatsby>claude-code-toggle)
+   (:maps agent-shell-mode-map :states insert)
+   ("RET" . #'comint-accumulate)
+   ("M-RET" . #'comint-send-input)
+   (:maps agent-shell-mode-map :states normal)
    ("q" . #'delete-window)
-   (:maps eca-chat-mode-map :states insert)
-   ("<return>" . #'eca-chat--key-pressed-newline)
-   ("S-<return>" . #'markdown-insert-list-item)
-   ("M-<return>" . #'eca-chat--key-pressed-return)))
+   ([remap kill-buffer-and-window] . #'delete-window)))
 
 (provide 'gatsby>ai)
 ;;; gatsby>ai.el ends here
