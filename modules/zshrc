@@ -45,5 +45,5 @@ if [ -f "$HOME/.zshrc.backup" ]; then
 fi
 
 # Local Variables:
-# mode: shell-script
+# mode: bash-ts
 # End:
