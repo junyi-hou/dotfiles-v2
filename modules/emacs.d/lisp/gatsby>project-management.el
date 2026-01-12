@@ -128,8 +128,9 @@
                 (shell-command (format "cat %s >> %s" file gitignore))
               (copy-file file gitignore))))
          (t
-          (copy-file file (file-name-concat destination (file-name-nondirectory file))
-                     1))))
+          (copy-file
+           file (file-name-concat destination (file-relative-name file template))
+           1))))
 
       (let ((default-directory destination))
         (envrc-allow))))
