@@ -13,7 +13,8 @@ else
     export EDITOR="emacsclient -r -a ''"
 fi
 
-export PATH=$DOTFILES_ROOT/.pixi/envs/all/bin:$HOME/.cargo/bin:/bin:$PATH
+export JAVA_HOME=$DOTFILES_ROOT/.tools/java
+export PATH=$DOTFILES_ROOT/.pixi/envs/all/bin:$JAVA_HOME/bin:$HOME/.cargo/bin:/bin:$PATH
 
 # mac setting
 if [[ "$(uname)" == "Darwin" ]]; then

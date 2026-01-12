@@ -1,4 +1,4 @@
-.PHONY: install uninstall update-secret build
+.PHONY: install uninstall update-secret build java
 
 install:
 	@python -m scripts.install
@@ -14,3 +14,6 @@ test:
 
 build:
 	@bash ./scripts/install.emacs-macos.sh
+
+java:
+	@bash ./scripts/install-java.sh
