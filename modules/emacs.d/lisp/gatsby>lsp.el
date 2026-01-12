@@ -41,6 +41,10 @@
    ("K" . #'corfu-popupinfo-scroll-down)
    ("<esc>" . #'corfu-popupinfo-toggle)))
 
+(use-package cape
+  :ensure (:host github :repo "minad/cape")
+  :init (add-hook 'completion-at-point-functions #'cape-file))
+
 (use-package orderless
   :ensure (:host github :repo "oantolin/orderless")
   :custom
