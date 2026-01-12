@@ -383,56 +383,56 @@
    ("A" . #'diff-apply-buffer)
    ("q" . #'kill-buffer-and-window)))
 
-(gatsby>use-internal-package vc-dir
-  :config
-  (gatsby>defcommand gatsby>vc-status ()
-    (vc-dir (project-root (project-current))))
+;; (gatsby>use-internal-package vc-dir
+;;   :config
+;;   (gatsby>defcommand gatsby>vc-status ()
+;;     (vc-dir (project-root (project-current))))
 
-  :evil-bind
-  ((:map normal)
-   ("SPC g g" . #'gatsby>vc-status)
-   (:map vc-dir-mode-map)
-   ("j" . #'vc-dir-next-line)
-   ("k" . #'vc-dir-previous-line)
-   ("<RET>" . #'vc-diff)))
+;;   :evil-bind
+;;   ((:map normal)
+;;    ("SPC g g" . #'gatsby>vc-status)
+;;    (:map vc-dir-mode-map)
+;;    ("j" . #'vc-dir-next-line)
+;;    ("k" . #'vc-dir-previous-line)
+;;    ("<RET>" . #'vc-diff)))
 
-(gatsby>use-internal-package vc
-  :config
+;; (gatsby>use-internal-package vc
+;;   :config
 
-  (defun gatsby>git-ref-log ()
-    "Show git reflog in a new buffer with ANSI colors and custom keybindings."
-    (interactive)
-    (let* ((root (vc-root-dir))
-           (buffer (get-buffer-create "*vc-git-reflog*")))
-      (with-current-buffer buffer
-        (setq-local vc-git-reflog-root root)
-        (let ((inhibit-read-only t))
-          (erase-buffer)
-          (vc-git-command
-           buffer
-           nil
-           nil
-           "reflog"
-           "--color=always"
-           "--pretty=format:%C(yellow)%h%Creset %C(auto)%d%Creset %Cgreen%gd%Creset %s %Cblue(%cr)%Creset")
-          (goto-char (point-min))
-          (ansi-color-apply-on-region (point-min) (point-max)))
+;;   (defun gatsby>git-ref-log ()
+;;     "Show git reflog in a new buffer with ANSI colors and custom keybindings."
+;;     (interactive)
+;;     (let* ((root (vc-root-dir))
+;;            (buffer (get-buffer-create "*vc-git-reflog*")))
+;;       (with-current-buffer buffer
+;;         (setq-local vc-git-reflog-root root)
+;;         (let ((inhibit-read-only t))
+;;           (erase-buffer)
+;;           (vc-git-command
+;;            buffer
+;;            nil
+;;            nil
+;;            "reflog"
+;;            "--color=always"
+;;            "--pretty=format:%C(yellow)%h%Creset %C(auto)%d%Creset %Cgreen%gd%Creset %s %Cblue(%cr)%Creset")
+;;           (goto-char (point-min))
+;;           (ansi-color-apply-on-region (point-min) (point-max)))
 
-        (let ((map (make-sparse-keymap)))
-          (evil-define-key nil map (kbd "/") #'isearch-forward)
-          (evil-define-key nil map (kbd "p") #'previous-line)
-          (evil-define-key nil map (kbd "n") #'next-line)
-          (evil-define-key nil map (kbd "q") #'kill-buffer-and-window)
-          (use-local-map map))
+;;         (let ((map (make-sparse-keymap)))
+;;           (evil-define-key nil map (kbd "/") #'isearch-forward)
+;;           (evil-define-key nil map (kbd "p") #'previous-line)
+;;           (evil-define-key nil map (kbd "n") #'next-line)
+;;           (evil-define-key nil map (kbd "q") #'kill-buffer-and-window)
+;;           (use-local-map map))
 
-        (evil-emacs-state)
+;;         (evil-emacs-state)
 
-        (setq buffer-read-only t)
-        (setq mode-name "Git-Reflog")
-        (setq major-mode 'special-mode))
-      (pop-to-buffer buffer)))
+;;         (setq buffer-read-only t)
+;;         (setq mode-name "Git-Reflog")
+;;         (setq major-mode 'special-mode))
+;;       (pop-to-buffer buffer)))
 
-  :evil-bind ((:maps normal) ("SPC g l" . #'vc-print-log)))
+;;   :evil-bind ((:maps normal) ("SPC g l" . #'vc-print-log)))
 
 (provide 'gatsby>project-management)
 ;;; gatsby>project-management.el ends here
