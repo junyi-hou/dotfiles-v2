@@ -12,8 +12,12 @@
   :custom
   (doom-themes-enable-italic t)
   (doom-themes-enable-bold t)
-  :config (load-theme 'doom-material-dark t)
 
+  :custom-face (nobreak-space ((t :foreground nil :background nil :underline nil)))
+
+  :config
+
+  (load-theme 'doom-material-dark t)
   ;; default UI
   (line-number-mode -1)
   (column-number-mode -1)

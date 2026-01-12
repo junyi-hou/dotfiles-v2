@@ -198,6 +198,19 @@
 
   (make-variable-buffer-local 'magit-log-section-commit-count)
 
+  ;; make recent-commits always visible
+  (magit-add-section-hook
+   'magit-status-sections-hook
+   'magit-insert-recent-commits
+   'magit-insert-unpushed-to-upstream-or-recent
+   'replace)
+
+  (magit-add-section-hook
+   'magit-status-sections-hook
+   'magit-insert-unpushed-to-upstream
+   'magit-insert-unpushed-to-pushremote
+   'append)
+
   (defun gatsby>>magit-change-number-of-commits (n increase)
     "Change the number of commits shown by N.
   If INCREASE is non-nil, show `magit-log-section-commit-count'+N commits,
@@ -249,33 +262,6 @@
      (t
       'magit-visit-thing)))
 
-  (gatsby>defcommand gatsby>magit-refresh-status (all-section)
-    (if (and all-section (eq major-mode 'magit-status-mode))
-        (let ((magit-status-section-hook
-               '(magit-insert-status-headers
-                 magit-insert-merge-log
-                 magit-insert-rebase-sequence
-                 magit-insert-am-sequence
-                 magit-insert-sequencer-sequence
-                 magit-insert-bisect-output
-                 magit-insert-bisect-rest
-                 magit-insert-bisect-log
-                 magit-insert-untracked-files
-                 magit-insert-unstaged-changes
-                 magit-insert-staged-changes
-                 magit-insert-stashes
-                 magit-insert-unpushed-to-pushremote
-                 magit-insert-unpushed-to-upstream
-                 magit-insert-unpulled-from-pushremote
-                 magit-insert-unpulled-from-upstream
-                 magit-insert-recent-commits))
-              (inhibit-read-only t)
-              (point (point)))
-          (erase-buffer)
-          (magit-status-refresh-buffer)
-          (goto-char (min (point-max) point)))
-      (call-interactively #'magit-refresh-buffer)))
-
   :evil-bind
   ((:maps normal)
    ("SPC g g" . #'magit-status)
@@ -287,7 +273,7 @@
    ("s" . #'magit-stage)
    ("u" . #'magit-unstage)
    ("p" . #'magit-push)
-   (:maps magit-hunk-section-map)
+   (:maps (magit-hunk-section-map magit-file-section-map))
    ("C-j" . #'windmove-down)
    (:maps magit-status-mode-map :states visual)
    ("u" . #'magit-unstage)
