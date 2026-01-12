@@ -13,7 +13,7 @@
   (doom-themes-enable-italic t)
   (doom-themes-enable-bold t)
 
-  :custom-face (nobreak-space ((t :foreground nil :background nil :underline nil)))
+  :custom-face (nobreak-space ((t :foreground unspecified :background unspecified :underline nil)))
 
   :config
 
@@ -260,9 +260,6 @@ current candidate"
    ("C-k" . #'windmove-up)))
 
 (use-package lolipop
-  ;; TODO: this requires emacs-31 (master)
-  ;; when https://github.com/emacs-mirror/emacs/commit/48b80a gets merge in
-  ;; https://github.com/jdtsmith/emacs-mac/tree/emacs-mac-gnu_master_exp
   :if (and (eq system-type 'darwin) (functionp #'window-cursor-info))
   :ensure
   (:host
