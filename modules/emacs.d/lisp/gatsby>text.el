@@ -12,7 +12,7 @@
   :ensure (:host github :repo "LionyxML/markdown-ts-mode")
   :mode ("\\.md\\'" . markdown-ts-mode)
   :hook
-  (markdown-ts-mode . eglot-ensure)
+  ;; (markdown-ts-mode . eglot-ensure)
   (markdown-ts-mode . corfu-mode)
   :after markdown-mode
   :init
