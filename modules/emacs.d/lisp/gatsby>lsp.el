@@ -151,7 +151,8 @@
   (defun gatsby>>init-tempel (&rest _)
     "Put tempel-expand next to `gatsby>insert-tab' in `gatsby>tab-commands'."
     (setq gatsby>tab-commands
-          '(gatsby>insert-tab gatsby>tempel-expand completion-at-point)))
+          '(gatsby>insert-tab gatsby>tempel-expand completion-at-point))
+    (add-hook 'completion-at-point-functions #'gatsby>tempel-capf nil t))
 
   (defun gatsby>tempel-capf ()
     "Auto complete the current templates"
@@ -165,8 +166,6 @@
        templates
        :exclusive 'no
        :company-kind (lambda (_) 'snippet))))
-
-  (add-to-list 'completion-at-point-functions #'gatsby>tempel-capf)
 
   :evil-bind
   ((:maps tempel-map)
