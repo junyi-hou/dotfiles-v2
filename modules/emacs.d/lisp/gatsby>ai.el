@@ -20,6 +20,7 @@
   (agent-shell-display-action
    '(display-buffer-in-side-window (side . right) (window-width . 0.25) (slot . 0)))
   (agent-shell-file-completion-enabled t)
+  :commands (agent-shell-anthropic-start-claude-code gatsby>claude-code-toggle)
   :init
   (defun gatsby>>get-ai-api-key ()
     "run passage to get the openai_api_key. Return nil if no key is found"
