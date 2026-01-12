@@ -1,4 +1,4 @@
-set -e
+set -euo pipefail
 
 export UV_NO_MODIFY_PATH=1
 export UV_INSTALL_DIR="$(pwd)/.tools/bin"
