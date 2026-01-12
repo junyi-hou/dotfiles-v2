@@ -223,11 +223,11 @@ at point-max."
       (backward-char 3)))
 
   (gatsby>defcommand gatsby>jupyter-next-cell ()
-    (let ((cell-regexp (format "^%s +\\(.\\)*\n" comment-start)))
+    (let ((cell-regexp (format "^%s\\+\\(.\\)*\n" comment-start)))
       (re-search-forward cell-regexp nil 'noerror)))
 
   (gatsby>defcommand gatsby>jupyter-prev-cell ()
-    (let ((cell-regexp (format "^%s +\\(.\\)*\n" comment-start)))
+    (let ((cell-regexp (format "^%s\\+\\(.\\)*\n" comment-start)))
       (re-search-backward cell-regexp nil 'noerror)))
 
   (gatsby>defcommand gatsby>jupyter-generate-notebook (run)
@@ -255,7 +255,7 @@ at point-max."
               (e (region-end)))
           (jupyter-eval-string (buffer-substring-no-properties b e))
           (evil-normal-state))
-      (let* ((format "^%s +\\(.\\)*\n" comment-start)
+      (let* ((cell-regexp (format "^%s\\+\\(.\\)*\n" comment-start))
              (b
               (save-excursion
                 (or (and (not from-top) (re-search-backward cell-regexp nil 'noerror))
