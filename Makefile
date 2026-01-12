@@ -13,7 +13,7 @@ test:
 	@pytest ./test_scripts
 
 build:
-	@bash ./scripts/install.emacs-macos.sh
+	@bash ./scripts/install-emacs-macos.sh
 
 java:
 	@bash ./scripts/install-java.sh

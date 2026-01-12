@@ -1,11 +1,11 @@
---- a/window.c	2025-01-04 19:05:30
-+++ b/window.c	2026-01-05 20:52:31
-@@ -8099,4 +8099,51 @@
-   (Lisp_Object window)
- {
+diff --git a/src/window.c b/src/window.c
+index e70b7ddde9a..c0b4854dc1a 100644
+--- a/src/window.c
++++ b/src/window.c
+@@ -8099,6 +8099,53 @@
    return decode_live_window (window)->cursor_type;
-+}
-+
+ }
+ 
 +DEFUN ("window-cursor-info", Fwindow_cursor_info, Swindow_cursor_info,
 +       0, 1, 0,
 +       doc: /* Return information about the cursor of WINDOW.
@@ -51,12 +51,14 @@
 +                make_fixnum (phys_cursor_width),
 +                make_fixnum (phys_cursor_height),
 +                make_fixnum (phys_cursor_ascent));
- }
-
++}
++
  
+ /***********************************************************************
+ 			    Scroll bars
 @@ -9036,5 +9083,6 @@
-   defsubr (&Swindow_parameter);
    defsubr (&Sset_window_parameter);
+   defsubr (&Swindow_discard_buffer);
    defsubr (&Swindow_cursor_type);
 +  defsubr (&Swindow_cursor_info);
    defsubr (&Sset_window_cursor_type);
