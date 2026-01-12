@@ -37,7 +37,7 @@
   (defun gatsby>>cache-remote (key cache orig-fn &rest args)
     "Cache the value in CACHE if KEY is a remoote path."
     (if (and key (file-remote-p key))
-        (if-let ((current (assoc key (symbol-value cache))))
+        (if-let* ((current (assoc key (symbol-value cache))))
           (cdr current)
           (let ((current (apply orig-fn args)))
             (set cache (cons (cons key current) (symbol-value cache)))

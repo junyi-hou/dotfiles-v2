@@ -57,7 +57,7 @@ If BUFFER is nil, use `gatsby>comint-buffer'."
       (user-error "An existing REPL is running"))
 
     (let* ((default-directory
-            (if-let ((project (project-current)))
+            (if-let* ((project (project-current)))
               (project-root project)
               default-directory))
            (repl-buffer
@@ -285,7 +285,7 @@ at point-max."
     (evil-insert-state))
 
   (gatsby>defcommand gatsby>jupyter-interrupt-or-clean-input ()
-    (if-let ((client (jupyter-repl--get-client))
+    (if-let* ((client (jupyter-repl--get-client))
              (_ (jupyter-kernel-busy-p client)))
       (jupyter-repl-interrupt-kernel client)
       (call-interactively #'jupyter-repl-clear-input)))

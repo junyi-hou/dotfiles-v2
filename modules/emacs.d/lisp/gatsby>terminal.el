@@ -144,7 +144,7 @@
            ;; assuming remote is linux (which is almost always true)
            (home (format "%s/home/%s" host (file-remote-p default-directory 'user)))
            (root
-            (when-let ((pr (project-current)))
+            (when-let* ((pr (project-current)))
               (project-root pr))))
       (cond
        ((and (not args)

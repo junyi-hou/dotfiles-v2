@@ -110,10 +110,10 @@ the first call.  Delete the auto-inserted comment for the second call.  Otherwis
          'Dotfiles "Another emacs server is running. Do not launch new server.")
       (server-start))))
 
-(use-package axis
-  :ensure (:host github :repo "junyi-hou/emacs-axis")
-  :custom (axis-db-location (concat (no-littering-expand-var-file-name "axis-data.sqlite")))
-  :hook (elpaca-after-init . global-axis-mode))
+;; (use-package axis
+;;   :ensure (:host github :repo "junyi-hou/emacs-axis")
+;;   :custom (axis-db-location (concat (no-littering-expand-var-file-name "axis-data.sqlite")))
+;;   :hook (elpaca-after-init . global-axis-mode))
 
 (gatsby>use-internal-package compile
   :init
@@ -222,7 +222,7 @@ Side windows are temporarily deleted and then restored after balancing."
     (let ((side-window-states nil))
       ;; Collect side window information before deleting
       (dolist (win (window-list))
-        (when-let ((side (window-parameter win 'window-side)))
+        (when-let* ((side (window-parameter win 'window-side)))
           (push (list
                  :side side
                  :slot (window-parameter win 'window-slot)

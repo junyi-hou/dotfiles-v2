@@ -66,7 +66,7 @@
   ;; ;; first, mimic `agent-shell--resolve-devcontainer-path'
   ;; (defun agent-shell--resolve-tramp-path (path)
   ;;   "TODO"
-  ;;   (if-let ((remote (file-remote-p default-directory)))
+  ;;   (if-let* ((remote (file-remote-p default-directory)))
   ;;     ;; we are on remote path
   ;;     (if (file-remote-p path)
   ;;         (file-remote-p path 'localname)
