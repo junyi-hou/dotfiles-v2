@@ -121,5 +121,10 @@
    ("<" . #'org-previous-visible-heading)
    (">" . #'org-next-visible-heading)))
 
+(use-package csv-mode
+  :mode "\\.[tc]sv\\'"
+  :ensure (:type git :repo "https://github.com/emacsmirror/csv-mode.git" :branch "master")
+  :hook (csv-mode . csv-align-mode))
+
 (provide 'gatsby>text)
 ;;; gatsby>text.el ends here
