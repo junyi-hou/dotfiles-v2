@@ -13,7 +13,7 @@
   ("\\.edn\\'" . clojure-ts-mode)
   :hook
   (clojure-ts-mode . eglot-ensure)
-  (clojure-ts-mode . gatsby>comint-managed-mode)
+  (clojure-ts-mode . gatsby>jupyter-managed-mode)
   (clojure-ts-mode . gatsby>>clojure-setup-local-var)
   :init
   ;; do not need to setup treesitter - it is taken care of by the mode itself

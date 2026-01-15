@@ -1,8 +1,7 @@
 set -euo pipefail
 
-_PROJECT_ROOT=$(git rev-parse --show-toplevel)
+_PROJECT_ROOT=$(pwd)
 _TOOLS="${_PROJECT_ROOT}/.tools"
-mkdir -p "${_TOOLS}"
 
 ### CLOJORE
 _CLOJORE_VERSION="1.12.3.1577"
@@ -17,23 +16,39 @@ if ! command -v clojure-lsp >/dev/null 2>&1; then
 fi
 
 # ### REPL
-# export UV_NO_MODIFY_PATH=1
-# export UV_INSTALL_DIR="$(pwd)/.tools/bin"
-# export UV_NO_PROGRESS=1
+export JUPYTER_PATH="${_TOOLS}/jupyter"
+export UV_NO_MODIFY_PATH=1
+export UV_INSTALL_DIR="${_TOOLS}/bin"
+export UV_NO_PROGRESS=1
+export PATH="${_TOOLS}/bin:$PATH"
 
-# if [ ! -f .tools/bin/uv ]; then
-#     echo "uv not found locally, installing..."
-#     mkdir -p .tools
-#     curl -LsSf https://astral.sh/uv/install.sh | sh -s --
-# fi
+if [ ! -f "${_TOOLS}/bin/uv" ]; then
+    echo "uv not found locally, installing..."
+    mkdir -p .tools
+    curl -LsSf https://astral.sh/uv/install.sh | sh -s --
+fi
 
-# if [ ! -d .venv ]; then
-#     uv venv .venv --python "==3.12"
-# fi
+if [ ! -d "${_TOOLS}/venv" ]; then
+    uv venv "${_TOOLS}/venv" --python "==3.12"
+fi
 
-# # Activate the virtual environment
-# source .venv/bin/activate
-# uv sync --all-groups --no-install-project --frozen
+source "${_TOOLS}/venv/bin/activate"
+uv pip install "jupyter==1.1.1"
+
+# create kernel.json file:
+if [ ! -f "${JUPYTER_PATH}/kernels/clojure/kernel.json" ]; then
+    cat > "${JUPYTER_PATH}/kernels/clojure/kernel.json" <<EOF
+{
+    "argv": [
+        "${JUPYTER_PATH}/kernels/clojure/start-kernel.sh",
+        "{connection_file}"
+    ],
+    "display_name": "Clojure (clojupyter)",
+    "language": "clojure",
+    "interrupt_mode": "message"
+}
+EOF
+fi
 
 # Local Variables:
 # mode: bash-ts
