@@ -200,8 +200,8 @@
    gatsby>consult-search-visual-line
    gatsby>consult-search-visual-outline
    :preview-key 'any)
-  ;; during `/' or `?' search, <C-Return> will start a consult search
 
+  ;; during `/' or `?' search, <C-Return> will start a consult search
   (gatsby>defcommand gatsby>consult-line-from-evil (arg)
     "Take current search string and run `consult-line' on it.
   If ARG is non-nil, run `consult-outline' instead."
