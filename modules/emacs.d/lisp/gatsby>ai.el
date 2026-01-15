@@ -53,14 +53,32 @@
              (cl-find-if
               (lambda (b)
                 (with-current-buffer b
-                  (file-equal-p
-                   default-directory
-                   (and (project-current) (project-root (project-current))))))))))
+                  (file-equal-p default-directory project-root)))))))
       (if (or force-new (not current-client))
           (call-interactively #'agent-shell-anthropic-start-claude-code)
         (display-buffer current-client agent-shell-display-action)
         (switch-to-buffer-other-window current-client)
         (evil-insert-state))))
+
+  ;; TODO: maybe doesn't need this when upstream fixed it?
+  (gatsby>defcommand gatsby>agent-shell-send-file (ask)
+    (cond
+     ((region-active-p)
+      (agent-shell-send-region))
+     ((buffer-file-name)
+      (agent-shell--insert-to-shell-buffer
+       :text
+       (agent-shell--processed-files
+        :files (list (file-relative-name buffer-file-name (agent-shell-cwd))))))
+     ((or ask (derived-mode-p 'agent-shell-mode))
+      (agent-shell--insert-to-shell-buffer
+       :text
+       (agent-shell--processed-files
+        :files
+        (or (list (completing-read "Send file: " (agent-shell--project-files)))
+            (user-error "No file to send")))))
+     (t
+      (user-error "No file to send"))))
 
   ;; ;; tramp integration
   ;; ;; first, mimic `agent-shell--resolve-devcontainer-path'
@@ -81,9 +99,13 @@
   :evil-bind
   ((:maps normal)
    ("SPC a a" . #'gatsby>claude-code-toggle)
+   ("SPC a s" . #'gatsby>agent-shell-send-file)
+   (:maps visual)
+   ("SPC a s" . #'agent-shell-send-region)
    (:maps agent-shell-mode-map :states insert)
    ("RET" . #'comint-accumulate)
    ("M-RET" . #'comint-send-input)
+   ("C-r" . #'agent-shell-search-history)
    (:maps agent-shell-mode-map :states normal)
    ("q" . #'delete-window)
    ([remap kill-buffer-and-window] . #'delete-window)))
