@@ -128,9 +128,12 @@
                 (shell-command (format "cat %s >> %s" file gitignore))
               (copy-file file gitignore))))
          (t
-          (copy-file
-           file (file-name-concat destination (file-relative-name file template))
-           1))))
+          (let ((template-file (file-relative-name file template)))
+            ;; if template-file sits in a folder inside the template
+            ;; create that folder in the destination first
+            (when-let* ((dir (file-name-directory template-file)))
+              (make-directory (file-name-concat destination dir) t))
+            (copy-file file (file-name-concat destination template-file) 1)))))
 
       (let ((default-directory destination))
         (envrc-allow))))
