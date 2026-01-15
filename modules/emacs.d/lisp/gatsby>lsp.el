@@ -110,9 +110,12 @@
 
   :init
   (setq eglot-server-programs nil)
+  (defun gatsby>>eglot-disable-inlay-hint (&rest _)
+    "Disable `eglot-inlay-hints-mode'"
+    (eglot-inlay-hints-mode -1))
+
   (defvar-local gatsby>eglot-auto-format-before-save nil
     "A file-local variable, if not-nil, enable auto format buffer whenever possible")
-
   (put 'gatsby>eglot-auto-format-before-save 'safe-local-variable #'booleanp)
 
   (defun gatsby>>maybe-format-buffer ()
@@ -124,7 +127,9 @@
                   (eglot-format-buffer)))
               nil t))
 
-  :hook (eglot-managed-mode . gatsby>>maybe-format-buffer)
+  :hook
+  (eglot-managed-mode . gatsby>>maybe-format-buffer)
+  (eglot-managed-mode . gatsby>>eglot-disable-inlay-hint)
   :evil-bind
   ((:maps (normal visual))
    ("SPC r a" . #'eglot-code-actions)
