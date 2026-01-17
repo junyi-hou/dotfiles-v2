@@ -291,7 +291,7 @@
     (magit-status-mode-map
      magit-diff-mode-map magit-log-mode-map magit-revision-mode-map)
     :states motion)
-   ("SPC r" . #'gatsby>magit-refresh-status)
+   ("SPC r" . #'magit-refresh-buffer)
    (:maps git-rebase-mode-map :states motion)
    ("p" . #'git-rebase-pick)
    ("e" . #'git-rebase-edit)
