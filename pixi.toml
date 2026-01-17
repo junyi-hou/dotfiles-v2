@@ -20,7 +20,9 @@ jupyter = "*"
 
 
 [feature.global.dependencies]
-python = "==3.12"
+## only needed if in the future I want to use pypi to install python packages
+## add the pypi dependencies in the [feature.global.pypi-dependencies]
+# python = "==3.12"
 rage = "*"
 eza = "*"
 fd-find = "*"
@@ -32,8 +34,4 @@ harper = "*"
 tinymist = "*"
 bash-language-server = "*"
 yaml-language-server = "*"
-markdown-oxide = "*"
 taplo = "*"
-
-[feature.global.pypi-dependencies]
-aider-chat = ">=0.86.0"
