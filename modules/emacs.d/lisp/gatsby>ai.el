@@ -80,6 +80,18 @@
      (t
       (user-error "No file to send"))))
 
+  ;; "<" and ">" jumps to prev/next permission button if there's a pending permission ask,
+  ;; else go to next/prev prompt
+  (gatsby>defcommand gatsby>agent-shell-next-prompt-or-permission ()
+    (if (map-elt (agent-shell--state) :tool-calls)
+        (call-interactively #'agent-shell-next-permission-button)
+      (call-interactively #'comint-next-prompt)))
+
+  (gatsby>defcommand gatsby>agent-shell-prev-prompt-or-permission ()
+    (if (map-elt (agent-shell--state) :tool-calls)
+        (call-interactively #'agent-shell-previous-permission-button)
+      (call-interactively #'comint-previous-prompt)))
+
   ;; ;; tramp integration
   ;; ;; first, mimic `agent-shell--resolve-devcontainer-path'
   ;; (defun agent-shell--resolve-tramp-path (path)
@@ -106,7 +118,12 @@
    ("RET" . #'comint-accumulate)
    ("M-RET" . #'comint-send-input)
    ("C-r" . #'agent-shell-search-history)
+   (:maps agent-shell-mode-map :states (normal visual insert))
+   ("C-c C-l" . #'comint-clear-buffer)
+   ("C-c C-c" . #'comint-interrupt-subjob)
    (:maps agent-shell-mode-map :states normal)
+   (">" . #'gatsby>agent-shell-next-prompt-or-permission)
+   ("<" . #'gatsby>agent-shell-prev-prompt-or-permission)
    ("q" . #'delete-window)
    ([remap kill-buffer-and-window] . #'delete-window)))
 

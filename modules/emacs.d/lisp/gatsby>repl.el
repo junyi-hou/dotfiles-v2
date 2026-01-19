@@ -6,33 +6,6 @@
 
 (require 'gatsby>>utility)
 
-(gatsby>use-internal-package comint
-  :config
-
-  (gatsby>defcommand gatsby>comint-goto-last-prompt ()
-    "clear current REPL buffer."
-    (goto-char (point-max))
-    (evil-insert-state))
-
-  ;; interacting with comint REPL
-  :evil-bind
-  ((:maps comint-mode-map :states (normal visual insert))
-   ("C-c C-l" . #'comint-clear-buffer)
-   ("C-c C-c" . #'comint-interrupt-subjob)
-
-   (:maps comint-mode-map :states insert)
-   ("<up>" . #'comint-previous-matching-input-from-input)
-   ("<down>" . #'comint-next-matching-input-from-input)
-   ("<S-return>" . #'comint-accumulate)
-
-   (:maps comint-mode-map :states normal)
-   ("<" . #'comint-previous-prompt)
-   (">" . #'comint-next-prompt)
-   ("A" . #'gatsby>comint-goto-last-prompt)
-   ("SPC q" . #'kill-buffer-and-window)
-   (:maps comint-mode-map :states (normal visual))
-   ("H" . #'comint-bol)))
-
 (use-package jupyter
   :ensure (:host github :repo "nnicandro/emacs-jupyter")
   :custom-face (jupyter-repl-traceback ((t (:extend t :background "firebrick"))))
