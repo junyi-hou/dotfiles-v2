@@ -32,7 +32,10 @@
 
 (use-package elisp-autofmt
   :ensure (:host codeberg :repo "ideasman42/emacs-elisp-autofmt")
-  :hook (emacs-lisp-mode . elisp-autofmt-mode))
+  :hook (emacs-lisp-mode . elisp-autofmt-mode)
+  :custom
+  (elisp-autofmt-python-bin
+   (format "%s.pixi/envs/bin/python" gatsby>dotfiles-repo-location)))
 
 (provide 'gatsby>elisp)
 ;;; gatsby>elisp.el ends here
