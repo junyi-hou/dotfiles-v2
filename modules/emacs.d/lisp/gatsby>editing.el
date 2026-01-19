@@ -72,6 +72,16 @@
   (gatsby>defcommand gatsby>indent-or-complete ()
     (run-hook-with-args-until-success 'gatsby>tab-commands))
 
+  (gatsby>defcommand gatsby>toggle-narrow ()
+    "Widen if the current buffer is narrowed, else narrow to defun or region, depending if region is active."
+    (cond
+     ((buffer-narrowed-p)
+      (call-interactively #'widen))
+     ((region-active-p)
+      (narrow-to-region))
+     (t
+      (narrow-to-defun))))
+
   (evil-define-command gatsby>normal-or-motion-state
     ()
     "Switch to normal or motion state without recording current command."
@@ -109,6 +119,7 @@
    ("SPC q" . #'gatsby>kill-buffer)
    ("SPC \\" . #'gatsby>split-right)
    ("SPC -" . #'gatsby>split-down)
+   ("SPC f" . #'gatsby>toggle-narrow)
    ("SPC o b" . #'switch-to-buffer)
    ("SPC o f" . #'find-file)
    ("SPC o m" . #'gatsby>switch-to-message)

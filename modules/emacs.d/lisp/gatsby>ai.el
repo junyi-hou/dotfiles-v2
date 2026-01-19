@@ -10,7 +10,6 @@
 ;; there are a few things lacking
 ;; - remote support (https://github.com/xenodium/agent-shell/issues/122)
 ;; - capf has issues (https://github.com/xenodium/agent-shell/issues/60)
-;; for now let's use eca which provide better user-experience
 (use-package agent-shell
   :ensure (:host github :repo "xenodium/agent-shell")
   :hook (agent-shell-mode . corfu-mode)
@@ -84,12 +83,14 @@
   ;; else go to next/prev prompt
   (gatsby>defcommand gatsby>agent-shell-next-prompt-or-permission ()
     (if (map-elt (agent-shell--state) :tool-calls)
-        (call-interactively #'agent-shell-next-permission-button)
+        (unless (call-interactively #'agent-shell-next-permission-button)
+          (call-interactively #'comint-previous-prompt))
       (call-interactively #'comint-next-prompt)))
 
   (gatsby>defcommand gatsby>agent-shell-prev-prompt-or-permission ()
     (if (map-elt (agent-shell--state) :tool-calls)
-        (call-interactively #'agent-shell-previous-permission-button)
+        (unless (call-interactively #'agent-shell-previous-permission-button)
+          (call-interactively #'comint-previous-prompt))
       (call-interactively #'comint-previous-prompt)))
 
   ;; ;; tramp integration
