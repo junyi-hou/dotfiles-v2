@@ -3,7 +3,6 @@ set -euo pipefail
 export UV_NO_MODIFY_PATH=1
 export UV_INSTALL_DIR="$(pwd)/.tools/bin"
 export UV_NO_PROGRESS=1
-export KAGGLE_API_TOKEN=$(direnv exec $HOME/Projects/dotfiles passage show kaggle-api)
 
 if [ ! -f .tools/bin/uv ]; then
     echo "uv not found locally, installing..."
