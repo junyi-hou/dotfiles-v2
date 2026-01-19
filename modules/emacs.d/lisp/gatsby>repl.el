@@ -39,6 +39,8 @@
   :commands (gatsby>jupyter-managed-mode gatsby>jupyter-start-or-switch-to-repl)
   :autoload jupyter-launch-notebook
   :custom
+  ;; make sure that jupyter autocomplete shows up super late
+  (jupyter-repl-completion-at-point-hook-depth 'back)
   (jupyter-repl-allow-RET-when-busy t)
   (jupyter-repl-echo-eval-p t)
   (jupyter-repl-maximum-size 12000)
