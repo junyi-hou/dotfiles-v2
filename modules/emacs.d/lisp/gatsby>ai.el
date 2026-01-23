@@ -17,7 +17,7 @@
   :custom
   (agent-shell-header-style 'text)
   (agent-shell-display-action
-   '(display-buffer-in-side-window (side . right) (window-width . 0.25) (slot . 0)))
+   '(display-buffer-in-side-window (side . bottom) (window-height . 0.3) (slot . 0)))
   (agent-shell-file-completion-enabled t)
   :commands (agent-shell-anthropic-start-claude-code gatsby>claude-code-toggle)
   :init
