@@ -239,6 +239,10 @@
        '(normal visual emacs insert) eshell-mode-map (kbd "C-c C-l") #'eshell/cls)))
 
   :config
+
+  (add-to-list 'display-buffer-alist '("^\\*eshell\\*" . (display-buffer-in-side-window (side . bottom) (window-height . 0.3) (slot . 0))))
+
+
   (gatsby>defcommand gatsby>eshell-open-or-switch (home)
     "Open a new shell.
 If the prefix argument (HOME) is not null, go to the home directory.
@@ -261,8 +265,6 @@ If there is a visible eshell window in the same PWD, switch to it instead of ope
           (progn
             (select-window visible)
             (evil-insert-state))
-        (split-window-below (- (/ (window-total-height) 3)))
-        (other-window 1)
         (prog1 (eshell 'Z)
           (evil-insert-state)))))
 
