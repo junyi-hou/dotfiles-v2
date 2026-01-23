@@ -109,16 +109,18 @@
   ;; (setq
   ;;  ;; agent-shell-path-resolver-function #'agent-shell--resolve-tramp-path
   ;;  agent-shell-header-style 'text)
+
   :evil-bind
   ((:maps normal)
    ("SPC a a" . #'gatsby>claude-code-toggle)
-   ("SPC a s" . #'gatsby>agent-shell-send-file)
-   (:maps visual)
+   (:maps (visual normal))
    ("SPC a s" . #'agent-shell-send-region)
    (:maps agent-shell-mode-map :states insert)
    ("RET" . #'comint-accumulate)
    ("M-RET" . #'comint-send-input)
    ("C-r" . #'agent-shell-search-history)
+   ("M-j" . #'comint-previous-input)
+   ("M-k" . #'comint-next-input)
    (:maps agent-shell-mode-map :states (normal visual insert))
    ("C-c C-l" . #'comint-clear-buffer)
    ("C-c C-c" . #'comint-interrupt-subjob)
