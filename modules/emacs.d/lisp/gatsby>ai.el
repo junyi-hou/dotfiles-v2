@@ -93,6 +93,35 @@
           (call-interactively #'comint-previous-prompt))
       (call-interactively #'comint-previous-prompt)))
 
+  ;; send a notification when there's outstanding tool permission asks
+  ;; NOTE: only work in Mac OS
+  ;; NOTE: you would also need to give emacs permission in the system setting
+  (defun gatsby>agent-notify-when-permission-requested ()
+    (when-let* ((tool-permission (alist-get :tool-calls agent-shell--state))
+                (pending-permission
+                 (thread-last
+                  tool-permission
+                  (mapcar
+                   (lambda (t)
+                     `(,(alist-get :kind (cdr t)) . ,(alist-get :status (cdr t)))))
+                  (seq-filter
+                   (lambda (s) (equal "pending" (cdr s))))
+                  (mapcar (lambda (t) (car t)))))
+                (group-by
+                 (let ((counts '()))
+                   (dolist (item pending-permission counts)
+                     (let ((entry (assoc item counts)))
+                       (if entry
+                           ;; If item is already in alist, increment its count
+                           (setcdr entry (1+ (cdr entry)))
+                         ;; Otherwise, add a new entry with count 1
+                         (push (cons item 1) counts)))))))
+      ;; send notification
+      (do-applescript
+       (format "display notification %S with title %S sound name \"Glass\""
+               "" "Agent Shell Permission Center"))))
+
+
   ;; ;; tramp integration
   ;; ;; first, mimic `agent-shell--resolve-devcontainer-path'
   ;; (defun agent-shell--resolve-tramp-path (path)
@@ -119,14 +148,18 @@
    ("RET" . #'comint-accumulate)
    ("M-RET" . #'comint-send-input)
    ("C-r" . #'agent-shell-search-history)
-   ("M-j" . #'comint-previous-input)
-   ("M-k" . #'comint-next-input)
+   ;; ("M-j" . #'comint-previous-input)
+   ;; ("M-k" . #'comint-next-input)
    (:maps agent-shell-mode-map :states (normal visual insert))
    ("C-c C-l" . #'comint-clear-buffer)
    ("C-c C-c" . #'comint-interrupt-subjob)
    (:maps agent-shell-mode-map :states normal)
    (">" . #'gatsby>agent-shell-next-prompt-or-permission)
    ("<" . #'gatsby>agent-shell-prev-prompt-or-permission)
+   ("z o" . #'agent-shell-ui-toggle-fragment-at-point)
+   ("z c" . #'agent-shell-ui-toggle-fragment-at-point)
+   ("m" . #'agent-shell-set-session-mode)
+   ("M" . #'agent-shell-set-session-model)
    ("q" . #'delete-window)
    ([remap kill-buffer-and-window] . #'delete-window)))
 
