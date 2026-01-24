@@ -6,7 +6,7 @@
                  (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
                            "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
                 :source "MELPA" :protocol https :inherit t :depth treeless :ref
-                "7b67facc657a7388a53ea8bba5d6e7eba20fa3e0"))
+                "9ab9b8f25cd7f42955171d471da5c3d016d1ef5a"))
  (agent-shell :source "elpaca-menu-lock-file" :recipe
               (:package "agent-shell" :fetcher github :repo "xenodium/agent-shell"
                         :files
@@ -16,11 +16,16 @@
                          (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
                                    "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
                         :source "MELPA" :protocol https :inherit t :depth treeless :host
-                        github :ref "9a7913a7c7b9b8e076b38e7133122dc608e7667e"))
- (axis :source "elpaca-menu-lock-file" :recipe
-       (:source nil :protocol https :inherit t :depth treeless :host github :repo
-                "junyi-hou/emacs-axis" :package "axis" :ref
-                "0d747c293e65f60a96adc8b8ad290afeae919ac0"))
+                        github :ref "6e04a69aae1b78fc2f4c901d0538249b1820aa7a"))
+ (cape :source "elpaca-menu-lock-file" :recipe
+       (:package "cape" :repo "minad/cape" :fetcher github :files
+                 ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"
+                  "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el" "docs/dir"
+                  "docs/*.info" "docs/*.texi" "docs/*.texinfo"
+                  (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
+                            "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
+                 :source "MELPA" :protocol https :inherit t :depth treeless :host github
+                 :ref "f8682a046a57525754ebc812ba3ae9c973db083b"))
  (clojure-ts-mode :source "elpaca-menu-lock-file" :recipe
                   (:package "clojure-ts-mode" :repo "clojure-emacs/clojure-ts-mode"
                             :fetcher github :files
@@ -251,7 +256,7 @@
           (:source nil :protocol https :inherit t :depth treeless :host github :repo
                    "RadioNoiseE/lolipop" :pre-build (("make clean") ("make")) :files
                    ("lolipop-mode.el" "lolipop-core.dylib") :package "lolipop" :ref
-                   "f7217486ae0e165565b17f5c5b5af7226222243e"))
+                   "d8653cd5f63798b0869f6bee36a8a05a53277ed7"))
  (magit :source "elpaca-menu-lock-file" :recipe
         (:package "magit" :fetcher github :repo "magit/magit" :files
                   ("lisp/magit*.el" "lisp/git-*.el" "docs/magit.texi" "docs/AUTHORS.md"
@@ -336,7 +341,7 @@
                          (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
                                    "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
                         :source "MELPA" :protocol https :inherit t :depth treeless :ref
-                        "53742d44b48a13e7550ecf4de824e15963bfa365"))
+                        "6eafe72de916cb3e75deb4f7220085ac3e775a11"))
  (simple-httpd :source "elpaca-menu-lock-file" :recipe
                (:package "simple-httpd" :repo "skeeto/emacs-web-server" :fetcher github
                          :files
