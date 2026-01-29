@@ -67,12 +67,12 @@
      ((buffer-file-name)
       (agent-shell--insert-to-shell-buffer
        :text
-       (agent-shell--processed-files
+       (agent-shell--get-files-context
         :files (list (file-relative-name buffer-file-name (agent-shell-cwd))))))
      ((or ask (derived-mode-p 'agent-shell-mode))
       (agent-shell--insert-to-shell-buffer
        :text
-       (agent-shell--processed-files
+       (agent-shell--get-files-context
         :files
         (or (list (completing-read "Send file: " (agent-shell--project-files)))
             (user-error "No file to send")))))
@@ -143,7 +143,7 @@
   ((:maps normal)
    ("SPC a a" . #'gatsby>claude-code-toggle)
    (:maps (visual normal))
-   ("SPC a s" . #'agent-shell-send-region)
+   ("SPC a s" . #'gatsby>agent-shell-send-file)
    (:maps agent-shell-mode-map :states insert)
    ("RET" . #'comint-accumulate)
    ("M-RET" . #'comint-send-input)
