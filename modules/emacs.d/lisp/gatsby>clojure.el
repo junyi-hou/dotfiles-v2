@@ -28,12 +28,13 @@
 
   :config
   (gatsby>defcommand gatsby>clojure-run-test ()
-    (let ((default-directory
+    (save-excursion
+     (let ((default-directory
            (or (and (project-current) (project-root (project-current)))
                default-directory)))
       (message "running tests...")
       ;; assume the project is initialized using `neil new`
-      (compile "clj -T:build test")))
+      (compile "clj -T:build test"))))
   :evil-bind ((:maps clojure-ts-mode-map :states normal) ("SPC r t" . #'gatsby>clojure-run-test)))
 
 ;; TODO: use this or cider for better completion, etc to have better completion/doc supports
