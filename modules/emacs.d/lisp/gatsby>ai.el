@@ -19,7 +19,7 @@
   (agent-shell-display-action
    '(display-buffer-in-side-window (side . bottom) (window-height . 0.3) (slot . 0)))
   (agent-shell-file-completion-enabled t)
-  :commands (agent-shell-anthropic-start-claude-code gatsby>claude-code-toggle)
+  :commands (agent-shell-opencode-start-agent gatsby>agent-shell-toggle)
   :init
   (defun gatsby>>get-ai-api-key ()
     "run passage to get the openai_api_key. Return nil if no key is found"
@@ -33,28 +33,25 @@
      (car)))
 
   :config
-  (setq agent-shell-anthropic-claude-environment
+  (setq agent-shell-opencode-environment
         (agent-shell-make-environment-variables
-         "ANTHROPIC_BASE_URL"
-         "https://openrouter.ai/api"
-         "ANTHROPIC_AUTH_TOKEN"
-         (gatsby>>get-ai-api-key)
-         "ANTHROPIC_API_KEY"
-         ""))
+         "OPENROUTER_API_KEY" (gatsby>>get-ai-api-key)))
 
-  (gatsby>defcommand gatsby>claude-code-toggle (force-new)
+  (gatsby>defcommand gatsby>agent-shell-toggle (force-new)
     (let* ((project-root (and (project-current) (project-root (project-current))))
            (current-client
             (thread-last
-             (buffer-list)
-             (seq-filter #'buffer-live-p)
-             (seq-filter (lambda (b) (string-prefix-p "Claude Code " (buffer-name b))))
+             (buffer-list) (seq-filter #'buffer-live-p)
+             (seq-filter
+              (lambda (b)
+                (with-current-buffer b
+                  (eq major-mode 'agent-shell-mode))))
              (cl-find-if
               (lambda (b)
                 (with-current-buffer b
                   (file-equal-p default-directory project-root)))))))
       (if (or force-new (not current-client))
-          (call-interactively #'agent-shell-anthropic-start-claude-code)
+          (call-interactively #'agent-shell-opencode-start-agent)
         (display-buffer current-client agent-shell-display-action)
         (switch-to-buffer-other-window current-client)
         (evil-insert-state))))
@@ -121,27 +118,9 @@
        (format "display notification %S with title %S sound name \"Glass\""
                "" "Agent Shell Permission Center"))))
 
-
-  ;; ;; tramp integration
-  ;; ;; first, mimic `agent-shell--resolve-devcontainer-path'
-  ;; (defun agent-shell--resolve-tramp-path (path)
-  ;;   "TODO"
-  ;;   (if-let* ((remote (file-remote-p default-directory)))
-  ;;     ;; we are on remote path
-  ;;     (if (file-remote-p path)
-  ;;         (file-remote-p path 'localname)
-  ;;       (concat remote path))
-  ;;     ;; we are in local path
-  ;;     path))
-
-  ;; ;; set `agent-shell-path-resolver-function'
-  ;; (setq
-  ;;  ;; agent-shell-path-resolver-function #'agent-shell--resolve-tramp-path
-  ;;  agent-shell-header-style 'text)
-
   :evil-bind
   ((:maps normal)
-   ("SPC a a" . #'gatsby>claude-code-toggle)
+   ("SPC a a" . #'gatsby>agent-shell-toggle)
    (:maps (visual normal))
    ("SPC a s" . #'gatsby>agent-shell-send-file)
    (:maps agent-shell-mode-map :states insert)
