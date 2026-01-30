@@ -269,6 +269,9 @@ current candidate"
    :files ("lolipop-mode.el" "lolipop-core.dylib"))
   :hook (elpaca-after-init . lolipop-mode))
 
+(use-package page-break-lines
+  :ensure (:host github :repo "purcell/page-break-lines")
+  :hook (elpaca-after-init . page-break-lines-mode))
 
 (provide 'gatsby>ui)
 ;;; gatsby>ui.el ends here
