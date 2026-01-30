@@ -20,7 +20,7 @@ fi
 # Activate the virtual environment
 source .venv/bin/activate
 
-uv sync --all-groups --no-install-project --frozen
+uv sync --all-groups --no-install-project
 
 # Local Variables:
 # mode: bash-ts
