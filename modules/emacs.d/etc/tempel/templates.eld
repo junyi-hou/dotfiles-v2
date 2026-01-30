@@ -16,6 +16,11 @@
 ;; (FORM ...) Other Lisp forms are evaluated. Named fields are lexically bound.
 ;; q Like p, but the template is finished if the user jumps to the field (see also r).
 
+fundamental-mode
+(sep comment-start (make-string (length content) ?=) n
+     comment-start (p "header" content) n
+     comment-start (make-string (length content) ?=))
+
 emacs-lisp-mode
 (defun "(defun " p " (" p ")\n  \"" p "\"" n> r> ")")
 (defcom "(gatsby>defcommand " p " (" p ")\n  \"" p "\"" n> r> ")")
