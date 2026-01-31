@@ -1,5 +1,9 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "permission": {
+    // see https://github.com/xenodium/agent-shell/issues/225
+    "question": "deny"
+  },
   "provider": {
     "openrouter": {
       "options": {
