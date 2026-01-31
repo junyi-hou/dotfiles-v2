@@ -131,7 +131,7 @@
    ;; ("M-k" . #'comint-next-input)
    (:maps agent-shell-mode-map :states (normal visual insert))
    ("C-c C-l" . #'comint-clear-buffer)
-   ("C-c C-c" . #'comint-interrupt-subjob)
+   ("C-c C-c" . #'agent-shell-interrupt)
    (:maps agent-shell-mode-map :states normal)
    (">" . #'gatsby>agent-shell-next-prompt-or-permission)
    ("<" . #'gatsby>agent-shell-prev-prompt-or-permission)
