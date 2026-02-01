@@ -90,6 +90,40 @@
           (call-interactively #'comint-previous-prompt))
       (call-interactively #'comint-previous-prompt)))
 
+  (gatsby>defcommand gatsby>agent-shell-commit ()
+    "Run the /commit command to create commit message of the current staged files in the
+  project agent-shell. Automatically create an agent-shell if none exists.
+
+  Raise error if
+  - `git-commit-message' skill or /commit command does not exists.
+  - the current agent-shell is busy (via `shell-maker--busy')"
+    (let* ((project-root (and (project-current) (project-root (project-current))))
+           (current-client
+            (thread-last
+             (buffer-list) (seq-filter #'buffer-live-p)
+             (seq-filter
+              (lambda (b)
+                (with-current-buffer b
+                  (eq major-mode 'agent-shell-mode))))
+             (cl-find-if
+              (lambda (b)
+                (with-current-buffer b
+                  (file-equal-p default-directory project-root)))))))
+
+      ;; start a shell if none exists
+      (unless current-client
+        (setq current-client
+              (let ((agent-shell-display-action '(display-buffer-no-window)))
+                (agent-shell--start
+                 :no-focus t
+                 :config (agent-shell-opencode-make-agent-config)
+                 :new-session t))))
+
+      (with-current-buffer current-client
+        (when shell-maker--busy
+          (user-error "Current shell is busy, try again later"))
+        (shell-maker-submit :input "/commit"))))
+
   ;; send a notification when there's outstanding tool permission asks
   ;; NOTE: only work in Mac OS
   ;; NOTE: you would also need to give emacs permission in the system setting
@@ -121,6 +155,8 @@
   :evil-bind
   ((:maps normal)
    ("SPC a a" . #'gatsby>agent-shell-toggle)
+   (:maps magit-status-mode-map)
+   ("g" . #'gatsby>agent-shell-commit)
    (:maps (visual normal))
    ("SPC a s" . #'gatsby>agent-shell-send-file)
    (:maps agent-shell-mode-map :states insert)
