@@ -10,10 +10,10 @@
         "apiKey": "{env:OPENROUTER_API_KEY}"
       },
       "models": {
-        "z-ai/glm-4.7:floor": {}
+        "google/gemini-3-flash-preview": {}
       }
     }
   },
-  "model": "openrouter/z-ai/glm-4.7:floor",
+  "model": "openrouter/google/gemini-3-flash-preview",
   "small_model": "openrouter/z-ai/glm-4.5-air:free"
 }
