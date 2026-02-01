@@ -4,6 +4,7 @@
     // see https://github.com/xenodium/agent-shell/issues/225
     "question": "deny"
   },
+ "plugin": ["@tarquinen/opencode-dcp@latest"],
   "provider": {
     "openrouter": {
       "options": {
