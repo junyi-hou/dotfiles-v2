@@ -13,12 +13,13 @@
   (doom-themes-enable-italic t)
   (doom-themes-enable-bold t)
 
-  :custom-face (nobreak-space ((t :foreground unspecified :background unspecified :underline nil)))
+  :custom-face
+  (nobreak-space ((t :foreground unspecified :background unspecified :underline nil)))
+  (mode-line-inactive ((t :background ,(doom-color 'bg-alt))))
 
   :config
-
-  (load-theme 'doom-material-dark t)
   ;; default UI
+  (load-theme 'doom-material-dark t)
   (line-number-mode -1)
   (column-number-mode -1)
   (tool-bar-mode -1)
