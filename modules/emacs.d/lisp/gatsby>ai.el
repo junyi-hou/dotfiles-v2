@@ -122,41 +122,19 @@
       (with-current-buffer current-client
         (when shell-maker--busy
           (user-error "Current shell is busy, try again later"))
+        (message "Generating commit message...")
         (shell-maker-submit :input "/commit"))))
 
-  ;; send a notification when there's outstanding tool permission asks
-  ;; NOTE: only work in Mac OS
-  ;; NOTE: you would also need to give emacs permission in the system setting
-  (defun gatsby>agent-notify-when-permission-requested ()
-    (when-let* ((tool-permission (alist-get :tool-calls agent-shell--state))
-                (pending-permission
-                 (thread-last
-                  tool-permission
-                  (mapcar
-                   (lambda (t)
-                     `(,(alist-get :kind (cdr t)) . ,(alist-get :status (cdr t)))))
-                  (seq-filter
-                   (lambda (s) (equal "pending" (cdr s))))
-                  (mapcar (lambda (t) (car t)))))
-                (group-by
-                 (let ((counts '()))
-                   (dolist (item pending-permission counts)
-                     (let ((entry (assoc item counts)))
-                       (if entry
-                           ;; If item is already in alist, increment its count
-                           (setcdr entry (1+ (cdr entry)))
-                         ;; Otherwise, add a new entry with count 1
-                         (push (cons item 1) counts)))))))
-      ;; send notification
-      (do-applescript
-       (format "display notification %S with title %S sound name \"Glass\""
-               "" "Agent Shell Permission Center"))))
+  ;; entrance point
+  (with-eval-after-load 'magit
+    (transient-append-suffix
+     'magit-commit
+     #'magit-commit-create
+     '("g" "Generate commit" gatsby>agent-shell-commit)))
 
   :evil-bind
   ((:maps normal)
    ("SPC a a" . #'gatsby>agent-shell-toggle)
-   (:maps magit-status-mode-map)
-   ("g" . #'gatsby>agent-shell-commit)
    (:maps (visual normal))
    ("SPC a s" . #'gatsby>agent-shell-send-file)
    (:maps agent-shell-mode-map :states insert)
