@@ -15,9 +15,8 @@
   :hook (agent-shell-mode . corfu-mode)
   :custom-face (header-line ((t :inherit default)))
   :custom
-  (agent-shell-header-style 'text)
   (agent-shell-display-action
-   '(display-buffer-in-side-window (side . bottom) (window-height . 0.3) (slot . 0)))
+   '(display-buffer-in-side-window (side . right) (window-height . 0.3) (slot . 0)))
   (agent-shell-file-completion-enabled t)
   :commands (agent-shell-opencode-start-agent gatsby>agent-shell-toggle)
   :init
@@ -89,6 +88,34 @@
         (unless (call-interactively #'agent-shell-previous-permission-button)
           (call-interactively #'comint-previous-prompt))
       (call-interactively #'comint-previous-prompt)))
+
+  (cl-defun gatsby>>agent-shell-header (state &key qualifier bindings)
+    "A simpler header for agent shell."
+    (unless state
+      (error "STATE is required"))
+    (let* ((mode
+            (when-let* ((mode-id (map-nested-elt state '(:session :mode-id))))
+              (or (agent-shell--resolve-session-mode-name
+                   mode-id
+                   (agent-shell--get-available-modes state))
+                  (map-nested-elt state '(:session :mode-id)))))
+           (model
+            (or (map-elt
+                 (seq-find
+                  (lambda (model)
+                    (string=
+                     (map-elt model :model-id)
+                     (map-nested-elt state '(:session :model-id))))
+                  (map-nested-elt state '(:session :models)))
+                 :name)
+                (map-nested-elt state '(:session :model-id)) "uninitiated")))
+      (format "%s %s"
+              (propertize model 'font-lock-face 'font-lock-negation-char-face)
+              (if mode
+                  (propertize (format "(%s)" mode) 'font-lock-face 'font-lock-type-face)
+                ""))))
+
+  (advice-add #'agent-shell--make-header :override #'gatsby>>agent-shell-header)
 
   (gatsby>defcommand gatsby>agent-shell-commit ()
     "Run the /commit command to create commit message of the current staged files in the
