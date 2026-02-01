@@ -156,19 +156,6 @@
      ("NOTE" . ,(doom-color 'yellow))
      ("HACK" . ,(doom-color 'yellow)))))
 
-;; doesn't play well with vterm
-;; (use-package auto-dim-other-buffers
-;;   :ensure (:host github :repo "mina86/auto-dim-other-buffers.el")
-;;   :hook (elpaca-after-init . auto-dim-other-buffers-mode)
-;;   :custom
-;;   (auto-dim-other-buffers-affected-faces
-;;   '((default            . (auto-dim-other-buffers . nil))
-;;     (frige              . (auto-dim-other-buffers . nil))
-;;     (border              . (auto-dim-other-buffers . nil))
-;;     (mode-line-inactive . (auto-dim-other-buffers . nil))
-;;     (line-number        . (auto-dim-other-buffers . nil))))
-;;   :custom-face (auto-dim-other-buffers ((t :background ,(doom-color 'bg-alt) :extend t :extend-selection t))))
-
 ;; minibuffer
 (use-package vertico
   :ensure (vertico :host github :repo "minad/vertico")
