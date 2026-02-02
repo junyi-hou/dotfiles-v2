@@ -177,12 +177,26 @@
                  :new-session t))))
 
       (with-current-buffer current-client
-        (when shell-maker--busy
-          (user-error "Current shell is busy, try again later"))
-        (gatsby>agent-shell-with-model
-         "openrouter/z-ai/glm-4.5-air:free"
-         (message "Generating commit message...")
-         (shell-maker-submit :input "/commit")))))
+        (let* ((state (agent-shell--state))
+               (client (map-elt state :client))
+               (model-env
+                (thread-last
+                 '(:client :environment-variables) (map-nested-elt state)
+                 (cl-find-if
+                  (lambda (env) (string-prefix-p "OPENCODE_SMALL_MODEL" env)))))
+               (model (thread-first model-env (string-split "=") cadr)))
+
+          (unless client
+            (message "uninitialized client, fallback to use the default model...")
+            (shell-maker-submit :input "/commit"))
+
+          (when shell-maker--busy
+            (user-error "Current shell is busy, try again later"))
+
+          (gatsby>agent-shell-with-model
+           model
+           (message "Generating commit message...")
+           (shell-maker-submit :input "/commit"))))))
 
   ;; entrance point
   (with-eval-after-load 'magit
