@@ -15,4 +15,7 @@ else
 fi
 
 # Directly run git commit with the message pre-filled in the editor
-git commit -e -m "$COMMIT_MSG"
+if ! git commit -e -m "$COMMIT_MSG"; then
+    echo "Error: Commit aborted or failed."
+    exit 1
+fi

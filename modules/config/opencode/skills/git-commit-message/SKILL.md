@@ -15,6 +15,7 @@ When a user asks to commit their changes or generate a commit message, follow th
 2.  **Generate Message**: Analyze the diff and draft a concise but descriptive commit message following project conventions (or standard "feat:", "fix:", "refactor:" prefixes).
 3.  **Commit with Editor**: Use the `scripts/prepare_commit_msg.sh` script to launch `git commit` with the generated message pre-filled in the user's editor.
 4.  **Completion**: The user reviews and finishes the commit in their editor.
+    - **CRITICAL**: If the `prepare_commit_msg.sh` script fails, is interrupted, or the editor process is canceled by the user, **DO NOT** attempt to commit the changes using `git commit -m`. Inform the user that the commit was aborted.
 
 ### Example Usage
 
