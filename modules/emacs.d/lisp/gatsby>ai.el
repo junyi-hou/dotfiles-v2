@@ -117,6 +117,31 @@
 
   (advice-add #'agent-shell--make-header :override #'gatsby>>agent-shell-header)
 
+  (defmacro gatsby>agent-shell-with-model (model-id &rest body)
+    (declare (indent 1))
+    `(let* ((current-model-id
+             (map-nested-elt (agent-shell--state) '(:session :model-id)))
+            (session-id (map-nested-elt (agent-shell--state) '(:session :id)))
+            (client (map-elt (agent-shell--state) :client))
+            (on-success-fn
+             (lambda (_response)
+               ,@body
+               (acp-send-request
+                :client client
+                :request
+                (acp-make-session-set-model-request
+                 :session-id session-id
+                 :model-id current-model-id)))))
+       (acp-send-request
+        :client client
+        :request
+        (acp-make-session-set-model-request :session-id session-id :model-id ,model-id)
+        :on-success on-success-fn
+        :on-failure
+        (lambda (error _raw-message)
+          (user-error "`gatsby>agent-shell-with-model`: fail to run with model %s"
+                      ,model-id)))))
+
   (gatsby>defcommand gatsby>agent-shell-commit ()
     "Run the /commit command to create commit message of the current staged files in the
   project agent-shell. Automatically create an agent-shell if none exists.
@@ -149,8 +174,10 @@
       (with-current-buffer current-client
         (when shell-maker--busy
           (user-error "Current shell is busy, try again later"))
-        (message "Generating commit message...")
-        (shell-maker-submit :input "/commit"))))
+        (gatsby>agent-shell-with-model
+         "openrouter/z-ai/glm-4.5-air:free"
+         (message "Generating commit message...")
+         (shell-maker-submit :input "/commit")))))
 
   ;; entrance point
   (with-eval-after-load 'magit
