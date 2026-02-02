@@ -9,12 +9,9 @@
     "openrouter": {
       "options": {
         "apiKey": "{env:OPENROUTER_API_KEY}"
-      },
-      "models": {
-        "google/gemini-3-flash-preview": {}
       }
     }
   },
-  "model": "openrouter/google/gemini-3-flash-preview",
-  "small_model": "openrouter/z-ai/glm-4.5-air:free"
+  "model": "{env:OPENCODE_MODEL}",
+  "small_model": "{env:OPENCODE_SMALL_MODEL}"
 }

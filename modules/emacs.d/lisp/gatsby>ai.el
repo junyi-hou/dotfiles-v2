@@ -34,7 +34,12 @@
   :config
   (setq agent-shell-opencode-environment
         (agent-shell-make-environment-variables
-         "OPENROUTER_API_KEY" (gatsby>>get-ai-api-key)))
+         "OPENROUTER_API_KEY"
+         (gatsby>>get-ai-api-key)
+         "OPENCODE_MODEL"
+         "openrouter/google/gemini-3-flash-preview"
+         "OPENCODE_SMALL_MODEL"
+         "openrouter/z-ai/glm-4.5-air:free"))
 
   (gatsby>defcommand gatsby>agent-shell-toggle (force-new)
     (let* ((project-root (and (project-current) (project-root (project-current))))
