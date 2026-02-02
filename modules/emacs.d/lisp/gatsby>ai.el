@@ -39,7 +39,7 @@
          "OPENCODE_MODEL"
          "openrouter/google/gemini-3-flash-preview"
          "OPENCODE_SMALL_MODEL"
-         "openrouter/z-ai/glm-4.5-air:free"))
+         "opencode/glm-4.7-free"))
 
   (gatsby>defcommand gatsby>agent-shell-toggle (force-new)
     (let* ((project-root (and (project-current) (project-root (project-current))))
