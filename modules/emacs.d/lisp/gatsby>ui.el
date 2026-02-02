@@ -259,7 +259,7 @@ current candidate"
 
 (use-package page-break-lines
   :ensure (:host github :repo "purcell/page-break-lines")
-  :hook (elpaca-after-init . page-break-lines-mode))
+  :hook (elpaca-after-init . global-page-break-lines-mode))
 
 (provide 'gatsby>ui)
 ;;; gatsby>ui.el ends here
