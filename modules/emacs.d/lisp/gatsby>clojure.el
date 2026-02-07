@@ -27,14 +27,33 @@
     (setq-local tab-width 2))
 
   :config
-  (gatsby>defcommand gatsby>clojure-run-test ()
+  (gatsby>defcommand gatsby>clojure-run-test (all)
     (save-excursion
-     (let ((default-directory
-           (or (and (project-current) (project-root (project-current)))
-               default-directory)))
-      (message "running tests...")
-      ;; assume the project is initialized using `neil new`
-      (compile "clj -T:build test"))))
+      (let ((default-directory
+             (or (and (project-current) (project-root (project-current)))
+                 default-directory))
+            ;; automatically kill buffer if the test succeed
+            ;; (compilation-exit-message-function
+            ;;  (lambda (status code msg)
+            ;;    (when (and (eq status 'exit) (zerop code))
+            ;;      (kill-buffer))
+            ;;    (cons msg code)))
+            )
+        (if all
+            (progn
+              (message "running tests...")
+              (compile "clj -T:build test"))
+          (let ((test-to-run
+                 (thread-last
+                  (completing-read
+                   "Run test: " (directory-files-recursively "test" ".+_test\\.clj"))
+                  (replace-regexp-in-string "\\.clj$" "")
+                  (replace-regexp-in-string "^test/" "")
+                  (replace-regexp-in-string "/" ".")
+                  (replace-regexp-in-string "_" "-"))))
+            (message "running tests...")
+            (compile
+             (concat "clj -M:test -m cognitect.test-runner -n " test-to-run)))))))
   :evil-bind ((:maps clojure-ts-mode-map :states normal) ("SPC r t" . #'gatsby>clojure-run-test)))
 
 ;; TODO: use this or cider for better completion, etc to have better completion/doc supports
