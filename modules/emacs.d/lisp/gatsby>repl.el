@@ -9,7 +9,7 @@
 (use-package jupyter
   :ensure (:host github :repo "nnicandro/emacs-jupyter")
   :custom-face (jupyter-repl-traceback ((t (:extend t :background "firebrick"))))
-  :commands (gatsby>jupyter-managed-mode gatsby>jupyter-start-or-switch-to-repl)
+  :commands (gatsby>jupyter-managed-mode gatsby>jupyter-start-or-switch-to-repl jupyter-servers)
   :autoload jupyter-launch-notebook
   :custom
   ;; make sure that jupyter autocomplete shows up super late
@@ -20,7 +20,9 @@
   (jupyter-repl-history-maximum-length 5000)
   (jupyter-use-zmq nil)
   :hook (jupyter-repl-mode . corfu-mode)
-  :init (defvar gatsby>jupyter-managed-mode-map (make-sparse-keymap))
+  :init
+
+  (defvar gatsby>jupyter-managed-mode-map (make-sparse-keymap))
 
   (define-minor-mode gatsby>jupyter-managed-mode
     "Minor mode that provides keybinds and commands to major-modes that support jupyter repl."
@@ -80,20 +82,49 @@
                 (or (re-search-forward cell-regexp nil 'noerror) (point-max)))))
         (jupyter-eval-string (buffer-substring-no-properties b e)))))
 
-  (gatsby>defcommand gatsby>jupyter-start-or-switch-to-repl (connect)
-    "Switch to REPL associated the current buffer."
-    (if (and (boundp 'jupyter-current-client)
+  (defun gatsby>>has-jupyter-kernel (&optional buffer)
+    "Return true if BUFFER has a valid jupyter client that connects to a live jupyter kernel."
+    (let ((buffer (or buffer (current-buffer))))
+      (with-current-buffer buffer
+        (and (boundp 'jupyter-current-client)
              jupyter-current-client
              (jupyter-kernel-alive-p jupyter-current-client)
-             (buffer-live-p (oref jupyter-current-client buffer)))
+             (buffer-live-p (oref jupyter-current-client buffer))))))
+
+  (defun gatsby>>get-server-at (dir)
+    "Return jupyter server whose root is DIR, or nil if no such server is found."
+    (ignore-errors
+      (seq-find
+       (lambda (s)
+         (file-equal-p
+          dir
+          (with-current-buffer (thread-last s jupyter-notebook-process (process-buffer))
+            default-directory)))
+       (jupyter-servers))))
+
+  (gatsby>defcommand gatsby>jupyter-start-or-switch-to-repl (connect)
+    "Switch to REPL associated the current buffer."
+    (if (gatsby>>has-jupyter-kernel)
         (jupyter-repl-pop-to-buffer)
       (let ((code-buffer (current-buffer)))
         (if connect
-            ;; TODO: fix connecting to a remote repl
+            ;; if prefix arg is given, connect to a knowen server
             (let ((current-prefix-arg t))
               (call-interactively #'jupyter-connect-server-repl))
-          (call-interactively #'jupyter-run-repl))
-        (switch-to-buffer-other-window code-buffer))))
+          ;; otherwise check whether there's a server running in `cwd'
+          (let* ((cwd
+                  (with-current-buffer code-buffer
+                    default-directory))
+                 (server (gatsby>>get-server-at cwd)))
+            ;; if not, start a new server
+            (unless server
+              (let ((port (jupyter-launch-notebook)))
+                (setq server
+                      (jupyter-server :url (format "http://localhost:%s" port)))))
+            (let ((kernel
+                   (jupyter-completing-read-kernelspec (jupyter-kernelspecs server))))
+              (jupyter-run-server-repl server kernel nil code-buffer nil t))))
+        (jupyter-repl-pop-to-buffer))))
 
   (gatsby>defcommand gatsby>jupyter-goto-last-prompt ()
     (goto-char (point-max))
