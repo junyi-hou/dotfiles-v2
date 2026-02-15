@@ -4,10 +4,6 @@
 
 ;;; Code:
 
-;; =====================================================================
-;; define new command without needing to add `interactive' over and over
-;; =====================================================================
-
 (eval-when-compile
   (require 'cl-lib)
   (require 'cl-seq)
@@ -175,6 +171,17 @@ The optional argument TEST specifies the hash table's test function
 ;; (gatsby>defcommand gatsby>retrieve-secret ()
 ;;   (set-register)
 ;;   )
+
+;; automatically update the elpaca lock file when exiting emacs
+(defun gatsby>>update-elpaca-lock-file ()
+  (let ((lock-file
+         (expand-file-name
+          (file-name-concat gatsby>dotfiles-repo-location
+                            "modules/emacs.d/elpaca-lock.el"))))
+    (elpaca-write-lock-file lock-file)))
+
+(add-hook 'kill-emacs-hook #'gatsby>>update-elpaca-lock-file)
+
 
 (provide 'gatsby>>utility)
 ;;; gatsby>>utility.el ends here
