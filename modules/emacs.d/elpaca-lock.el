@@ -6,7 +6,7 @@
                  (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
                            "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
                 :source "elpaca-menu-lock-file" :protocol https :inherit t :depth
-                treeless :ref "9ab9b8f25cd7f42955171d471da5c3d016d1ef5a"))
+                treeless :ref "e5dec95452de8b4cbacf41156d4dfa261668ae31"))
  (agent-shell :source "elpaca-menu-lock-file" :recipe
               (:package "agent-shell" :fetcher github :repo "xenodium/agent-shell"
                         :files
@@ -17,7 +17,7 @@
                                    "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
                         :source "elpaca-menu-lock-file" :protocol https :inherit t
                         :depth treeless :host github :ref
-                        "6e04a69aae1b78fc2f4c901d0538249b1820aa7a"))
+                        "c617076cae65468de645abdef4c8d07d7cf26c49"))
  (cape :source "elpaca-menu-lock-file" :recipe
        (:package "cape" :repo "minad/cape" :fetcher github :files
                  ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"
@@ -373,7 +373,7 @@
                          (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
                                    "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
                         :source "elpaca-menu-lock-file" :protocol https :inherit t
-                        :depth treeless :ref "6eafe72de916cb3e75deb4f7220085ac3e775a11"))
+                        :depth treeless :ref "a7ff78f8cd29fba9a694b8d7bbee448c7a51472d"))
  (simple-httpd :source "elpaca-menu-lock-file" :recipe
                (:package "simple-httpd" :repo "skeeto/emacs-web-server" :fetcher github
                          :files
