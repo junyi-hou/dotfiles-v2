@@ -3,7 +3,7 @@
 ;;; Commentary:
 
 ;;; Code:
-(require gatsby>>utility)
+(require 'gatsby>>utility)
 
 (gatsby>use-internal-package sh-script
   :mode ("\\.[z]sh" . bash-ts-mode)

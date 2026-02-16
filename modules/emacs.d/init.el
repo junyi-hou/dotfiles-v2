@@ -33,6 +33,7 @@
 (require 'gatsby>python)
 (require 'gatsby>clojure)
 (require 'gatsby>elisp)
+(require 'gatsby>sh-scripts)
 (require 'gatsby>config-files)
 (require 'gatsby>text)
 
