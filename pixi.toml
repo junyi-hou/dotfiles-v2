@@ -33,5 +33,6 @@ nodejs = "*"  # for acp
 harper = "*"
 tinymist = "*"
 bash-language-server = "*"
+shellcheck = "*"
 yaml-language-server = "*"
 taplo = "*"
