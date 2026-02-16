@@ -312,6 +312,16 @@
                              :source "elpaca-menu-lock-file" :protocol https :inherit t
                              :depth treeless :host github :ref
                              "2f1ee8b94cdf53cebc31ae08ecfbba846193d5e1"))
+ (msgpack :source "elpaca-menu-lock-file" :recipe
+          (:package "msgpack" :fetcher github :repo "xuchunyang/msgpack.el" :files
+                    ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"
+                     "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el" "docs/dir"
+                     "docs/*.info" "docs/*.texi" "docs/*.texinfo"
+                     (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
+                               "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
+                    :source "elpaca-menu-lock-file" :protocol https :inherit t :depth
+                    treeless :host github :ref
+                    "90e3086f259549b1667a3c5b9aa2d70aaeaa4d3d"))
  (no-littering :source "elpaca-menu-lock-file" :recipe
                (:package "no-littering" :fetcher github :repo
                          "emacscollective/no-littering" :files
@@ -343,8 +353,8 @@
                               (:exclude ".dir-locals.el" "test.el" "tests.el"
                                         "*-test.el" "*-tests.el" "LICENSE" "README*"
                                         "*-pkg.el"))
-                             :source "MELPA" :protocol https :inherit t :depth treeless
-                             :host github :ref
+                             :source "elpaca-menu-lock-file" :protocol https :inherit t
+                             :depth treeless :host github :ref
                              "f54aa2b96f6ed249e103346cdb872c97c3c98054"))
  (posframe :source "elpaca-menu-lock-file" :recipe
            (:package "posframe" :fetcher github :repo "tumashu/posframe" :files
@@ -393,6 +403,10 @@
                               "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
                    :source "elpaca-menu-lock-file" :protocol https :inherit t :depth
                    treeless :host github :ref "abc41419e9eff719ccc8a156defb0e6db3b7f460"))
+ (tramp-rpc :source "elpaca-menu-lock-file" :recipe
+            (:source "elpaca-menu-lock-file" :protocol https :inherit t :depth treeless
+                     :host github :repo "ArthurHeymans/emacs-tramp-rpc" :package
+                     "tramp-rpc" :ref "9c4380bf860cc2224781d5faae2064949ca9ff3d"))
  (transient :source "elpaca-menu-lock-file" :recipe
             (:package "transient" :fetcher github :repo "magit/transient" :files
                       ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"
