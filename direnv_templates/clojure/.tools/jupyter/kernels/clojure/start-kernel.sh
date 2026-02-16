@@ -5,7 +5,7 @@ set -euo pipefail
 # do not rely on `git rev-parse --show-toplevel` since we may not be in a git repo
 cd "$JUPYTER_PATH/../.."
 
-CLASSPATH=$(clj -Spath)
+CLASSPATH=$(clj -A:repl -Spath)
 
 exec java -Djava.awt.headless=true \
   -cp "$CLASSPATH" \
