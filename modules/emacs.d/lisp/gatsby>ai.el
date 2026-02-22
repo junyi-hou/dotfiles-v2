@@ -122,31 +122,6 @@
 
   (advice-add #'agent-shell--make-header :override #'gatsby>>agent-shell-header)
 
-  (defmacro gatsby>agent-shell-with-model (model-id &rest body)
-    (declare (indent 1))
-    `(let* ((current-model-id
-             (map-nested-elt (agent-shell--state) '(:session :model-id)))
-            (session-id (map-nested-elt (agent-shell--state) '(:session :id)))
-            (client (map-elt (agent-shell--state) :client))
-            (on-success-fn
-             (lambda (_response)
-               ,@body
-               (acp-send-request
-                :client client
-                :request
-                (acp-make-session-set-model-request
-                 :session-id session-id
-                 :model-id current-model-id)))))
-       (acp-send-request
-        :client client
-        :request
-        (acp-make-session-set-model-request :session-id session-id :model-id ,model-id)
-        :on-success on-success-fn
-        :on-failure
-        (lambda (error _raw-message)
-          (user-error "`gatsby>agent-shell-with-model`: fail to run with model %s"
-                      ,model-id)))))
-
   (gatsby>defcommand gatsby>agent-shell-commit ()
     "Run the /commit command to create commit message of the current staged files in the
   project agent-shell. Automatically create an agent-shell if none exists.
@@ -177,26 +152,8 @@
                  :new-session t))))
 
       (with-current-buffer current-client
-        (let* ((state (agent-shell--state))
-               (client (map-elt state :client))
-               (model-env
-                (thread-last
-                 '(:client :environment-variables) (map-nested-elt state)
-                 (cl-find-if
-                  (lambda (env) (string-prefix-p "OPENCODE_SMALL_MODEL" env)))))
-               (model (thread-first model-env (string-split "=") cadr)))
-
-          (unless client
-            (message "uninitialized client, fallback to use the default model...")
-            (shell-maker-submit :input "/commit"))
-
-          (when shell-maker--busy
-            (user-error "Current shell is busy, try again later"))
-
-          (gatsby>agent-shell-with-model
-           model
-           (message "Generating commit message...")
-           (shell-maker-submit :input "/commit"))))))
+        (message "Generating commit message...")
+        (shell-maker-submit :input "/commit"))))
 
   ;; entrance point
   (with-eval-after-load 'magit
