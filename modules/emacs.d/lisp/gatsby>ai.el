@@ -9,7 +9,6 @@
 ;; TODO
 ;; there are a few things lacking
 ;; - remote support (https://github.com/xenodium/agent-shell/issues/122)
-;; - capf has issues (https://github.com/xenodium/agent-shell/issues/60)
 (use-package agent-shell
   :ensure (:host github :repo "xenodium/agent-shell")
   :hook (agent-shell-mode . corfu-mode)
@@ -59,26 +58,6 @@
         (display-buffer current-client agent-shell-display-action)
         (switch-to-buffer-other-window current-client)
         (evil-insert-state))))
-
-  ;; TODO: maybe doesn't need this when upstream fixed it?
-  (gatsby>defcommand gatsby>agent-shell-send-file (ask)
-    (cond
-     ((region-active-p)
-      (agent-shell-send-region))
-     ((buffer-file-name)
-      (agent-shell--insert-to-shell-buffer
-       :text
-       (agent-shell--get-files-context
-        :files (list (file-relative-name buffer-file-name (agent-shell-cwd))))))
-     ((or ask (derived-mode-p 'agent-shell-mode))
-      (agent-shell--insert-to-shell-buffer
-       :text
-       (agent-shell--get-files-context
-        :files
-        (or (list (completing-read "Send file: " (agent-shell--project-files)))
-            (user-error "No file to send")))))
-     (t
-      (user-error "No file to send"))))
 
   ;; "<" and ">" jumps to prev/next permission button if there's a pending permission ask,
   ;; else go to next/prev prompt
@@ -166,7 +145,7 @@
   ((:maps normal)
    ("SPC a a" . #'gatsby>agent-shell-toggle)
    (:maps (visual normal))
-   ("SPC a s" . #'gatsby>agent-shell-send-file)
+   ("SPC a s" . #'agent-shell-send-file)
    (:maps agent-shell-mode-map :states insert)
    ("RET" . #'comint-accumulate)
    ("M-RET" . #'comint-send-input)
