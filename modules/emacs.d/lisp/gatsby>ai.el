@@ -100,6 +100,12 @@
                 ""))))
 
   (advice-add #'agent-shell--make-header :override #'gatsby>>agent-shell-header)
+  (advice-add
+   #'agent-shell-anthropic--claude-code-ascii-art
+   :override
+   (lambda ()
+     ""
+     "[claude code]"))
 
   (gatsby>defcommand gatsby>agent-shell-commit ()
     "Run the /commit command to create commit message of the current staged files in the
