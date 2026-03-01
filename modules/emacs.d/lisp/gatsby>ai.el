@@ -31,19 +31,14 @@
      (car)))
 
   :config
-  (setq
-   agent-shell-anthropic-claude-environment
-   (agent-shell-make-environment-variables
-    "ANTHROPIC_BASE_URL"
-    "https://openrouter.ai/api"
-    "ANTHROPIC_AUTH_TOKEN"
-    (gatsby>>get-ai-api-key)
-    "ANTHROPIC_API_KEY"
-    ""
-    "ANTHROPIC_MODEL"
-    "google/gemini-3-flash-preview")
-
-   agent-shell-anthropic-claude-acp-command '("claude-agent-acp" "--model" "google/gemini-3-flash-preview"))
+  (setq agent-shell-anthropic-claude-environment
+        (agent-shell-make-environment-variables
+         "ANTHROPIC_BASE_URL"
+         "https://openrouter.ai/api"
+         "ANTHROPIC_AUTH_TOKEN"
+         (gatsby>>get-ai-api-key)
+         "ANTHROPIC_API_KEY"
+         ""))
 
   (gatsby>defcommand gatsby>agent-shell-toggle (force-new)
     (let* ((project-root (and (project-current) (project-root (project-current))))
