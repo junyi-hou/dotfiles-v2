@@ -31,14 +31,19 @@
      (car)))
 
   :config
-  (setq agent-shell-opencode-environment
-        (agent-shell-make-environment-variables
-         "OPENROUTER_API_KEY"
-         (gatsby>>get-ai-api-key)
-         "OPENCODE_MODEL"
-         "openrouter/google/gemini-3-flash-preview"
-         "OPENCODE_SMALL_MODEL"
-         "opencode/glm-4.7-free"))
+  (setq
+   agent-shell-anthropic-claude-environment
+   (agent-shell-make-environment-variables
+    "ANTHROPIC_BASE_URL"
+    "https://openrouter.ai/api"
+    "ANTHROPIC_AUTH_TOKEN"
+    (gatsby>>get-ai-api-key)
+    "ANTHROPIC_API_KEY"
+    ""
+    "ANTHROPIC_MODEL"
+    "google/gemini-3-flash-preview")
+
+   agent-shell-anthropic-claude-acp-command '("claude-agent-acp" "--model" "google/gemini-3-flash-preview"))
 
   (gatsby>defcommand gatsby>agent-shell-toggle (force-new)
     (let* ((project-root (and (project-current) (project-root (project-current))))
@@ -54,7 +59,7 @@
                 (with-current-buffer b
                   (file-equal-p default-directory project-root)))))))
       (if (or force-new (not current-client))
-          (call-interactively #'agent-shell-opencode-start-agent)
+          (call-interactively #'agent-shell-anthropic-start-claude-code)
         (display-buffer current-client agent-shell-display-action)
         (switch-to-buffer-other-window current-client)
         (evil-insert-state))))
