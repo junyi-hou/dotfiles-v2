@@ -161,8 +161,7 @@
          :endpoint "/api/v1/chat/completions"
          :stream t
          :key #'gatsby>>get-ai-api-key
-         :models '(google/gemini-3-flash-preview)))
-  :evil-bind ((:maps (normal visual)) ("SPC a r" . #'gptel-rewrite) ("SPC a C-g" . #'gptel-abort)))
+         :models '(google/gemini-3-flash-preview))))
 
 (use-package gptel-magit
   :ensure (:host github :repo "ragnard/gptel-magit")
