@@ -17,7 +17,8 @@
   (agent-shell-display-action
    '(display-buffer-in-side-window (side . right) (window-height . 0.3) (slot . 0)))
   (agent-shell-file-completion-enabled t)
-  :commands (agent-shell-opencode-start-agent gatsby>agent-shell-toggle)
+  (agent-shell-session-strategy 'latest)
+  :commands (agent-shell-anthropic-start-claude-code gatsby>agent-shell-toggle)
   :init
   (defun gatsby>>get-ai-api-key ()
     "run passage to get the openai_api_key. Return nil if no key is found"
@@ -53,11 +54,17 @@
               (lambda (b)
                 (with-current-buffer b
                   (file-equal-p default-directory project-root)))))))
-      (if (or force-new (not current-client))
-          (call-interactively #'agent-shell-anthropic-start-claude-code)
+      (cond
+       (force-new
+        ;; FIXME: this let does not work
+        (let ((agent-shell-session-strategy 'prompt))
+          (call-interactively #'agent-shell-anthropic-start-claude-code)))
+       ((not current-client)
+        (call-interactively #'agent-shell-anthropic-start-claude-code))
+       (t
         (display-buffer current-client agent-shell-display-action)
         (switch-to-buffer-other-window current-client)
-        (evil-insert-state))))
+        (evil-insert-state)))))
 
   ;; "<" and ">" jumps to prev/next permission button if there's a pending permission ask,
   ;; else go to next/prev prompt
