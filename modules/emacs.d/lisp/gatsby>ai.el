@@ -114,39 +114,6 @@
      ""
      "[claude code]"))
 
-  (gatsby>defcommand gatsby>agent-shell-commit ()
-    "Run the /commit command to create commit message of the current staged files in the
-  project agent-shell. Automatically create an agent-shell if none exists.
-
-  Raise error if
-  - `git-commit-message' skill or /commit command does not exists.
-  - the current agent-shell is busy (via `shell-maker--busy')"
-    (let* ((project-root (and (project-current) (project-root (project-current))))
-           (current-client
-            (thread-last
-             (buffer-list) (seq-filter #'buffer-live-p)
-             (seq-filter
-              (lambda (b)
-                (with-current-buffer b
-                  (eq major-mode 'agent-shell-mode))))
-             (cl-find-if
-              (lambda (b)
-                (with-current-buffer b
-                  (file-equal-p default-directory project-root)))))))
-
-      ;; start a shell if none exists
-      (unless current-client
-        (setq current-client
-              (let ((agent-shell-display-action '(display-buffer-no-window)))
-                (agent-shell--start
-                 :no-focus t
-                 :config (agent-shell-opencode-make-agent-config)
-                 :new-session t))))
-
-      (with-current-buffer current-client
-        (message "Generating commit message...")
-        (shell-maker-submit :input "/commit"))))
-
   ;; entrance point
   (with-eval-after-load 'magit
     (transient-append-suffix
