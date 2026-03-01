@@ -6,6 +6,17 @@
 
 (require 'gatsby>>utility)
 
+(defun gatsby>>get-ai-api-key ()
+  "run passage to get the openai_api_key. Return nil if no key is found"
+  (thread-first
+   "direnv exec %s passage show openrouter-api"
+   (format (expand-file-name gatsby>dotfiles-repo-location))
+   (shell-command-to-string)
+   (string-trim)
+   (string-split "\n")
+   (last)
+   (car)))
+
 ;; TODO
 ;; there are a few things lacking
 ;; - remote support (https://github.com/xenodium/agent-shell/issues/122)
@@ -19,18 +30,6 @@
   (agent-shell-file-completion-enabled t)
   (agent-shell-session-strategy 'latest)
   :commands (agent-shell-anthropic-start-claude-code gatsby>agent-shell-toggle)
-  :init
-  (defun gatsby>>get-ai-api-key ()
-    "run passage to get the openai_api_key. Return nil if no key is found"
-    (thread-first
-     "direnv exec %s passage show openrouter-api"
-     (format (expand-file-name gatsby>dotfiles-repo-location))
-     (shell-command-to-string)
-     (string-trim)
-     (string-split "\n")
-     (last)
-     (car)))
-
   :config
   (setq agent-shell-anthropic-claude-environment
         (agent-shell-make-environment-variables
@@ -144,6 +143,30 @@
    ("M" . #'agent-shell-set-session-model)
    ("q" . #'delete-window)
    ([remap kill-buffer-and-window] . #'delete-window)))
+
+;; for commit message and simple rewrite
+(use-package gptel
+  :ensure (:host github :repo "karthink/gptel")
+  :custom
+  (gptel-model "")
+  (gptel-use-header-line nil)
+  (gptel-cache nil)
+  (gptel-use-tools nil)
+  :hook (gptel-post-response . (lambda (&rest _) (evil-normal-state)))
+  :config
+  (setq gptel-backend
+        (gptel-make-openai
+         "OpenRouter"
+         :host "openrouter.ai"
+         :endpoint "/api/v1/chat/completions"
+         :stream t
+         :key #'gatsby>>get-ai-api-key
+         :models '(google/gemini-3-flash-preview)))
+  :evil-bind ((:maps (normal visual)) ("SPC a r" . #'gptel-rewrite) ("SPC a C-g" . #'gptel-abort)))
+
+(use-package gptel-magit
+  :ensure (:host github :repo "ragnard/gptel-magit")
+  :hook (magit-mode . gptel-magit-install))
 
 (provide 'gatsby>ai)
 ;;; gatsby>ai.el ends here
