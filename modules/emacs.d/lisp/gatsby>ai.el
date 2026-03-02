@@ -28,8 +28,12 @@
   (agent-shell-display-action
    '(display-buffer-in-side-window (side . right) (window-height . 0.3) (slot . 0)))
   (agent-shell-file-completion-enabled t)
-  (agent-shell-session-strategy 'latest)
-  :commands (agent-shell-anthropic-start-claude-code gatsby>agent-shell-toggle)
+  (agent-shell-session-strategy 'new)
+  :commands
+  (agent-shell--start
+   agent-shell-anthropic-make-claude-code-config
+   agent-shell-anthropic-start-claude-code
+   gatsby>agent-shell-toggle)
   :config
   (setq agent-shell-anthropic-claude-environment
         (agent-shell-make-environment-variables
@@ -40,7 +44,7 @@
          "ANTHROPIC_API_KEY"
          ""))
 
-  (gatsby>defcommand gatsby>agent-shell-toggle (force-new)
+  (gatsby>defcommand gatsby>agent-shell-toggle (resume)
     (let* ((project-root (and (project-current) (project-root (project-current))))
            (current-client
             (thread-last
@@ -54,10 +58,12 @@
                 (with-current-buffer b
                   (file-equal-p default-directory project-root)))))))
       (cond
-       (force-new
-        ;; FIXME: this let does not work
-        (let ((agent-shell-session-strategy 'prompt))
-          (call-interactively #'agent-shell-anthropic-start-claude-code)))
+       ((and resume (not current-client))
+        (agent-shell--start
+         :no-focus nil
+         :config (agent-shell-anthropic-make-claude-code-config)
+         :new-session t
+         :session-strategy 'prompt))
        ((not current-client)
         (call-interactively #'agent-shell-anthropic-start-claude-code))
        (t
