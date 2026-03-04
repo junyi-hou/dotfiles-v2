@@ -22,12 +22,12 @@ jupyter = "*"
 [feature.global.dependencies]
 ## only needed if in the future I want to use pypi to install python packages
 ## add the pypi dependencies in the [feature.global.pypi-dependencies]
-# python = "==3.12"
+python = "==3.12"
 rage = "*"
 eza = "*"
 fd-find = "*"
 ripgrep = "*"
-nodejs = "*"  # for acp
+nodejs = "*"      # for acp
 
 # lsp
 harper = "*"
@@ -38,3 +38,6 @@ yaml-language-server = "*"
 taplo = "*"
 typos-lsp = "*"
 codebook-lsp = "*"
+
+[feature.global.pypi-dependencies]
+"rassumfrassum" = "*"

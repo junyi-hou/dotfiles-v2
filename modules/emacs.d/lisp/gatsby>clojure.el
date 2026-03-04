@@ -19,7 +19,9 @@
   ;; do not need to setup treesitter - it is taken care of by the mode itself
   ;; lsp
   (with-eval-after-load 'eglot
-    (add-to-list 'eglot-server-programs '(clojure-ts-mode "clojure-lsp" "listen")))
+    (add-to-list
+     'eglot-server-programs
+     '(clojure-ts-mode "rass" "--" "clojure-lsp" "listen" "--" "typos-lsp")))
 
   (defun gatsby>>clojure-setup-local-var ()
     (setq-local gatsby>comint-command "clj")

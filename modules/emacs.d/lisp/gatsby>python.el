@@ -24,7 +24,10 @@
   (add-to-list 'major-mode-remap-alist '(python-mode . python-ts-mode))
   ;; lsp
   (with-eval-after-load 'eglot
-    (add-to-list 'eglot-server-programs '(python-ts-mode "ty" "server")))
+    (add-to-list
+     'eglot-server-programs
+     '(python-ts-mode
+       "rass" "--" "ty" "server" "--" "ruff" "server" "--" "codebook-lsp" "serve")))
   :evil-bind
   ((:maps python-ts-mode-map :states visual)
    ("<" . #'python-indent-shift-left)
