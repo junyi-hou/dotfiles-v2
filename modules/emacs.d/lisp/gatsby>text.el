@@ -6,7 +6,8 @@
 (require 'gatsby>>utility)
 
 (use-package markdown-mode
-  :ensure (:host github :repo "jrblevin/markdown-mode"))
+  :ensure (:host github :repo "jrblevin/markdown-mode")
+  :command (markdown-insert-gfm-code-block markdown-insert-link))
 
 (use-package markdown-ts-mode
   :ensure (:host github :repo "LionyxML/markdown-ts-mode")
@@ -14,6 +15,7 @@
   :hook
   ;; (markdown-ts-mode . eglot-ensure)
   (markdown-ts-mode . corfu-mode)
+  (markdown-ts-mode . display-line-numbers-mode)
   :after markdown-mode
   :init
   ;; treesitter

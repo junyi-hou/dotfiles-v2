@@ -18,7 +18,8 @@
 
   ;; lsp
   (with-eval-after-load 'eglot
-    (add-to-list 'eglot-server-programs '(yaml-ts-mode "yaml-lanugage-server" "--stdio")))
+    (add-to-list
+     'eglot-server-programs '(yaml-ts-mode "yaml-language-server" "--stdio")))
 
   :hook
   (yaml-ts-mode . display-line-numbers-mode) ;; turn on line-number
@@ -35,7 +36,9 @@
   (gatsby>install-treesitter-grammar
    'json "https://github.com/tree-sitter/tree-sitter-json"
    "v0.24.8")
-  :hook (json-ts-mode . gatsby>>json-add-formatting-hook))
+  :hook
+  (json-ts-mode . gatsby>>json-add-formatting-hook)
+  (json-ts-mode . display-line-numbers-mode))
 
 ;; protofub-ts-mode upstream is down as of 2025-10-13
 ;; (use-package protobuf-ts-mode
@@ -55,7 +58,9 @@
   ;; lsp
   (with-eval-after-load 'eglot
     (add-to-list 'eglot-server-programs '(toml-ts-mode "taplo" "lsp" "stdio")))
-  :hook (toml-ts-mode . eglot-ensure))
+  :hook
+  (toml-ts-mode . eglot-ensure)
+  (toml-ts-mode . display-line-numbers-mode))
 
 (provide 'gatsby>config-files)
 ;;; gatsby>config-files.el ends here
