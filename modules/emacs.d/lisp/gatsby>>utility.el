@@ -168,9 +168,32 @@ The optional argument TEST specifies the hash table's test function
       (add-to-list list modes))))
 
 ;; secret management via `passage'
-;; (gatsby>defcommand gatsby>retrieve-secret ()
-;;   (set-register)
-;;   )
+(gatsby>defcommand gatsby>retrieve-secret ()
+  (let* ((default-directory gatsby>dotfiles-repo-location)
+         (dir (getenv "PASSAGE_DIR"))
+         (pass-path
+          (thread-last
+           (directory-files-recursively dir "\\.age$")
+           (mapcar
+            (lambda (f)
+              (thread-first f (file-relative-name dir) (file-name-sans-extension))))
+           (completing-read "Getting secret: ")))
+         (secret
+          (thread-last
+           pass-path
+           (format "direnv exec %s passage show %s" default-directory)
+           (shell-command-to-string)
+           ((lambda (l) (string-split l "\n" 'omit-nulls)))
+           (last)
+           (car))))
+    (kill-new secret)
+    (run-at-time 30 nil
+                 (lambda (s)
+                   (gui-set-selection 'CLIPBOARD "")
+                   (setq kill-ring (delete s kill-ring))
+                   (message "Secret cleaned"))
+                 secret)
+    (message "Secret %s copied to the clipboard..." pass-path)))
 
 ;; automatically update the elpaca lock file when exiting emacs
 (defun gatsby>>update-elpaca-lock-file ()
