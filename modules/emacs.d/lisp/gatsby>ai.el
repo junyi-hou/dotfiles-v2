@@ -7,7 +7,7 @@
 (require 'gatsby>>utility)
 
 (defun gatsby>>get-ai-api-key ()
-  "run passage to get the openai_api_key. Return nil if no key is found"
+  "Run passage to get the openai_api_key.  Return nil if no key is found."
   (thread-first
    "direnv exec %s passage show openrouter-api"
    (format (expand-file-name gatsby>dotfiles-repo-location))

@@ -2,12 +2,12 @@
 
 ;;; Commentary:
 
-;; Code:
+;;; Code:
 (require 'gatsby>>utility)
 
 (use-package markdown-mode
   :ensure (:host github :repo "jrblevin/markdown-mode")
-  :command (markdown-insert-gfm-code-block markdown-insert-link))
+  :commands (markdown-insert-gfm-code-block markdown-insert-link))
 
 (use-package markdown-ts-mode
   :ensure (:host github :repo "LionyxML/markdown-ts-mode")
