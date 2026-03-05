@@ -17,6 +17,7 @@ pytest = "*"
 ty = "*"
 ruff = "*"
 jupyter = "*"
+tree = "*"        # passage needs it
 
 
 [feature.global.dependencies]

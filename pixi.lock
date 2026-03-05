@@ -259,6 +259,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/tomli-2.3.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/tornado-6.5.3-py312h4c3975b_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/traitlets-5.14.3-pyhd8ed1ab_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/tree-2.3.1-hb03c661_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/ty-0.0.5-h4e94fc0_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/typing-extensions-4.14.1-h4440ef1_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/typing_extensions-4.14.1-pyhe01879c_0.conda
@@ -411,6 +412,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/tomli-2.3.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/tornado-6.5.3-py312h4409184_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/traitlets-5.14.3-pyhd8ed1ab_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/tree-2.3.1-h84a0fba_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/ty-0.0.5-ha73ee7d_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/typing-extensions-4.14.1-h4440ef1_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/typing_extensions-4.14.1-pyhe01879c_0.conda
@@ -3246,6 +3248,25 @@ packages:
   license_family: BSD
   size: 110051
   timestamp: 1733367480074
+- conda: https://conda.anaconda.org/conda-forge/linux-64/tree-2.3.1-hb03c661_0.conda
+  sha256: 6d67f765577c18bfb96a0618778374403e01b6a7be34181682d26fecb7696e99
+  md5: 3651c76e752d339d37f50ee5b05e432f
+  depends:
+  - __glibc >=2.17,<3.0.a0
+  - libgcc >=14
+  license: GPL-2.0-only
+  license_family: GPL
+  size: 56019
+  timestamp: 1770446789536
+- conda: https://conda.anaconda.org/conda-forge/osx-arm64/tree-2.3.1-h84a0fba_0.conda
+  sha256: feeae1c5aec92094de0c87704e5b9ddb8b1881bad6dbf59d57b23ea4783b3dae
+  md5: 32233bdb66ca4926c75b86c8ab6aa2e1
+  depends:
+  - __osx >=11.0
+  license: GPL-2.0-only
+  license_family: GPL
+  size: 53444
+  timestamp: 1770447146941
 - conda: https://conda.anaconda.org/conda-forge/linux-64/ty-0.0.5-h4e94fc0_0.conda
   noarch: python
   sha256: 001fb96e14f3a5d2d4d506f96699eee763c2810f556dc2ae3f283da42f815604
