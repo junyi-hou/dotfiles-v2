@@ -15,11 +15,8 @@
 ;; (p FORM <NAME> <NOINSERT>) Like p described above, but FORM is evaluated.
 ;; (FORM ...) Other Lisp forms are evaluated. Named fields are lexically bound.
 ;; q Like p, but the template is finished if the user jumps to the field (see also r).
-
 fundamental-mode
-(sep comment-start (make-string (length content) ?=) n
-     comment-start (p "header" content) n
-     comment-start (make-string (length content) ?=))
+(sep comment-start " " p " \f" n)
 
 emacs-lisp-mode
 (defun "(defun " p " (" p ")\n  \"" p "\"" n> r> ")")
@@ -40,3 +37,6 @@ markdown-ts-mode
 
 org-mode
 (src "#+begin_src " q n r n "#+end_src")
+
+clojure-ts-mode
+(defn- "(defn ^:private " p n> "\"" p "\""n> "[" p "]" n> r> ")")
