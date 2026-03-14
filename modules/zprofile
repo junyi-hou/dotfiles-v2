@@ -14,7 +14,7 @@ else
 fi
 
 export JAVA_HOME=$DOTFILES_ROOT/.tools/java
-export PATH=$DOTFILES_ROOT/.pixi/envs/all/bin:$JAVA_HOME/bin:$HOME/.cargo/bin:/bin:$PATH
+export PATH=$DOTFILES_ROOT/.pixi/envs/all/bin:$JAVA_HOME/bin:$HOME/.local/bin:/bin:$PATH
 
 # mac setting
 if [[ "$(uname)" == "Darwin" ]]; then
