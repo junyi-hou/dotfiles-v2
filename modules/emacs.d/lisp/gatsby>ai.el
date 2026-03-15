@@ -30,6 +30,7 @@
   (agent-shell-file-completion-enabled t)
   (agent-shell-session-strategy 'new)
   (agent-shell-header-style 'text)
+  (agent-shell-preferred-agent-config 'claude-code)
   :commands
   (agent-shell--start
    agent-shell-anthropic-make-claude-code-config
@@ -62,11 +63,11 @@
        ((and resume (not current-client))
         (agent-shell--start
          :no-focus nil
-         :config (agent-shell-anthropic-make-claude-code-config)
+         :config (agent-shell--resolve-preferred-config)
          :new-session t
          :session-strategy 'prompt))
        ((not current-client)
-        (call-interactively #'agent-shell-anthropic-start-claude-code))
+        (call-interactively #'agent-shell))
        (t
         (display-buffer current-client agent-shell-display-action)
         (switch-to-buffer-other-window current-client)
