@@ -107,23 +107,13 @@
                   (map-nested-elt state '(:session :models)))
                  :name)
                 (map-nested-elt state '(:session :model-id)) "uninitiated"))
-           (cost
-            (if-let* ((agent-shell--usage-has-data-p (map-elt state :usage))
-                      (cost
-                       (thread-last
-                        '(:usage :cost-amount)
-                        (map-nested-elt state)
-                        (format "%.3f")
-                        (string-to-number)))
-                      ((> cost 0)))
-              (format " [$%s]" cost)
-              "")))
+           (context-usage (or (agent-shell--context-usage-indicator) "")))
       (format "%s %s %s"
               (propertize model 'font-lock-face 'font-lock-negation-char-face)
               (if mode
                   (propertize (format "(%s)" mode) 'font-lock-face 'font-lock-type-face)
                 "")
-              cost)))
+              context-usage)))
 
   (advice-add #'agent-shell--make-header :override #'gatsby>>agent-shell-header)
   (advice-add
