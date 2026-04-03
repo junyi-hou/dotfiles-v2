@@ -17,9 +17,6 @@
    (last)
    (car)))
 
-;; TODO
-;; there are a few things lacking
-;; - remote support (https://github.com/xenodium/agent-shell/issues/122)
 (use-package agent-shell
   :ensure (:host github :repo "xenodium/agent-shell")
   :hook (agent-shell-mode . corfu-mode)
@@ -31,6 +28,11 @@
   (agent-shell-session-strategy 'new)
   (agent-shell-header-style 'text)
   (agent-shell-preferred-agent-config 'claude-code)
+  (agent-shell-path-resolver-function
+   (lambda (path)
+     (if (file-remote-p default-directory)
+         (file-local-name path)
+       path)))
   :commands
   (agent-shell--start
    agent-shell-anthropic-make-claude-code-config
@@ -123,12 +125,44 @@
      ""
      "[claude code]"))
 
-  ;; entrance point
-  (with-eval-after-load 'magit
-    (transient-append-suffix
-     'magit-commit
-     #'magit-commit-create
-     '("g" "Generate commit" gatsby>agent-shell-commit)))
+  (defun gatsby>>acp--start-client-remote-advice (orig-fun &rest args)
+    "Around advice for `acp--start-client' to enable TRAMP / remote support."
+    (let ((client (plist-get args :client)))
+      (if (file-remote-p default-directory)
+          (cl-letf* ((old-make-process (symbol-function 'make-process))
+                     ((symbol-function #'make-process)
+                      (lambda (&rest props)
+                        (apply old-make-process (append props (list :file-handler t)))))
+                     ((symbol-function #'executable-find)
+                      (lambda (command)
+                        (with-no-warnings (executable-find command t)))))
+            (apply orig-fun args))
+        (apply orig-fun args))))
+
+  (with-eval-after-load 'acp
+    (advice-add #'acp--start-client :around #'gatsby>>acp--start-client-remote-advice))
+
+  (defun gatsby>>agent-shell-insert-shell-command-output-remote-advice
+      (orig-fun &rest args)
+    "Around advice for `agent-shell-insert-shell-command-output' to enable TRAMP / remote support."
+    (if (file-remote-p default-directory)
+        (cl-letf* ((old-make-process (symbol-function 'make-process))
+                   ((symbol-function 'make-process)
+                    (lambda (&rest props)
+                      (apply old-make-process (append props (list :file-handler t))))))
+          (apply orig-fun args))
+      (apply orig-fun args)))
+
+  (advice-add
+   #'agent-shell-insert-shell-command-output
+   :around #'gatsby>>agent-shell-insert-shell-command-output-remote-advice)
+
+  ;; ;; entrance point
+  ;; (with-eval-after-load 'magit
+  ;;   (transient-append-suffix
+  ;;    'magit-commit
+  ;;    #'magit-commit-create
+  ;;    '("g" "Generate commit" gatsby>agent-shell-commit)))
 
   :evil-bind
   ((:maps normal)
