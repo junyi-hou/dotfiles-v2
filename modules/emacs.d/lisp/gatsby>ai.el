@@ -26,7 +26,7 @@
   :custom-face (header-line ((t :inherit default)))
   :custom
   (agent-shell-display-action
-   '(display-buffer-in-side-window (side . right) (window-height . 0.3) (slot . 0)))
+   '(display-buffer-in-side-window (side . right) (window-height . 0.4) (slot . 0)))
   (agent-shell-file-completion-enabled t)
   (agent-shell-session-strategy 'new)
   (agent-shell-header-style 'text)
