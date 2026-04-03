@@ -95,6 +95,10 @@
 
 (setq elpaca-lock-file (expand-file-name "elpaca-lock.el" user-emacs-directory))
 
+;; ensure lock file is used to pin package versions
+(when (fboundp 'elpaca-menu-lock-file)
+  (elpaca-menu-lock-file 'update))
+
 ;; Install use-package support
 (elpaca elpaca-use-package (elpaca-use-package-mode))
 

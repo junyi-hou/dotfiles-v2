@@ -205,6 +205,30 @@ The optional argument TEST specifies the hash table's test function
 
 (add-hook 'kill-emacs-hook #'gatsby>>update-elpaca-lock-file)
 
+(defun gatsby>update-emacs-package ()
+  "Choose from a list of installed package, go into the elpaca repo folder, run git pull and elpaca rebuild."
+  (interactive)
+  (let* ((queued (elpaca--queued))
+         (packages (mapcar #'car queued))
+         (package (completing-read "Update package: " packages nil t))
+         (id (intern package))
+         (e (elpaca-get id))
+         (repo (elpaca<-repo-dir e)))
+    (if (and repo (file-directory-p repo))
+        (let ((default-directory repo)
+              (pkg-id id)
+              (pkg-name package))
+          (message "Updating %s in %s..." pkg-name repo)
+          (set-process-sentinel
+           (start-process "elpaca-git-pull" (format "*elpaca-update-%s*" pkg-name) "git" "pull")
+           (lambda (proc event)
+             (when (string-match-p "finished" event)
+               (message "Git pull finished for %s. Rebuilding..." pkg-name)
+               (elpaca-rebuild pkg-id)
+               (elpaca-wait)
+               (gatsby>>update-elpaca-lock-file)
+               (message "Elpaca update and lock file update finished for %s" pkg-name)))))
+      (error "Repository for %s not found" package))))
 
 (provide 'gatsby>>utility)
 ;;; gatsby>>utility.el ends here
