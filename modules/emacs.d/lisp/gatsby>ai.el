@@ -152,6 +152,7 @@
    ("m" . #'agent-shell-set-session-mode)
    ("M" . #'agent-shell-set-session-model)
    ("q" . #'delete-window)
+   ("M-v" . #'agent-shell-yank-dwim)
    ([remap kill-buffer-and-window] . #'delete-window)))
 
 ;; for commit message and simple rewrite

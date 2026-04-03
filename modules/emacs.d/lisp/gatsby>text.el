@@ -53,7 +53,9 @@
 
   ;; lsp
   (with-eval-after-load 'eglot
-    (add-to-list 'eglot-server-programs '(typst-ts-mode "tinymist" "lsp")))
+    (add-to-list
+     'eglot-server-programs
+     '(typst-ts-mode "rass" "--" "tinymist" "lsp" "--" "typos-lsp")))
 
   :config
   (defun gatsby>>typst-stop-watching (&rest _)
