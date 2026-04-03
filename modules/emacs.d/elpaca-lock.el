@@ -6,7 +6,7 @@
                  (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
                            "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
                 :source "elpaca-menu-lock-file" :protocol https :inherit t :depth
-                treeless :ref "49de56f0de328ad9022e2784f52acd73170f7e75"))
+                treeless :ref "c32fbf8df34ed0095853a8cf55dc783e68b67d90"))
  (agent-shell :source "elpaca-menu-lock-file" :recipe
               (:package "agent-shell" :fetcher github :repo "xenodium/agent-shell"
                         :files
@@ -17,7 +17,7 @@
                                    "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
                         :source "elpaca-menu-lock-file" :protocol https :inherit t
                         :depth treeless :host github :ref
-                        "17d8009f5c09c14a0f11f4267f6dc081ae161b6d"))
+                        "1e5d17598d191386ee02998199b77d0f70866820"))
  (cape :source "elpaca-menu-lock-file" :recipe
        (:package "cape" :repo "minad/cape" :fetcher github :files
                  ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"
