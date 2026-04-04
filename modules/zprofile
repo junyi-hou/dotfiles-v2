@@ -1,17 +1,10 @@
-if [ -n "$BASH_SOURCE" ]; then
-    CURRENT_SCRIPT="$BASH_SOURCE"
-elif [ -n "$ZSH_NAME" ]; then
-    CURRENT_SCRIPT="${(%):-%N}"
-else
-    CURRENT_SCRIPT="$0"
-fi
-
-DOTFILES_ROOT=$(dirname $(dirname "$(readlink -f "$CURRENT_SCRIPT")"))
-
 # source existing zprofile file backed up if exists
 if [ -f "$HOME/.zprofile.backup" ]; then
     source "$HOME/.zprofile.backup"
 fi
+
+CURRENT_SCRIPT="${(%):-%x}"
+DOTFILES_ROOT=$(dirname $(dirname "$(readlink -f "$CURRENT_SCRIPT")"))
 
 # If install according to the README, this will work
 if [[ "$(uname)" == "Darwin" ]]; then
@@ -20,9 +13,6 @@ else
     # we are in Linux
     export EDITOR="emacsclient -r -a ''"
 fi
-
-export JAVA_HOME=$DOTFILES_ROOT/.tools/java
-export PATH=$DOTFILES_ROOT/.pixi/envs/all/bin:$JAVA_HOME/bin:$HOME/.local/bin:/bin:$PATH
 
 # mac setting
 if [[ "$(uname)" == "Darwin" ]]; then

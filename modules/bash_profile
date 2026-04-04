@@ -1,4 +1,8 @@
-# Get the directory of the current script to source zprofile relative to it
+# source existing zprofile file backed up if exists
+if [ -f "$HOME/.zprofile.backup" ]; then
+    source "$HOME/.bash_profile.backup"
+fi
+
 BASH_PROFILE_PARENT_DIR="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 if [ -f "$BASH_PROFILE_PARENT_DIR/zprofile" ]; then
     source "$BASH_PROFILE_PARENT_DIR/zprofile"
