@@ -189,28 +189,5 @@
    ("M-v" . #'agent-shell-yank-dwim)
    ([remap kill-buffer-and-window] . #'delete-window)))
 
-;; for commit message and simple rewrite
-(use-package gptel
-  :ensure (:host github :repo "karthink/gptel")
-  :custom
-  (gptel-model "")
-  (gptel-use-header-line nil)
-  (gptel-cache nil)
-  (gptel-use-tools nil)
-  :hook (gptel-post-response . (lambda (&rest _) (evil-normal-state)))
-  :config
-  (setq gptel-backend
-        (gptel-make-openai
-         "OpenRouter"
-         :host "openrouter.ai"
-         :endpoint "/api/v1/chat/completions"
-         :stream t
-         :key #'gatsby>>get-ai-api-key
-         :models '(google/gemini-3-flash-preview))))
-
-(use-package gptel-magit
-  :ensure (:host github :repo "ragnard/gptel-magit")
-  :hook (magit-mode . gptel-magit-install))
-
 (provide 'gatsby>ai)
 ;;; gatsby>ai.el ends here
