@@ -1,3 +1,8 @@
+# source existing zprofile file backed up if exists
+if [ -f "$HOME/.zshrc.backup" ]; then
+    source "$HOME/.zshrc.backup"
+fi
+
 if [[ "$INSIDE_EMACS" = 'vterm' ]] && [[ -n "${EMACS_VTERM_PATH}" ]] && [[ -f "${EMACS_VTERM_PATH}/etc/emacs-vterm-zsh.sh" ]]; then
     source ''${EMACS_VTERM_PATH}/etc/emacs-vterm-zsh.sh
 fi
@@ -38,11 +43,6 @@ function cd() {
         builtin cd "$@" && ls
     fi
 }
-
-# source existing zprofile file backed up if exists
-if [ -f "$HOME/.zshrc.backup" ]; then
-    source "$HOME/.zshrc.backup"
-fi
 
 # Local Variables:
 # mode: bash-ts
