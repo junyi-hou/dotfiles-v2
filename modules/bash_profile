@@ -1,5 +1,5 @@
 # source existing zprofile file backed up if exists
-if [ -f "$HOME/.zprofile.backup" ]; then
+if [ -f "$HOME/.bash_profile.backup" ]; then
     source "$HOME/.bash_profile.backup"
 fi
 

@@ -1,4 +1,4 @@
-if [ -d "$HOME/.profile.backup" ]; then
+if [ -f "$HOME/.profile.backup" ]; then
     . "$HOME/.profile.backup"
 fi
 
@@ -12,7 +12,7 @@ if [ -d "$DOTFILES_ROOT/.tools/java" ]; then
     export JAVA_HOME
 fi
 
-export $PATH
+export PATH
 
 # Local Variables:
 # mode: bash-ts
