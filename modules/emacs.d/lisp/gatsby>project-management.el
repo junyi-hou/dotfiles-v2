@@ -192,13 +192,6 @@
          git-rebase-mode)
        'motion)))
    (evil-mode . (lambda () (gatsby>>put-mode-to-evil-state 'git-commit-mode 'insert))))
-  :custom
-  (magit-status-section-hook
-   '(magit-insert-status-headers
-     magit-insert-untracked-files
-     magit-insert-unstaged-changes
-     magit-insert-staged-changes
-     magit-insert-recent-commits))
   :config
 
   (make-variable-buffer-local 'magit-log-section-commit-count)
@@ -216,6 +209,8 @@
    'magit-insert-unpushed-to-pushremote
    'append)
 
+  (make-variable-buffer-local 'magit-log-section-commit-count)
+
   (defun gatsby>>magit-change-number-of-commits (n increase)
     "Change the number of commits shown by N.
   If INCREASE is non-nil, show `magit-log-section-commit-count'+N commits,
@@ -223,12 +218,10 @@
     (if increase
         (setq-local magit-log-section-commit-count (+ magit-log-section-commit-count n))
       (setq-local magit-log-section-commit-count (- magit-log-section-commit-count n)))
-    (let ((inhibit-read-only t)
-          (magit-section-initial-visibility-alist
+    (let ((magit-section-initial-visibility-alist
            `(,@magit-section-initial-visibility-alist (recent . show)))
           (point (point)))
-      (erase-buffer)
-      (magit-status-refresh-buffer)
+      (call-interactively #'magit-refresh)
       (goto-char (min (point-max) point))))
 
   (defun gatsby>magit-increase-number-of-commits (&optional n)
