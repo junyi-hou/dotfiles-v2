@@ -24,7 +24,9 @@
   3. last command is `corfu-next'or `corfu-previous'."
     (if (memq
          last-command '(gatsby>corfu-complete corfu-complete corfu-next corfu-previous))
-        (let ((corfu--index (max 0 corfu--index)))
+        (progn
+          (when (< corfu--index 0)
+            (corfu--goto 0))
           (corfu-insert))
       (corfu-expand)))
 
