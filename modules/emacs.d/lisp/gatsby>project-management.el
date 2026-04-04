@@ -141,22 +141,22 @@
         (envrc-allow))))
 
   ;; setup lighter on the status line
-  ;; (defun gatsby>>envrc-lighter ()
-  ;;   "`envrc--lighter' with mouse hover showing current root directory"
-  ;;   `("[e:"
-  ;;     (:propertize ,(if (memq envrc--status '(none error))
-  ;;                       (symbol-name envrc--status)
-  ;;                     ;; if current buffer has direnv, return its path
-  ;;                     (abbreviate-file-name (envrc--find-env-dir)))
-  ;;                  face
-  ;;                  ,(pcase envrc--status
-  ;;                     (`on 'envrc-mode-line-on-face)
-  ;;                     (`error 'envrc-mode-line-error-face)
-  ;;                     (`none 'envrc-mode-line-none-face))
-  ;;                  mouse-face mode-line-highlight
-  ;;                  )
-  ;;     "]"))
-  ;; (setq gatsby>right-mode-line `((:eval (gatsby>>envrc-lighter)) " " ,@gatsby>right-mode-line))
+  (defun gatsby>>envrc-lighter ()
+    "`envrc--lighter' with mouse hover showing current root directory"
+    `("[e:" (:propertize
+       ,(if (memq envrc--status '(none error))
+            (symbol-name envrc--status)
+          ;; if current buffer has direnv, return its path
+          (abbreviate-file-name (envrc--find-env-dir)))
+       face
+       ,(pcase envrc--status
+          (`on 'envrc-mode-line-on-face)
+          (`error 'envrc-mode-line-error-face)
+          (`none 'envrc-mode-line-none-face))
+       mouse-face mode-line-highlight)
+      "]"))
+  (setq gatsby>right-mode-line
+        `((:eval (gatsby>>envrc-lighter)) " " ,@gatsby>right-mode-line))
 
   (gatsby>defcommand gatsby>envrc-log-buffer ()
     (switch-to-buffer-other-window "*envrc*"))
