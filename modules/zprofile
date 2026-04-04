@@ -3,9 +3,6 @@ if [ -f "$HOME/.zprofile.backup" ]; then
     source "$HOME/.zprofile.backup"
 fi
 
-CURRENT_SCRIPT="${(%):-%x}"
-DOTFILES_ROOT=$(dirname $(dirname "$(readlink -f "$CURRENT_SCRIPT")"))
-
 # If install according to the README, this will work
 if [[ "$(uname)" == "Darwin" ]]; then
     export EDITOR="/Applications/Emacs.app/Contents/MacOS/bin/emacsclient -r -a ''"
@@ -22,6 +19,8 @@ if [[ "$(uname)" == "Darwin" ]]; then
     killall Dock >/dev/null 2>&1
   fi
 fi
+
+source $HOME/.profile
 
 # Local Variables:
 # mode: bash-ts
