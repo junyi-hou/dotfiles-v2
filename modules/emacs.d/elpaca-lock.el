@@ -425,7 +425,7 @@
  (tramp-rpc :source "elpaca-menu-lock-file" :recipe
             (:source "elpaca-menu-lock-file" :protocol https :inherit t :depth treeless
                      :host github :repo "ArthurHeymans/emacs-tramp-rpc" :package
-                     "tramp-rpc" :ref "9c4380bf860cc2224781d5faae2064949ca9ff3d"))
+                     "tramp-rpc" :ref "c3161fec03d1e77ce1fe3571f2f61228aaae18e3"))
  (transient :source "elpaca-menu-lock-file" :recipe
             (:package "transient" :fetcher github :repo "magit/transient" :files
                       ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"
