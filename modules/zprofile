@@ -1,4 +1,12 @@
-DOTFILES_ROOT=$(dirname $(dirname "$(readlink -f "${(%):-%N}")"))
+if [ -n "$BASH_SOURCE" ]; then
+    CURRENT_SCRIPT="$BASH_SOURCE"
+elif [ -n "$ZSH_NAME" ]; then
+    CURRENT_SCRIPT="${(%):-%N}"
+else
+    CURRENT_SCRIPT="$0"
+fi
+
+DOTFILES_ROOT=$(dirname $(dirname "$(readlink -f "$CURRENT_SCRIPT")"))
 
 # source existing zprofile file backed up if exists
 if [ -f "$HOME/.zprofile.backup" ]; then

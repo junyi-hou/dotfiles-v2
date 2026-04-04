@@ -1,0 +1,9 @@
+# Get the directory of the current script to source zprofile relative to it
+BASH_PROFILE_PARENT_DIR="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+if [ -f "$BASH_PROFILE_PARENT_DIR/zprofile" ]; then
+    source "$BASH_PROFILE_PARENT_DIR/zprofile"
+fi
+
+# Local Variables:
+# mode: bash-ts
+# End:

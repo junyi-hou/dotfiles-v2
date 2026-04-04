@@ -1,0 +1,9 @@
+# Get the directory of the current script to source zshrc relative to it
+BASHRC_PARENT_DIR="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+if [ -f "$BASHRC_PARENT_DIR/zshrc" ]; then
+    source "$BASHRC_PARENT_DIR/zshrc"
+fi
+
+# Local Variables:
+# mode: bash-ts
+# End:
