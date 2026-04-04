@@ -1,5 +1,8 @@
-# Note: readlink -f is common on Linux but not POSIX-standard
-DOTFILES_ROOT=$(dirname "$(dirname "$(readlink -f "$0" 2>/dev/null || echo "$0")")")
+if [ -d "$HOME/.profile.backup" ]; then
+    . "$HOME/.profile.backup"
+fi
+
+DOTFILES_ROOT=$(dirname "$(dirname "$(readlink "$HOME/.profile")")")
 
 PATH="$DOTFILES_ROOT/.pixi/envs/all/bin:$HOME/.local/bin:/bin:$PATH"
 

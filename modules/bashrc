@@ -3,10 +3,7 @@ if [ -f "$HOME/.bashrc.backup" ]; then
     source "$HOME/.bashrc.backup"
 fi
 
-BASHRC_PARENT_DIR="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
-if [ -f "$BASHRC_PARENT_DIR/zshrc" ]; then
-    source "$BASHRC_PARENT_DIR/zshrc"
-fi
+source "$HOME/.zshrc"
 
 # Local Variables:
 # mode: bash-ts

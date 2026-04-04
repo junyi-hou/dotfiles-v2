@@ -3,10 +3,7 @@ if [ -f "$HOME/.zprofile.backup" ]; then
     source "$HOME/.bash_profile.backup"
 fi
 
-BASH_PROFILE_PARENT_DIR="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
-if [ -f "$BASH_PROFILE_PARENT_DIR/zprofile" ]; then
-    source "$BASH_PROFILE_PARENT_DIR/zprofile"
-fi
+source "$HOME/.profile"
 
 # Local Variables:
 # mode: bash-ts
