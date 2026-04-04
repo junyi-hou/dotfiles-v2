@@ -243,29 +243,29 @@
     (interactive "p")
     (gatsby>>magit-change-number-of-commits n nil))
 
-  (gatsby>defcommand gatsby>magit-visit-thing-at-point ()
-    "Get file at point in magit buffers."
-    (cond
-     ((magit-section-match '([file] [hunk]))
-      (let ((file (magit-file-at-point t)))
-        (unless file
-          (error "No file at point"))
-        (magit-diff-visit-file--internal nil #'switch-to-buffer-other-window)))
-     ((magit-section-match [commit])
-      ;; commits: show the commit details
-      (call-interactively #'magit-show-commit))
-     ((magit-section-match [* error])
-      (call-interactively #'magit-process-buffer))
-     ;; TODO: use smerge instead of ediff
-     ;; ((magit-section-match [stash])
-     ;;  (call-interactively #'magit-ediff-show-stash))
-     ;; ((and (magit-section-match '(issue pullreq))
-     ;;       (featurep 'forge))
-     ;;  ;; for `forge-issue' and `forge-pullreq' block, visit corresponding issue
-     ;;  (call-interactively #'forge-visit-topic))
-     ;; fallback - `magit-visit-thing'
-     (t
-      'magit-visit-thing)))
+  ;; (gatsby>defcommand gatsby>magit-visit-thing-at-point ()
+  ;;   "Get file at point in magit buffers."
+  ;;   (cond
+  ;;    ((magit-section-match '([file] [hunk]))
+  ;;     (let ((file (magit-file-at-point t)))
+  ;;       (unless file
+  ;;         (error "No file at point"))
+  ;;       (magit-diff-visit-file--internal nil #'switch-to-buffer-other-window)))
+  ;;    ((magit-section-match [commit])
+  ;;     ;; commits: show the commit details
+  ;;     (call-interactively #'magit-show-commit))
+  ;;    ((magit-section-match [* error])
+  ;;     (call-interactively #'magit-process-buffer))
+  ;;    ;; TODO: use smerge instead of ediff
+  ;;    ;; ((magit-section-match [stash])
+  ;;    ;;  (call-interactively #'magit-ediff-show-stash))
+  ;;    ;; ((and (magit-section-match '(issue pullreq))
+  ;;    ;;       (featurep 'forge))
+  ;;    ;;  ;; for `forge-issue' and `forge-pullreq' block, visit corresponding issue
+  ;;    ;;  (call-interactively #'forge-visit-topic))
+  ;;    ;; fallback - `magit-visit-thing'
+  ;;    (t
+  ;;     'magit-visit-thing)))
 
   :evil-bind
   ((:maps normal)
@@ -288,7 +288,7 @@
    ("`" . #'magit-dispatch)
    ("z o" . #'magit-section-show)
    ("z c" . #'magit-section-hide)
-   ("RET" . #'gatsby>magit-visit-thing-at-point)
+   ;; ("RET" . #'gatsby>magit-visit-thing-at-point)
    (:maps
     (magit-status-mode-map
      magit-diff-mode-map magit-log-mode-map magit-revision-mode-map)
@@ -306,79 +306,10 @@
    ("M-k" . #'git-rebase-move-line-up)))
 
 (gatsby>use-internal-package diff-mode
-  :custom-face
-  (gatsby>diff-context ((t :extend t :background "#212121" :foreground "#8e9999")))
-  (gatsby>diff-context-hl ((t :extend t :background "#3E3E3E" :foreground "#EEFFFF")))
-  (gatsby>diff-added-hl
-   ((t :extend t :weight bold :background "#414836" :foreground "#c2e88d")))
-  (gatsby>diff-removed-hl
-   ((t :extend t :weight bold :background "#5f4545" :foreground "#f57373")))
-  (gatsby>diff-hunk-heading-hl
-   ((t :extend t :weight bold :background "#bb80b3" :foreground "#212121")))
   :custom
   (diff-font-lock-prettify t)
   (diff-font-lock-syntax nil)
-  :hook
-  (diff-mode . outline-minor-mode)
-  (diff-mode . gatsby>>diff-setup-hunk-highlighting)
-  (diff-mode . gatsby>diff-highlight-current-hunk)
-  :config
-
-  (advice-add #'diff-apply-hunk :after #'diff-kill-applied-hunks)
-
-  ;; mimic magit faces
-  (defun gatsby>>diff-apply-overlay (ov face &optional priority)
-    (overlay-put ov 'font-lock-face face)
-    (overlay-put ov 'priority (or priority 1))
-    (overlay-put ov 'evaproate t)
-    (overlay-put ov 'gatsby>diff-overlay t))
-
-  (defun gatsby>>diff-dim-region (beg end)
-    "Apply `gatsby>diff-context' face overlay to BEG and END"
-    (let ((ov (make-overlay beg end)))
-      (gatsby>>diff-apply-overlay ov 'gatsby>diff-context)))
-
-  (defun gatsby>>diff-highligh-current-hunk (beg end)
-    "Apply `gatsby>diff-context-hl', `gatsby>diff-removed-hl' and `gatsby>diff-added-hl' face between BEG and END."
-    (save-excursion
-      (goto-char beg)
-      (while (< (point) end)
-        (let ((line-start (line-beginning-position))
-              (line-end (1+ (line-end-position))))
-          (when (< line-start end)
-            (let ((face
-                   (cond
-                    ((looking-at "^\\+")
-                     'gatsby>diff-added-hl)
-                    ((looking-at "^-")
-                     'gatsby>diff-removed-hl)
-                    ((looking-at diff-hunk-header-re-unified)
-                     'gatsby>diff-hunk-heading-hl)
-                    (t
-                     'gatsby>diff-context-hl))))
-              (let ((ov (make-overlay line-start line-end)))
-                (gatsby>>diff-apply-overlay ov face)))))
-        (forward-line 1))))
-
-  (defun gatsby>diff-highlight-current-hunk ()
-    (remove-overlays (point-min) (point-max) 'gatsby>diff-overlay t)
-    (let ((hunk-bounds
-           (ignore-errors
-             (diff-bounds-of-hunk)))
-          (file-bounds
-           (ignore-errors
-             (diff-bounds-of-file))))
-      (if hunk-bounds
-          (pcase-let ((`(,beg ,end) hunk-bounds)
-                      (`(,file-header _) file-bounds))
-            (gatsby>>diff-dim-region (point-min) (1- beg))
-            (gatsby>>diff-dim-region (1+ end) (point-max))
-            (gatsby>>diff-highligh-current-hunk beg end))
-        (gatsby>>diff-dim-region (point-min) (point-max)))))
-
-  (defun gatsby>>diff-setup-hunk-highlighting ()
-    (add-hook 'post-command-hook #'gatsby>diff-highlight-current-hunk nil t))
-
+  :hook (diff-mode . outline-minor-mode)
   :evil-bind
   ((:maps diff-mode-map :states normal)
    (">" . #'diff-hunk-next)
@@ -387,57 +318,6 @@
    ("s" . #'diff-split-hunk)
    ("A" . #'diff-apply-buffer)
    ("q" . #'kill-buffer-and-window)))
-
-;; (gatsby>use-internal-package vc-dir
-;;   :config
-;;   (gatsby>defcommand gatsby>vc-status ()
-;;     (vc-dir (project-root (project-current))))
-
-;;   :evil-bind
-;;   ((:map normal)
-;;    ("SPC g g" . #'gatsby>vc-status)
-;;    (:map vc-dir-mode-map)
-;;    ("j" . #'vc-dir-next-line)
-;;    ("k" . #'vc-dir-previous-line)
-;;    ("<RET>" . #'vc-diff)))
-
-;; (gatsby>use-internal-package vc
-;;   :config
-
-;;   (defun gatsby>git-ref-log ()
-;;     "Show git reflog in a new buffer with ANSI colors and custom keybindings."
-;;     (interactive)
-;;     (let* ((root (vc-root-dir))
-;;            (buffer (get-buffer-create "*vc-git-reflog*")))
-;;       (with-current-buffer buffer
-;;         (setq-local vc-git-reflog-root root)
-;;         (let ((inhibit-read-only t))
-;;           (erase-buffer)
-;;           (vc-git-command
-;;            buffer
-;;            nil
-;;            nil
-;;            "reflog"
-;;            "--color=always"
-;;            "--pretty=format:%C(yellow)%h%Creset %C(auto)%d%Creset %Cgreen%gd%Creset %s %Cblue(%cr)%Creset")
-;;           (goto-char (point-min))
-;;           (ansi-color-apply-on-region (point-min) (point-max)))
-
-;;         (let ((map (make-sparse-keymap)))
-;;           (evil-define-key nil map (kbd "/") #'isearch-forward)
-;;           (evil-define-key nil map (kbd "p") #'previous-line)
-;;           (evil-define-key nil map (kbd "n") #'next-line)
-;;           (evil-define-key nil map (kbd "q") #'kill-buffer-and-window)
-;;           (use-local-map map))
-
-;;         (evil-emacs-state)
-
-;;         (setq buffer-read-only t)
-;;         (setq mode-name "Git-Reflog")
-;;         (setq major-mode 'special-mode))
-;;       (pop-to-buffer buffer)))
-
-;;   :evil-bind ((:maps normal) ("SPC g l" . #'vc-print-log)))
 
 (provide 'gatsby>project-management)
 ;;; gatsby>project-management.el ends here
