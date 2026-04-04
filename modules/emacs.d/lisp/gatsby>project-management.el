@@ -236,29 +236,29 @@
     (interactive "p")
     (gatsby>>magit-change-number-of-commits n nil))
 
-  ;; (gatsby>defcommand gatsby>magit-visit-thing-at-point ()
-  ;;   "Get file at point in magit buffers."
-  ;;   (cond
-  ;;    ((magit-section-match '([file] [hunk]))
-  ;;     (let ((file (magit-file-at-point t)))
-  ;;       (unless file
-  ;;         (error "No file at point"))
-  ;;       (magit-diff-visit-file--internal nil #'switch-to-buffer-other-window)))
-  ;;    ((magit-section-match [commit])
-  ;;     ;; commits: show the commit details
-  ;;     (call-interactively #'magit-show-commit))
-  ;;    ((magit-section-match [* error])
-  ;;     (call-interactively #'magit-process-buffer))
-  ;;    ;; TODO: use smerge instead of ediff
-  ;;    ;; ((magit-section-match [stash])
-  ;;    ;;  (call-interactively #'magit-ediff-show-stash))
-  ;;    ;; ((and (magit-section-match '(issue pullreq))
-  ;;    ;;       (featurep 'forge))
-  ;;    ;;  ;; for `forge-issue' and `forge-pullreq' block, visit corresponding issue
-  ;;    ;;  (call-interactively #'forge-visit-topic))
-  ;;    ;; fallback - `magit-visit-thing'
-  ;;    (t
-  ;;     'magit-visit-thing)))
+  (gatsby>defcommand gatsby>magit-visit-thing-at-point ()
+    "Get file at point in magit buffers."
+    (cond
+     ((magit-section-match '([file] [hunk]))
+      (let ((file (magit-file-at-point t)))
+        (unless file
+          (error "No file at point"))
+        (magit-diff-visit-worktree-file t)))
+     ((magit-section-match [commit])
+      ;; commits: show the commit details
+      (call-interactively #'magit-show-commit))
+     ((magit-section-match [* error])
+      (call-interactively #'magit-process-buffer))
+     ;; TODO: use smerge instead of ediff
+     ;; ((magit-section-match [stash])
+     ;;  (call-interactively #'magit-ediff-show-stash))
+     ;; ((and (magit-section-match '(issue pullreq))
+     ;;       (featurep 'forge))
+     ;;  ;; for `forge-issue' and `forge-pullreq' block, visit corresponding issue
+     ;;  (call-interactively #'forge-visit-topic))
+     ;; fallback - `magit-visit-thing'
+     (t
+      'magit-visit-thing)))
 
   :evil-bind
   ((:maps normal)
@@ -281,7 +281,7 @@
    ("`" . #'magit-dispatch)
    ("z o" . #'magit-section-show)
    ("z c" . #'magit-section-hide)
-   ;; ("RET" . #'gatsby>magit-visit-thing-at-point)
+   ("RET" . #'gatsby>magit-visit-thing-at-point)
    (:maps
     (magit-status-mode-map
      magit-diff-mode-map magit-log-mode-map magit-revision-mode-map)
