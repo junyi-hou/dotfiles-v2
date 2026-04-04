@@ -13,20 +13,20 @@ brew link --overwrite tree-sitter@0.25
 
 git clone -b emacs-mac-30_1_exp https://github.com/jdtsmith/emacs-mac.git
 cd emacs-mac
+git checkout 26c1548f5969564a185967c27ad2353a1f1093d5
 
 # Apply patches if they exist
-## FIXME - this does not work
-# if [ -d "../patches" ]; then
-#     echo "Applying patches from ../patches directory..."
-#     for patch_file in ../patches/*.patch; do
-#         if [ -f "$patch_file" ]; then
-#             echo "Applying patch: $(basename "$patch_file")"
-#             git apply "$patch_file"
-#         fi
-#     done
-# else
-#     echo "No patches directory found, skipping patch application."
-# fi
+if [ -d "../patches" ]; then
+    echo "Applying patches from ../patches directory..."
+    for patch_file in ../patches/*.patch; do
+        if [ -f "$patch_file" ]; then
+            echo "Applying patch: $(basename "$patch_file")"
+            git apply "$patch_file"
+        fi
+    done
+else
+    echo "No patches directory found, skipping patch application."
+fi
 
 ./autogen.sh
 
