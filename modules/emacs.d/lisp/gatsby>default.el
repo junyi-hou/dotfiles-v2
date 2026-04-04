@@ -126,9 +126,15 @@ the first call.  Delete the auto-inserted comment for the second call.  Otherwis
   :config
   (defun gatsby>>make-compilation-buffer-name-unique (cmd &rest _)
     (with-current-buffer (get-buffer "*compilation*")
-      (pcase cmd
-        ((pred listp) (rename-buffer (car cmd) t))
-        ((pred stringp) (rename-buffer (car (s-split " " cmd)) t)))))
+      (let ((name
+             (pcase cmd
+               ((pred listp) (string-join cmd " "))
+               ((pred stringp) cmd))))
+        (when-let* ((old-buffer
+                     (seq-find
+                      (lambda (b) (equal (buffer-name b) name)) (buffer-list))))
+          (kill-buffer old-buffer))
+        (rename-buffer name))))
 
   (defun gatsby>>compile-comint (cmd &optional comint)
     "Put point at the end and switch to normal state."
