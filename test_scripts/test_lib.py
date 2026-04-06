@@ -1,5 +1,5 @@
 from pathlib import Path
-from ..scripts._lib import get_target_path, get_backup_path, HOME
+from scripts._lib import get_target_path, get_backup_path, HOME
 
 
 def test_get_target_path():

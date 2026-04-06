@@ -24,11 +24,8 @@ def test_install_plugins(mock_logger, mock_run_claude):
     """Test that it installs all plugins."""
     install_plugins()
 
-    # Verify both plugins from LIST_OF_PLUGINS are installed
-    assert mock_run_claude.call_count == 2
-    mock_run_claude.assert_any_call(
-        ["plugins", "install", "skill-creator@claude-plugins-official"]
-    )
-    mock_run_claude.assert_any_call(
-        ["plugins", "install", "code-review@claude-plugins-official"]
-    )
+    # Verify marketplace update and both plugins are installed
+    assert mock_run_claude.call_count == 3
+    mock_run_claude.assert_any_call(["plugins", "marketplace", "update"])
+    mock_run_claude.assert_any_call(["plugins", "install", "skill-creator@claude-plugins-official"])
+    mock_run_claude.assert_any_call(["plugins", "install", "code-review@claude-plugins-official"])
