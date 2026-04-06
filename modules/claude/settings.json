@@ -2,13 +2,32 @@
   "model": "google/gemini-3-flash-preview",
   "enabledPlugins": {
     "skill-creator@claude-plugins-official": true,
-    "code-review@claude-plugins-official": true
+    "code-review@claude-plugins-official": true,
+    "plugin-dev@claude-plugins-official": true,
+    "commit-msg@personal-claude-plugins": true
   },
+  "alwaysAllowTools": [
+    {
+      "tools": [
+        "Write",
+        "Edit"
+      ],
+      "arguments": {
+        "file_path": "/path/to/your/temp/commit-msg-*"
+      }
+    }
+  ],
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
       "source": {
         "source": "git",
         "url": "https://github.com/anthropics/claude-plugins-official.git"
+      }
+    },
+    "personal-claude-plugins": {
+      "source": {
+        "source": "git",
+        "url": "https://github.com/junyi-hou/personal-claude-plugins.git"
       }
     }
   }

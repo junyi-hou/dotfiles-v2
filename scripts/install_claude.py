@@ -8,6 +8,12 @@ from scripts._lib import logger
 LIST_OF_PLUGINS = [
     "skill-creator@claude-plugins-official",
     "code-review@claude-plugins-official",
+    "commit-msg@personal-claude-plugins",
+]
+
+LIST_OF_MARKETPLACES = [
+    "https://github.com/junyi-hou/personal-claude-plugins.git",
+    "https://github.com/anthropics/claude-plugins-official.git",
 ]
 
 
@@ -51,10 +57,18 @@ def _run_claude(commands: list[str]) -> str:
     return result.stdout
 
 
-@_check_claude
+def pull_marketplaces() -> None:
+    for marketplace in LIST_OF_MARKETPLACES:
+        try:
+            logger.info(f"Pulling marketplaces: {marketplace}...")
+            _run_claude(["plugins", "marketplace", "add", marketplace])
+        except Exception as e:
+            logger.error(f"Failed to pull marketplace {marketplace}: {e}")
+            sys.exit(1)
+
+
 def install_plugins() -> None:
     """Install plugins from `LIST_OF_PLUGINS`."""
-    _run_claude(["plugins", "marketplace", "update"])
     for plugin in LIST_OF_PLUGINS:
         try:
             logger.info(f"Installing plugin: {plugin}...")
@@ -65,5 +79,6 @@ def install_plugins() -> None:
 
 
 if __name__ == "__main__":
+    pull_marketplaces()
     install_plugins()
     logger.info("Claude successfully installed!")
