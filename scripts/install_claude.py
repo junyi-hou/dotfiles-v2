@@ -54,10 +54,8 @@ def _run_claude(commands: list[str]) -> str:
 @_check_claude
 def install_plugins() -> None:
     """Install plugins from `LIST_OF_PLUGINS`."""
+    _run_claude(["plugins", "marketplace", "update"])
     for plugin in LIST_OF_PLUGINS:
-        if not plugin:
-            continue
-
         try:
             logger.info(f"Installing plugin: {plugin}...")
             _run_claude(["plugins", "install", plugin])
