@@ -5,7 +5,6 @@ from subprocess import run
 
 from scripts._lib import logger
 
-
 LIST_OF_PLUGINS = [
     "skill-creator@claude-plugins-official",
     "code-review@claude-plugins-official",
@@ -15,7 +14,7 @@ LIST_OF_PLUGINS = [
 def _install_claude() -> bool:
     try:
         logger.debug("Installing Claude CLI...")
-        run("curl -fsSL https://claude.ai/install.sh | bash", shell=True, check=True)
+        run("npm install -g @anthropic-ai/claude-code", shell=True, check=True)
         if not shutil.which("claude-agent-acp"):
             run(
                 "npm install -g @agentclientprotocol/claude-agent-acp",
@@ -52,38 +51,11 @@ def _run_claude(commands: list[str]) -> str:
     return result.stdout
 
 
-def get_list_of_installed_plugins() -> list[str]:
-    """
-    Parses the output of `claude plugins list` to return a list of plugin names.
-    """
-    output = _run_claude(["plugins", "list"])
-    plugins = []
-    for line in output.splitlines():
-        line = line.strip()
-        # Look for lines starting with the selection indicator or just the plugin name
-        if line.startswith("❯"):
-            plugin_name = line.lstrip("❯").strip()
-            plugins.append(plugin_name)
-        elif (
-            "@" in line
-            and not line.startswith("Version:")
-            and not line.startswith("Scope:")
-            and not line.startswith("Status:")
-        ):
-            # Fallback for lines like 'skill-creator@claude-plugins-official' without indicator
-            plugin_name = line.strip()
-            if plugin_name and plugin_name not in ["Installed plugins:"]:
-                plugins.append(plugin_name)
-    return plugins
-
-
 @_check_claude
-def install_missing_plugins() -> None:
-    """Install any missing plugins in `LIST_OF_PLUGINS`."""
-    installed_plugins = get_list_of_installed_plugins()
-
+def install_plugins() -> None:
+    """Install plugins from `LIST_OF_PLUGINS`."""
     for plugin in LIST_OF_PLUGINS:
-        if not plugin or plugin in installed_plugins:
+        if not plugin:
             continue
 
         try:
@@ -95,5 +67,5 @@ def install_missing_plugins() -> None:
 
 
 if __name__ == "__main__":
-    install_missing_plugins()
+    install_plugins()
     logger.info("Claude successfully installed!")

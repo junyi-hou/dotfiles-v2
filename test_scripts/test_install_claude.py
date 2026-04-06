@@ -1,33 +1,6 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from scripts.install_claude import _check_claude, get_list_of_installed_plugins, install_missing_plugins
-
-
-def test_get_list_of_installed_plugins_basic():
-    """Test standard plugin listing output."""
-    mock_output = """Installed plugins:
-
-  ❯ skill-creator@claude-plugins-official
-    Version: 104d39be10b7
-    Status: ✔ enabled
-
-    code-review@claude-plugins-official
-    Version: abc123def456
-    Status: ✔ enabled
-"""
-    with patch("scripts.install_claude._run_claude", return_value=mock_output):
-        plugins = get_list_of_installed_plugins()
-        assert "skill-creator@claude-plugins-official" in plugins
-        assert "code-review@claude-plugins-official" in plugins
-        assert len(plugins) == 2
-
-
-def test_get_list_of_installed_plugins_empty():
-    """Test output with no plugins."""
-    mock_output = "No plugins installed."
-    with patch("scripts.install_claude._run_claude", return_value=mock_output):
-        plugins = get_list_of_installed_plugins()
-        assert plugins == []
+from scripts.install_claude import _check_claude, install_plugins
 
 
 def test_decorator_already_installed():
@@ -46,17 +19,16 @@ def test_decorator_already_installed():
 
 
 @patch("scripts.install_claude._run_claude")
-@patch("scripts.install_claude.get_list_of_installed_plugins")
 @patch("scripts.install_claude.logger")
-def test_install_missing_plugins(mock_logger, mock_get_plugins, mock_run_claude):
-    """Test that it installs only missing plugins."""
-    # List one as installed, one as missing
-    mock_get_plugins.return_value = ["skill-creator@claude-plugins-official"]
+def test_install_plugins(mock_logger, mock_run_claude):
+    """Test that it installs all plugins."""
+    install_plugins()
 
-    # LIST_OF_PLUGINS has ["skill-creator@...", "code-review@..."]
-    install_missing_plugins()
-
-    # code-review should be installed
-    mock_run_claude.assert_called_with(["plugins", "install", "code-review@claude-plugins-official"])
-    # skill-creator should be skipped
-    assert mock_run_claude.call_count == 1
+    # Verify both plugins from LIST_OF_PLUGINS are installed
+    assert mock_run_claude.call_count == 2
+    mock_run_claude.assert_any_call(
+        ["plugins", "install", "skill-creator@claude-plugins-official"]
+    )
+    mock_run_claude.assert_any_call(
+        ["plugins", "install", "code-review@claude-plugins-official"]
+    )
