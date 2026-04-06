@@ -17,3 +17,7 @@ build:
 
 java:
 	@bash ./scripts/install-java.sh
+
+claude:
+	@python -m scripts.install -m claude profile bash_profile zprofile
+	@python -m scripts.install_claude
