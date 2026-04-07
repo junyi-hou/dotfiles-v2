@@ -158,11 +158,27 @@
    :around #'gatsby>>agent-shell-insert-shell-command-output-remote-advice)
 
   ;; ;; entrance point
-  ;; (with-eval-after-load 'magit
-  ;;   (transient-append-suffix
-  ;;    'magit-commit
-  ;;    #'magit-commit-create
-  ;;    '("g" "Generate commit" gatsby>agent-shell-commit)))
+
+  (defun gatsby>agent-shell-commit ()
+  (gatsby>defcommand gatsby>agent-shell-commit ()
+    "Automatically generate commit message by calling /commit-msg in an agent-shell session."
+    ;; always start a new session for handling commit (with no history)
+    (let* ((agent-shell-display-action '(display-buffer-no-window))
+           (buf
+            (agent-shell--start
+             :no-focus t
+             :config (agent-shell--resolve-preferred-config)
+             :new-session t
+             :session-strategy 'new-deferred)))
+      (with-current-buffer buf
+        (shell-maker-submit :input "/commit-msg"))))
+
+
+  (with-eval-after-load 'magit
+    (transient-append-suffix
+     'magit-commit
+     #'magit-commit-create
+     '("g" "Generate commit" gatsby>agent-shell-commit)))
 
   :evil-bind
   ((:maps normal)
