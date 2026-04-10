@@ -44,14 +44,18 @@
    agent-shell-anthropic-start-claude-code
    gatsby>agent-shell-toggle)
   :config
-  (setq agent-shell-anthropic-claude-environment
-        (agent-shell-make-environment-variables
-         "ANTHROPIC_BASE_URL"
-         "https://openrouter.ai/api"
-         "ANTHROPIC_AUTH_TOKEN"
-         (gatsby>>get-ai-api-key)
-         "ANTHROPIC_API_KEY"
-         ""))
+  (setq
+   agent-shell-anthropic-claude-environment
+   (agent-shell-make-environment-variables
+    ;; see https://www.reddit.com/r/ClaudeCode/comments/1sbwlmz/claude_code_with_openrouter_api_error_400/
+    "CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS"
+    "TRUE"
+    "ANTHROPIC_BASE_URL"
+    "https://openrouter.ai/api"
+    "ANTHROPIC_AUTH_TOKEN"
+    (gatsby>>get-ai-api-key)
+    "ANTHROPIC_API_KEY"
+    ""))
 
   (gatsby>defcommand gatsby>agent-shell-toggle (resume)
     (let* ((project-root (and (project-current) (project-root (project-current))))
@@ -307,8 +311,8 @@
               (accept-process-output process 0.1))
             (map-put! client :process process))))))
 
-  (with-eval-after-load 'tramp
-    (advice-add #'acp--start-client :override #'gatsby:acp--start-client))
+  ;; (with-eval-after-load 'tramp
+  ;;   (advice-add #'acp--start-client :override #'gatsby:acp--start-client))
 
 
   :evil-bind
