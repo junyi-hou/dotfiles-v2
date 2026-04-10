@@ -208,6 +208,11 @@
                  :source "elpaca-menu-lock-file" :protocol https :inherit t :depth
                  treeless :host github :wait t :ref
                  "0089f9c3a6d4e9a310d0791cf6fa8f35642ecfd9"))
+ (ghostel :source "elpaca-menu-lock-file" :recipe
+          (:source "elpaca-menu-lock-file" :protocol https :inherit t :depth treeless
+                   :host github :repo "dakra/ghostel" :files
+                   (:defaults ("etc/*" "etc/*")) :package "ghostel" :ref
+                   "8a0532c6f760054b222929e6c2eddda780e7931e"))
  (goto-chg :source "elpaca-menu-lock-file" :recipe
            (:package "goto-chg" :repo "emacs-evil/goto-chg" :fetcher github :files
                      ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"
@@ -413,12 +418,6 @@
                     (:defaults "extensions/vertico-*.el") :fetcher github :source
                     "elpaca-menu-lock-file" :protocol https :inherit t :depth treeless
                     :host github :ref "709597a39f337b8448c50c8824e34b8ce98cfaca"))
- (vterm :source "elpaca-menu-lock-file" :recipe
-        (:package "vterm" :fetcher github :repo "akermu/emacs-libvterm" :files
-                  ("CMakeLists.txt" "elisp.c" "elisp.h" "emacs-module.h" "etc" "utf8.c"
-                   "utf8.h" "vterm.el" "vterm-module.c" "vterm-module.h")
-                  :source "elpaca-menu-lock-file" :protocol https :inherit t :depth
-                  treeless :host github :ref "a01a2894a1c1e81a39527835a9169e35b7ec5dec"))
  (websocket :source "elpaca-menu-lock-file" :recipe
             (:package "websocket" :repo "ahyatt/emacs-websocket" :fetcher github :files
                       ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"

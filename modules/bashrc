@@ -3,6 +3,8 @@ if [ -f "$HOME/.bashrc.backup" ]; then
     source "$HOME/.bashrc.backup"
 fi
 
+[[ "$INSIDE_EMACS" = 'ghostel' ]] && source ~/.local/share/ghostel/ghostel.bash
+
 source "$HOME/.zshrc"
 
 # Local Variables:
