@@ -17,6 +17,11 @@
    (last)
    (car)))
 
+;; (use-package claude-code-ide
+;;   :ensure (:type git :host github :repo "manzaltu/claude-code-ide.el")
+;;   ;; :bind ("C-c C-'" . claude-code-ide-menu) ; Set your favorite keybinding
+;;   :config (claude-code-ide-emacs-tools-setup))
+
 (use-package agent-shell
   :ensure (:host github :repo "xenodium/agent-shell")
   :hook (agent-shell-mode . corfu-mode)
@@ -125,60 +130,186 @@
      ""
      "[claude code]"))
 
-  (defun gatsby>>acp--start-client-remote-advice (orig-fun &rest args)
-    "Around advice for `acp--start-client' to enable TRAMP / remote support."
-    (let ((client (plist-get args :client)))
-      (if (file-remote-p default-directory)
-          (cl-letf* ((old-make-process (symbol-function 'make-process))
-                     ((symbol-function #'make-process)
-                      (lambda (&rest props)
-                        (apply old-make-process (append props (list :file-handler t)))))
-                     ((symbol-function #'executable-find)
-                      (lambda (command)
-                        (with-no-warnings (executable-find command t)))))
-            (apply orig-fun args))
-        (apply orig-fun args))))
+  ;; (defun gatsby>>acp--start-client-remote-advice (orig-fun &rest args)
+  ;;   "Around advice for `acp--start-client' to enable TRAMP / remote support."
+  ;;   (let ((client (plist-get args :client)))
+  ;;     (if (file-remote-p default-directory)
+  ;;         (cl-letf* ((old-make-process (symbol-function 'make-process))
+  ;;                    ((symbol-function #'make-process)
+  ;;                     (lambda (&rest props)
+  ;;                       (apply old-make-process (append props (list :file-handler t)))))
+  ;;                    ((symbol-function #'executable-find)
+  ;;                     (lambda (command)
+  ;;                       (with-no-warnings (executable-find command t)))))
+  ;;           (apply orig-fun args))
+  ;;       (apply orig-fun args))))
 
-  (with-eval-after-load 'acp
-    (advice-add #'acp--start-client :around #'gatsby>>acp--start-client-remote-advice))
+  ;; (with-eval-after-load 'acp
+  ;;   (advice-add #'acp--start-client :around #'gatsby>>acp--start-client-remote-advice))
 
-  (defun gatsby>>agent-shell-insert-shell-command-output-remote-advice
-      (orig-fun &rest args)
-    "Around advice for `agent-shell-insert-shell-command-output' to enable TRAMP / remote support."
-    (if (file-remote-p default-directory)
-        (cl-letf* ((old-make-process (symbol-function 'make-process))
-                   ((symbol-function 'make-process)
-                    (lambda (&rest props)
-                      (apply old-make-process (append props (list :file-handler t))))))
-          (apply orig-fun args))
-      (apply orig-fun args)))
+  ;; (defun gatsby>>agent-shell-insert-shell-command-output-remote-advice
+  ;;     (orig-fun &rest args)
+  ;;   "Around advice for `agent-shell-insert-shell-command-output' to enable TRAMP / remote support."
+  ;;   (if (file-remote-p default-directory)
+  ;;       (cl-letf* ((old-make-process (symbol-function 'make-process))
+  ;;                  ((symbol-function 'make-process)
+  ;;                   (lambda (&rest props)
+  ;;                     (apply old-make-process (append props (list :file-handler t))))))
+  ;;         (apply orig-fun args))
+  ;;     (apply orig-fun args)))
 
-  (advice-add
-   #'agent-shell-insert-shell-command-output
-   :around #'gatsby>>agent-shell-insert-shell-command-output-remote-advice)
+  ;; (advice-add
+  ;;  #'agent-shell-insert-shell-command-output
+  ;;  :around #'gatsby>>agent-shell-insert-shell-command-output-remote-advice)
 
-  ;; ;; entrance point
+  ;; until tramp pacthes get merged:
+  (cl-defun gatsby:acp--start-client (&key client)
+    "Start CLIENT."
+    (unless client
+      (error ":client is required"))
+    (unless (map-elt client :command)
+      (error ":command is required"))
+    (unless (executable-find (map-elt client :command)
+                             (file-remote-p default-directory))
+      (error
+       "\"%s\" command line utility not found.  Please install it"
+       (map-elt client :command)))
+    (when (acp--client-started-p client)
+      (error "Client already started"))
+    (let* ((pending-input "")
+           (message-queue nil)
+           (message-queue-busy nil)
+           (process-environment
+            (append (map-elt client :environment-variables) process-environment))
+           (stderr-buffer
+            (get-buffer-create
+             (format "acp-client-stderr(%s)-%s"
+                     (map-elt client :command)
+                     (map-elt client :instance-count))))
+           ;; For TRAMP (file-handler), we can only use a buffer for stderr.
+           ;; For local execution, we use a pipe process for live error parsing.
+           (use-file-handler (file-remote-p default-directory))
+           (stderr-proc
+            (unless use-file-handler
+              (make-pipe-process
+               :name
+               (format "acp-client-stderr(%s)-%s"
+                       (map-elt client :command)
+                       (map-elt client :instance-count))
+               :buffer stderr-buffer
+               :filter
+               (lambda (_process raw-output)
+                 (acp--log client "STDERR" "%s" (string-trim raw-output))
+                 (when-let ((std-error
+                             (cond
+                              ((acp--parse-stderr-api-error raw-output)
+                               (acp--parse-stderr-api-error raw-output))
+                              ((not (string-empty-p (string-trim raw-output)))
+                               ;; Fallback: create a generic error response
+                               `((code . -32603) (message . ,raw-output))))))
+                   (acp--log client "API-ERROR" "%s" (string-trim raw-output))
+                   (dolist (handler (map-elt client :error-handlers))
+                     (funcall handler std-error))))))))
+      ;; Disable SSH ControlMaster for TRAMP - it can't handle large data (see eglot bug#61350)
+      ;; Disable direct async process for TRAMP - it breaks process filters (see lsp-mode#4573)
+      (cl-letf (((symbol-function 'tramp-direct-async-process-p)
+                 (lambda (&rest _) nil)))
+        (let ((tramp-use-ssh-controlmaster-options
+               (if use-file-handler
+                   'suppress
+                 tramp-use-ssh-controlmaster-options))
+              (tramp-ssh-controlmaster-options
+               (if use-file-handler
+                   "-o ControlMaster=no -o ControlPath=none"
+                 tramp-ssh-controlmaster-options)))
+          (let
+              ((process
+                (make-process
+                 :name
+                 (format "acp-client(%s)-%s"
+                         (map-elt client :command)
+                         (map-elt client :instance-count))
+                 :command (cons (map-elt client :command) (map-elt client :command-params))
+                 :stderr (or stderr-proc stderr-buffer)
+                 :connection-type 'pipe
+                 :coding 'utf-8-emacs-unix
+                 :noquery t
+                 :file-handler use-file-handler
+                 :filter
+                 (lambda (_proc input)
+                   (acp--log client "INCOMING TEXT" "%s" input)
+                   (setq pending-input (concat pending-input input))
+                   (let ((start 0)
+                         pos)
+                     (while (setq pos (string-search "\n" pending-input start))
+                       (let ((json (substring pending-input start pos)))
+                         (acp--log client "INCOMING LINE" "%s" json)
+                         (when-let* ((object
+                                      (condition-case nil
+                                          (acp--parse-json json)
+                                        (error
+                                         (acp--log
+                                          client
+                                          "JSON PARSE ERROR"
+                                          "Invalid JSON: %s"
+                                          json)
+                                         nil))))
+                           (setq message-queue
+                                 (append
+                                  message-queue
+                                  (list (acp--make-message :json json :object object))))
+                           (unless message-queue-busy
+                             (setq message-queue-busy t)
+                             (run-at-time
+                              0 nil
+                              (lambda ()
+                                (while message-queue
+                                  (let ((message (car message-queue)))
+                                    (setq message-queue (cdr message-queue))
+                                    (acp--route-incoming-message
+                                     :message message
+                                     :client client
+                                     :on-notification
+                                     (lambda (notification)
+                                       (dolist (handler
+                                                (map-elt client :notification-handlers))
+                                         (condition-case-unless-debug err
+                                             (funcall handler notification)
+                                           (error
+                                            (acp--log
+                                             client
+                                             "NOTIFICATION HANDLER ERROR"
+                                             "Failed with error: %S"
+                                             err)))))
+                                     :on-request
+                                     (lambda (request)
+                                       (dolist (handler
+                                                (map-elt client :request-handlers))
+                                         (condition-case-unless-debug err
+                                             (funcall handler request)
+                                           (error
+                                            (acp--log
+                                             client
+                                             "REQUEST HANDLER ERROR"
+                                             "Failed with error: %S"
+                                             err))))))))
+                                (setq message-queue-busy nil))))))
+                       (setq start (1+ pos)))
+                     (setq pending-input (substring pending-input start))))
+                 :sentinel
+                 (lambda (_process _event)
+                   (when (process-live-p stderr-proc)
+                     (delete-process stderr-proc))
+                   (when (buffer-live-p stderr-buffer)
+                     (kill-buffer stderr-buffer))))))
+            ;; For TRAMP connections, wait a moment for the SSH connection to fully establish
+            (when use-file-handler
+              (accept-process-output process 0.1))
+            (map-put! client :process process))))))
 
-  (defun gatsby>agent-shell-commit ()
-  (gatsby>defcommand gatsby>agent-shell-commit ()
-    "Automatically generate commit message by calling /commit-msg in an agent-shell session."
-    ;; always start a new session for handling commit (with no history)
-    (let* ((agent-shell-display-action '(display-buffer-no-window))
-           (buf
-            (agent-shell--start
-             :no-focus t
-             :config (agent-shell--resolve-preferred-config)
-             :new-session t
-             :session-strategy 'new-deferred)))
-      (with-current-buffer buf
-        (shell-maker-submit :input "/commit-msg"))))
+  (with-eval-after-load 'tramp
+    (advice-add #'acp--start-client :override #'gatsby:acp--start-client))
 
-
-  (with-eval-after-load 'magit
-    (transient-append-suffix
-     'magit-commit
-     #'magit-commit-create
-     '("g" "Generate commit" gatsby>agent-shell-commit)))
 
   :evil-bind
   ((:maps normal)

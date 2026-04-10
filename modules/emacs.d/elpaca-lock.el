@@ -217,25 +217,6 @@
                                 "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
                      :source "elpaca-menu-lock-file" :protocol https :inherit t :depth
                      treeless :ref "72f556524b88e9d30dc7fc5b0dc32078c166fda7"))
- (gptel :source "elpaca-menu-lock-file" :recipe
-        (:package "gptel" :repo "karthink/gptel" :fetcher github :files
-                  ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"
-                   "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el" "docs/dir"
-                   "docs/*.info" "docs/*.texi" "docs/*.texinfo"
-                   (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
-                             "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
-                  :source "elpaca-menu-lock-file" :protocol https :inherit t :depth
-                  treeless :host github :ref "63795dee75db49a04fd87842a1dcdef29c855f93"))
- (gptel-magit :source "elpaca-menu-lock-file" :recipe
-              (:package "gptel-magit" :fetcher github :repo "ragnard/gptel-magit" :files
-                        ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"
-                         "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el"
-                         "docs/dir" "docs/*.info" "docs/*.texi" "docs/*.texinfo"
-                         (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
-                                   "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
-                        :source "elpaca-menu-lock-file" :protocol https :inherit t
-                        :depth treeless :host github :ref
-                        "f27c01821b67ed99ddf705c2b995f78b71394d8b"))
  (helpful :source "elpaca-menu-lock-file" :recipe
           (:package "helpful" :repo "Wilfred/helpful" :fetcher github :files
                     ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"
@@ -331,16 +312,6 @@
                              :source "elpaca-menu-lock-file" :protocol https :inherit t
                              :depth treeless :host github :ref
                              "2f1ee8b94cdf53cebc31ae08ecfbba846193d5e1"))
- (msgpack :source "elpaca-menu-lock-file" :recipe
-          (:package "msgpack" :fetcher github :repo "xuchunyang/msgpack.el" :files
-                    ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"
-                     "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el" "docs/dir"
-                     "docs/*.info" "docs/*.texi" "docs/*.texinfo"
-                     (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
-                               "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
-                    :source "elpaca-menu-lock-file" :protocol https :inherit t :depth
-                    treeless :host github :ref
-                    "90e3086f259549b1667a3c5b9aa2d70aaeaa4d3d"))
  (no-littering :source "elpaca-menu-lock-file" :recipe
                (:package "no-littering" :fetcher github :repo
                          "emacscollective/no-littering" :files
@@ -422,10 +393,6 @@
                               "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
                    :source "elpaca-menu-lock-file" :protocol https :inherit t :depth
                    treeless :host github :ref "abc41419e9eff719ccc8a156defb0e6db3b7f460"))
- (tramp-rpc :source "elpaca-menu-lock-file" :recipe
-            (:source "elpaca-menu-lock-file" :protocol https :inherit t :depth treeless
-                     :host github :repo "ArthurHeymans/emacs-tramp-rpc" :package
-                     "tramp-rpc" :ref "c3161fec03d1e77ce1fe3571f2f61228aaae18e3"))
  (transient :source "elpaca-menu-lock-file" :recipe
             (:package "transient" :fetcher github :repo "magit/transient" :files
                       ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"
