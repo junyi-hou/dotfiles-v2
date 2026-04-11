@@ -250,13 +250,13 @@
   (gatsby>defcommand gatsby>eshell-open-or-switch (home)
     "Open a new shell.
 If the prefix argument (HOME) is not null, go to the home directory.
-If there is a visible eshell window in the same PWD, switch to it instead of open a new one."
+If there is an idle eshell in the same PWD, switch to that window."
     (let* ((default-directory
             (if home
                 (expand-file-name "~/")
               default-directory))
            (dir default-directory)
-           (visible
+           (idle
             (thread-last
              (buffer-list)
              (cl-remove-if-not
@@ -264,10 +264,13 @@ If there is a visible eshell window in the same PWD, switch to it instead of ope
                 (with-current-buffer buf
                   (and (string-equal major-mode "eshell-mode")
                        (file-equal-p dir default-directory)))))
-             (cl-some (lambda (buf) (get-buffer-window buf))))))
-      (if visible
+             (cl-some
+              (lambda (buf)
+                (with-current-buffer buf
+                  (and (not eshell-foreground-command) buf)))))))
+      (if idle
           (progn
-            (select-window visible)
+            (display-buffer idle)
             (evil-insert-state))
         (prog1 (eshell 'Z)
           (evil-insert-state)))))
