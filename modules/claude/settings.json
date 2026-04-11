@@ -24,5 +24,10 @@
         "url": "https://github.com/junyi-hou/personal-claude-plugins.git"
       }
     }
+  },
+  "env": {
+    "CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS": "TRUE",
+    "ANTHROPIC_BASE_URL": "https://openrouter.ai/api",
+    "ANTHROPIC_API_KEY": ""
   }
 }
