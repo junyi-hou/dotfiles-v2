@@ -16,7 +16,6 @@
   ;; (markdown-ts-mode . eglot-ensure)
   (markdown-ts-mode . corfu-mode)
   (markdown-ts-mode . display-line-numbers-mode)
-  :after markdown-mode
   :init
   ;; treesitter
   (gatsby>install-treesitter-grammar
@@ -44,7 +43,7 @@
   (typst-ts-mode . eglot-ensure)
   (typst-ts-mode . corfu-mode)
   (typst-ts-mode . display-line-numbers-mode)
-  (typst-ts-mode . typst-ts-watch-mode)
+  (typst-ts-mode . gatsby>>typst-cleanup-watch)
   (typst-ts-mode . gatsby>>typst-stop-watching)
   :init
   ;; tree-sitter
@@ -58,12 +57,25 @@
      '(typst-ts-mode "rass" "--" "tinymist" "lsp" "--" "typos-lsp")))
 
   :config
+  (defun gatsby>typst-compile-and-watch ()
+    "Stop any existing watch and start watching the current file."
+    (interactive)
+    (when (and (boundp 'typst-ts-watch-mode) typst-ts-watch-mode)
+      (typst-ts-watch-stop))
+    (typst-ts-watch-mode 1)
+    (typst-ts-compile-and-preview))
+
+  (defun gatsby>>typst-cleanup-watch ()
+    "Stop the watch process if it is active."
+    (when (and (boundp 'typst-ts-watch-mode) typst-ts-watch-mode)
+      (typst-ts-watch-stop)))
+
   (defun gatsby>>typst-stop-watching (&rest _)
-    (add-hook 'kill-buffer-hook #'typst-ts-watch-stop nil t))
+    (add-hook 'kill-buffer-hook #'gatsby>>typst-cleanup-watch nil t))
 
   :evil-bind
   ((:maps typst-ts-mode-map :states normal)
-   ("SPC r r" . #'typst-ts-compile-and-preview)
+   ("SPC r r" . #'gatsby>typst-compile-and-watch)
    ("SPC r o" . #'typst-ts-preview)))
 
 (gatsby>use-internal-package org
