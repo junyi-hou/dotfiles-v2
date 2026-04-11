@@ -17,11 +17,6 @@
          (last)
          (car)))
 
-(use-package claude-code-ide
-  :ensure (:type git :host github :repo "manzaltu/claude-code-ide.el")
-  ;; :bind ("C-c C-'" . claude-code-ide-menu) ; Set your favorite keybinding
-  :config (claude-code-ide-emacs-tools-setup))
-
 (use-package agent-shell
   :ensure (:host github :repo "xenodium/agent-shell")
   :hook (agent-shell-mode . corfu-mode)
