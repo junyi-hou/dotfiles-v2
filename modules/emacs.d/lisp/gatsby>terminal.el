@@ -167,6 +167,7 @@
       "Goto current prompt and continue editting."
       (goto-char (point-max))
       (evil-insert 1))
+
     (evil-define-operator eshell/evil-change
       (beg end type register yank-handler delete-func)
       "Like `evil-change' but will not delete/copy the prompt."
@@ -179,12 +180,14 @@
              (point-max)
            (min (or end (point-max)) (point-max)))
          type register yank-handler delete-func)))
+
     (evil-define-operator eshell/evil-change-line (beg end type register yank-handler)
       "Change to end of line."
       :motion
       evil-end-of-line
       (interactive "<R><x><y>")
       (eshell/evil-change beg end type register yank-handler #'evil-delete-line))
+
     (evil-define-operator eshell/evil-delete (beg end type register yank-handler)
       "Like `evil-delete' but will not delete/copy the prompt."
       (interactive "<R><x><y>")
@@ -198,6 +201,7 @@
              (point-max)
            (min (or end (point-max)) (point-max)))
          type register yank-handler)))
+
     (evil-define-operator eshell/evil-delete-line (_beg end type register yank-handler)
       "Change to end of line."
       :motion nil
