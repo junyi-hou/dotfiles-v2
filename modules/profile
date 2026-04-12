@@ -1,13 +1,7 @@
-if [ -f "$HOME/.profile.backup" ]; then
-    . "$HOME/.profile.backup"
-fi
+PATH="$HOME/dotfiles-v2/.pixi/envs/all/bin:$HOME/.local/bin:/bin:$PATH"
 
-DOTFILES_ROOT=$(dirname "$(dirname "$(readlink "$HOME/.profile")")")
-
-PATH="$DOTFILES_ROOT/.pixi/envs/all/bin:$HOME/.local/bin:/bin:$PATH"
-
-if [ -d "$DOTFILES_ROOT/.tools/java" ]; then
-    JAVA_HOME=$DOTFILES_ROOT/.tools/java
+if [ -d "$HOME/dotfiles-v2/.tools/java" ]; then
+    JAVA_HOME=$HOME/dotfiles-v2/.tools/java
     PATH="$JAVA_HOME/bin:$PATH"
     export JAVA_HOME
 fi

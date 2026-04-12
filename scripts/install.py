@@ -59,6 +59,17 @@ def install(module: str | Path, *, dry_run: bool = True) -> None:
             install(child, dry_run=dry_run)
     
 
+def symlink_project_root(dry_run: bool = True) -> None:
+    """
+    Symlink project root to ~/dotfiles-v2 if it does not exist.
+    """
+    root = git_root(__file__)
+    dotfiles_v2 = Path.home() / "dotfiles-v2"
+    if not dotfiles_v2.exists():
+        symlink(root, dotfiles_v2, dry_run=dry_run)
+        logger.info(f"Symlinked {root} to {dotfiles_v2}")
+
+
 def main() -> int:
     """
     Entry point for the installer. Parses arguments and installs requested modules.
@@ -97,6 +108,9 @@ def main() -> int:
 
     if args.verbose:
         logger.setLevel(logging.DEBUG)
+
+    # Symlink project root to ~/dotfiles-v2
+    symlink_project_root(dry_run=args.dry_run)
 
     for module in args.modules:
         install(module, dry_run=args.dry_run)

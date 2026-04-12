@@ -3,6 +3,10 @@ if [ -f "$HOME/.zshrc.backup" ]; then
     source "$HOME/.zshrc.backup"
 fi
 
+if [ -f "$HOME/.profile.backup" ]; then
+    . "$HOME/.profile.backup"
+fi
+
 if [[ "$INSIDE_EMACS" = 'ghostel' ]] && [[ -n "${ZSH_VERSION}" ]]; then
     source "$EMACS_GHOSTEL_PATH/etc/ghostel.zsh"
 fi
@@ -14,7 +18,7 @@ alias tree="eza --tree"
 
 if [[ "$INSIDE_EMACS" = 'ghostel' ]]; then
     # Open a file in Emacs from the terminal
-    ff()   { ghostel_cmd find-file-other-window "$@"; }
+    ff() { ghostel_cmd find-file-other-window "$@"; }
 fi
 
 # # Custom cd function: cd without args goes to git root, or home if already at root/not in repo

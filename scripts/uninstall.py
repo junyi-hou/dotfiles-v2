@@ -61,6 +61,17 @@ def uninstall(module: str | Path, *, dry_run: bool = True) -> None:
         move(backup_path, install_path, dry_run)
 
 
+def remove_project_root_symlink(dry_run: bool = True) -> None:
+    """
+    Remove the ~/dotfiles-v2 symlink if it exists and points to the project.
+    """
+    root = git_root(__file__)
+    dotfiles_v2 = Path.home() / "dotfiles-v2"
+    if dotfiles_v2.is_symlink() and dotfiles_v2.resolve() == root:
+        remove_file(dotfiles_v2, dry_run=dry_run)
+        logger.info(f"Removed {dotfiles_v2}")
+
+
 def main() -> int:
 
     @dataclass
@@ -97,6 +108,9 @@ def main() -> int:
 
     if args.verbose:
         logger.setLevel(logging.DEBUG)
+
+    # Remove ~/dotfiles-v2 symlink
+    remove_project_root_symlink(dry_run=args.dry_run)
 
     for module in args.modules:
         uninstall(module, dry_run=args.dry_run)
