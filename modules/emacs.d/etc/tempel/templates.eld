@@ -23,13 +23,11 @@ emacs-lisp-mode
 (defcom "(gatsby>defcommand " p " (" p ")\n  \"" p "\"" n> r> ")")
 (let "(let* (" p ")" n> r> ")")
 (header ";;; " (file-name-nondirectory (or (buffer-file-name) (buffer-name)))
-        " --- " p " -*- lexical-binding: t -*-" n
-        ";;; Commentary:" n ";;; Code:" n n)
+        " --- " p " -*- lexical-binding: t -*-" n n
+        ";;; Commentary:" n n ";;; Code:" n n)
 (provide "(provide '" (file-name-base (or (buffer-file-name) (buffer-name))) ")" n
          ";;; " (file-name-nondirectory (or (buffer-file-name) (buffer-name)))
          " ends here" n)
-(package (i header) r n n (i provide))
-
 
 markdown-ts-mode
 (link (call-interactively #'markdown-insert-link))
