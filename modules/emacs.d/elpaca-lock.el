@@ -317,6 +317,16 @@
                              :source "elpaca-menu-lock-file" :protocol https :inherit t
                              :depth treeless :host github :ref
                              "2f1ee8b94cdf53cebc31ae08ecfbba846193d5e1"))
+ (msgpack :source "elpaca-menu-lock-file" :recipe
+          (:package "msgpack" :fetcher github :repo "xuchunyang/msgpack.el" :files
+                    ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"
+                     "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el" "docs/dir"
+                     "docs/*.info" "docs/*.texi" "docs/*.texinfo"
+                     (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
+                               "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
+                    :source "elpaca-menu-lock-file" :protocol https :inherit t :depth
+                    treeless :host github :ref
+                    "90e3086f259549b1667a3c5b9aa2d70aaeaa4d3d"))
  (no-littering :source "elpaca-menu-lock-file" :recipe
                (:package "no-littering" :fetcher github :repo
                          "emacscollective/no-littering" :files
@@ -398,6 +408,15 @@
                               "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
                    :source "elpaca-menu-lock-file" :protocol https :inherit t :depth
                    treeless :host github :ref "abc41419e9eff719ccc8a156defb0e6db3b7f460"))
+ (tramp :source "elpaca-menu-lock-file" :recipe
+        (:package "tramp" :repo "https://git.savannah.gnu.org/git/tramp.git" :branch
+                  "externals/tramp" :files ("*" (:exclude ".git")) :source
+                  "elpaca-menu-lock-file" :protocol https :inherit t :depth treeless
+                  :type git :ref "fe4488160a4c40c0540b31997b95764571a9202f"))
+ (tramp-rpc :source "elpaca-menu-lock-file" :recipe
+            (:source "elpaca-menu-lock-file" :protocol https :inherit t :depth treeless
+                     :host github :repo "ArthurHeymans/emacs-tramp-rpc" :package
+                     "tramp-rpc" :ref "7d96f4c2c39bef0211e318ac763f7a5817532a0d"))
  (transient :source "elpaca-menu-lock-file" :recipe
             (:package "transient" :fetcher github :repo "magit/transient" :files
                       ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"
