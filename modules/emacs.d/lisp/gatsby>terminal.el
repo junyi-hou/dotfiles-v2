@@ -274,6 +274,7 @@ If there is an idle eshell in the same PWD, switch to that window."
       (if idle
           (progn
             (display-buffer idle)
+            (select-window (get-buffer-window idle))
             (evil-insert-state))
         (prog1 (eshell 'Z)
           (evil-insert-state)))))
