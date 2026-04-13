@@ -6,16 +6,9 @@
 
 (require 'gatsby>>utility)
 
-;; set-up API key
-(setenv "ANTHROPIC_AUTH_TOKEN"
-        (thread-first
-         "direnv exec %s passage show openrouter-api"
-         (format (expand-file-name gatsby>dotfiles-repo-location))
-         (shell-command-to-string)
-         (string-trim)
-         (string-split "\n")
-         (last)
-         (car)))
+(use-package agent-shell-tramp
+  :ensure (:host github :repo "junyi-hou/agent-shell-tramp")
+  :config (agent-shell-tramp-mode 1))
 
 (use-package agent-shell
   :ensure (:host github :repo "xenodium/agent-shell")
@@ -23,22 +16,28 @@
   :custom-face (header-line ((t :inherit default)))
   :custom
   (agent-shell-display-action
-   '(display-buffer-in-side-window (side . right) (window-height . 0.4) (slot . 0)))
+   '(display-buffer-in-side-window (side . right) (window-width . 0.33) (slot . 0)))
   (agent-shell-file-completion-enabled t)
   (agent-shell-session-strategy 'new)
   (agent-shell-header-style 'text)
   (agent-shell-preferred-agent-config 'claude-code)
-  (agent-shell-path-resolver-function
-   (lambda (path)
-     (if (file-remote-p default-directory)
-         (file-local-name path)
-       path)))
   :commands
   (agent-shell--start
    agent-shell-anthropic-make-claude-code-config
    agent-shell-anthropic-start-claude-code
    gatsby>agent-shell-toggle)
   :config
+  (setq agent-shell-anthropic-claude-environment
+        (agent-shell-make-environment-variables
+         "ANTHROPIC_AUTH_TOKEN"
+         (thread-first
+          "direnv exec %s passage show openrouter-api"
+          (format (expand-file-name gatsby>dotfiles-repo-location))
+          (shell-command-to-string)
+          (string-trim)
+          (string-split "\n")
+          (last)
+          (car))))
 
   (gatsby>defcommand gatsby>agent-shell-toggle (resume)
     (let* ((project-root (and (project-current) (project-root (project-current))))
@@ -81,73 +80,41 @@
           (call-interactively #'comint-previous-prompt))
       (call-interactively #'comint-previous-prompt)))
 
-  (cl-defun gatsby>>agent-shell-header (state &key qualifier bindings)
-    "A simpler header for agent shell."
-    (unless state
-      (error "STATE is required"))
-    (let* ((mode
-            (when-let* ((mode-id (map-nested-elt state '(:session :mode-id))))
-              (or (agent-shell--resolve-session-mode-name
-                   mode-id
-                   (agent-shell--get-available-modes state))
-                  (map-nested-elt state '(:session :mode-id)))))
-           (model
-            (or (map-elt
-                 (seq-find
-                  (lambda (model)
-                    (string=
-                     (map-elt model :model-id)
-                     (map-nested-elt state '(:session :model-id))))
-                  (map-nested-elt state '(:session :models)))
-                 :name)
-                (map-nested-elt state '(:session :model-id)) "uninitiated"))
-           (context-usage (or (agent-shell--context-usage-indicator) "")))
-      (format "%s %s %s"
-              (propertize model 'font-lock-face 'font-lock-negation-char-face)
-              (if mode
-                  (propertize (format "(%s)" mode) 'font-lock-face 'font-lock-type-face)
-                "")
-              context-usage)))
+  ;; (cl-defun gatsby>>agent-shell-header (state &key qualifier bindings)
+  ;;   "A simpler header for agent shell."
+  ;;   (unless state
+  ;;     (error "STATE is required"))
+  ;;   (let* ((mode
+  ;;           (when-let* ((mode-id (map-nested-elt state '(:session :mode-id))))
+  ;;             (or (agent-shell--resolve-session-mode-name
+  ;;                  mode-id
+  ;;                  (agent-shell--get-available-modes state))
+  ;;                 (map-nested-elt state '(:session :mode-id)))))
+  ;;          (model
+  ;;           (or (map-elt
+  ;;                (seq-find
+  ;;                 (lambda (model)
+  ;;                   (string=
+  ;;                    (map-elt model :model-id)
+  ;;                    (map-nested-elt state '(:session :model-id))))
+  ;;                 (map-nested-elt state '(:session :models)))
+  ;;                :name)
+  ;;               (map-nested-elt state '(:session :model-id)) "uninitiated"))
+  ;;          (context-usage (or (agent-shell--context-usage-indicator) "")))
+  ;;     (format "%s %s %s"
+  ;;             (propertize model 'font-lock-face 'font-lock-negation-char-face)
+  ;;             (if mode
+  ;;                 (propertize (format "(%s)" mode) 'font-lock-face 'font-lock-type-face)
+  ;;               "")
+  ;;             context-usage)))
 
-  (advice-add #'agent-shell--make-header :override #'gatsby>>agent-shell-header)
-  (advice-add
-   #'agent-shell-anthropic--claude-code-ascii-art
-   :override
-   (lambda ()
-     ""
-     "[claude code]"))
-
-  ;; (defun gatsby>>acp--start-client-remote-advice (orig-fun &rest args)
-  ;;   "Around advice for `acp--start-client' to enable TRAMP / remote support."
-  ;;   (let ((client (plist-get args :client)))
-  ;;     (if (file-remote-p default-directory)
-  ;;         (cl-letf* ((old-make-process (symbol-function 'make-process))
-  ;;                    ((symbol-function #'make-process)
-  ;;                     (lambda (&rest props)
-  ;;                       (apply old-make-process (append props (list :file-handler t)))))
-  ;;                    ((symbol-function #'executable-find)
-  ;;                     (lambda (command)
-  ;;                       (with-no-warnings (executable-find command t)))))
-  ;;           (apply orig-fun args))
-  ;;       (apply orig-fun args))))
-
-  ;; (with-eval-after-load 'acp
-  ;;   (advice-add #'acp--start-client :around #'gatsby>>acp--start-client-remote-advice))
-
-  ;; (defun gatsby>>agent-shell-insert-shell-command-output-remote-advice
-  ;;     (orig-fun &rest args)
-  ;;   "Around advice for `agent-shell-insert-shell-command-output' to enable TRAMP / remote support."
-  ;;   (if (file-remote-p default-directory)
-  ;;       (cl-letf* ((old-make-process (symbol-function 'make-process))
-  ;;                  ((symbol-function 'make-process)
-  ;;                   (lambda (&rest props)
-  ;;                     (apply old-make-process (append props (list :file-handler t))))))
-  ;;         (apply orig-fun args))
-  ;;     (apply orig-fun args)))
-
+  ;; (advice-add #'agent-shell--make-header :override #'gatsby>>agent-shell-header)
   ;; (advice-add
-  ;;  #'agent-shell-insert-shell-command-output
-  ;;  :around #'gatsby>>agent-shell-insert-shell-command-output-remote-advice)
+  ;;  #'agent-shell-anthropic--claude-code-ascii-art
+  ;;  :override
+  ;;  (lambda ()
+  ;;    ""
+  ;;    "[claude code]"))
 
   :evil-bind
   ((:maps normal)

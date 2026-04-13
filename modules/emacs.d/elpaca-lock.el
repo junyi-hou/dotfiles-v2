@@ -18,6 +18,11 @@
                         :source "elpaca-menu-lock-file" :protocol https :inherit t
                         :depth treeless :host github :ref
                         "1e5d17598d191386ee02998199b77d0f70866820"))
+ (agent-shell-tramp :source "elpaca-menu-lock-file" :recipe
+                    (:source "elpaca-menu-lock-file" :protocol https :inherit t :depth
+                             treeless :host github :repo "junyi-hou/agent-shell-tramp"
+                             :package "agent-shell-tramp" :ref
+                             "a226677ce95699938db60f69900cdeb1fba0446e"))
  (cape :source "elpaca-menu-lock-file" :recipe
        (:package "cape" :repo "minad/cape" :fetcher github :files
                  ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"
@@ -388,7 +393,7 @@
                          (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
                                    "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
                         :source "elpaca-menu-lock-file" :protocol https :inherit t
-                        :depth treeless :ref "a7ff78f8cd29fba9a694b8d7bbee448c7a51472d"))
+                        :depth treeless :ref "6377cbdb49248d670170f1c8dbe045648063583e"))
  (simple-httpd :source "elpaca-menu-lock-file" :recipe
                (:package "simple-httpd" :repo "skeeto/emacs-web-server" :fetcher github
                          :files
