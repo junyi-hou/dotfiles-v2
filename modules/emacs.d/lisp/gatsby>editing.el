@@ -266,6 +266,7 @@
   :evil-bind
   ((:maps (motion normal))
    ([remap switch-to-buffer] . #'consult-buffer)
+   ("SPC r g" . #'consult-ripgrep)
    (:maps isearch-mode-map)
    ("<C-return>" . #'gatsby>consult-line-from-evil)
    (:maps (motion normal))
