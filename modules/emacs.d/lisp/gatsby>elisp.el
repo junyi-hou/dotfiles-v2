@@ -10,7 +10,11 @@
   :init
   (defun gatsby>>lisp-set-tab-width (&rest _)
     (setq-local tab-width 2))
-  :hook (emacs-lisp-mode . gatsby>>lisp-set-tab-width)
+
+  (setq trusted-content '(,gatsby>dotfiles-repo-location "~/dotfiles-v2"))
+  :hook
+  (emacs-lisp-mode . gatsby>>lisp-set-tab-width)
+  (emacs-lisp-mode . flymake-mode)
   :evil-bind
   ((:maps (emacs-lisp-mode-map lisp-interaction-mode-map) :states normal)
    ("SPC e l" . #'eval-last-sexp)
