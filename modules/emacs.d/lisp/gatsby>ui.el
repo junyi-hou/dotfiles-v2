@@ -133,19 +133,9 @@
 (gatsby>use-internal-package display-line-numbers
   :custom
   (display-line-numbers-width-start t)
-  (display-line-numbers-type 'visual)
-  :hook
-  (prog-mode . gatsby>set-line-numbers-width)
-  (prog-mode . display-line-numbers-mode)
-  :config (set-face-attribute 'line-number nil :background (face-background 'default))
-
-  (defun gatsby>set-line-numbers-width ()
-    "Set line number width based on total lines in buffer."
-    (when display-line-numbers-mode
-      (setq-local display-line-numbers-width
-                  (+ 1
-                     (length
-                      (number-to-string (count-lines (point-min) (point-max)))))))))
+  (display-line-numbers-type t)
+  :hook (prog-mode . display-line-numbers-mode)
+  :config (set-face-attribute 'line-number nil :background (face-background 'default)))
 
 (use-package hl-todo
   :ensure (:host github :repo "tarsius/hl-todo")
