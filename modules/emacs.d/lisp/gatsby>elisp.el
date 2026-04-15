@@ -11,7 +11,7 @@
   (defun gatsby>>lisp-set-tab-width (&rest _)
     (setq-local tab-width 2))
 
-  (setq trusted-content '(,gatsby>dotfiles-repo-location "~/dotfiles-v2"))
+  (setq trusted-content `(,gatsby>dotfiles-repo-location "~/dotfiles-v2"))
   :hook
   (emacs-lisp-mode . gatsby>>lisp-set-tab-width)
   (emacs-lisp-mode . flymake-mode)
