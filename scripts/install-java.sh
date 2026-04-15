@@ -45,7 +45,12 @@ if [ -z "${EXTRACTED_ROOT}" ]; then
     exit 1
 fi
 
-CONTENT_HOME="${EXTRACTED_ROOT}/Contents/Home"
+if [ "${__UNAME_S}" = 'macos' ]; then
+    CONTENT_HOME="${EXTRACTED_ROOT}/Contents/Home"
+else
+    CONTENT_HOME="${EXTRACTED_ROOT}"
+fi
+
 if [ ! -d "${CONTENT_HOME}" ]; then
     echo "Expected Content/Home not found in archive" >&2
     rm -rf "${TMP_DIR}" "${TMP_TAR}"
