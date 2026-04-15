@@ -28,7 +28,17 @@
 ;;; Code:
 (eval-when-compile
   (require 'use-package-core)
+  (require 'subr-x)
   (require 'cl-lib))
+
+(declare-function cl-oddp "cl-lib")
+(declare-function cl-remove-if-not "cl-seq")
+(declare-function cl-remove-duplicates "cl-seq")
+(declare-function cl-reduce "cl-seq")
+(declare-function use-package-split-list-at-keys "use-package-core")
+(declare-function use-package-split-when "use-package-core")
+(declare-function use-package-process-keywords "use-package-core")
+
 
 (defconst gatsby>>evil-states '(normal motion visual emacs insert operator replace)
   "A list of valid states in evil.")
@@ -46,18 +56,20 @@
       map)))
 
 (defun gatsby>>evil-bind-config-p (item)
-  "Return true if `item' is a plist with one or both of the following keys: `:maps' & `:states'"
+  "Return t if ITEM is a plist with at least one of the keys: `:maps' & `:states'."
   (pcase item
     ((or `(:maps ,_) `(:states ,_) `(:maps ,_ :states ,_) `(:states ,_ :maps ,_)) t)
     (_ nil)))
 
 (defun gatsby>>ensure-list (var)
-  "I only need to care about three possibilities: nil, a symbol of a list of symbols"
+  "Make sure VAR come out as a list."
+  ;; Only need to care about 3 cases: nil, a symbol or a list of symbols
   (pcase var
     ((pred listp) var)
     (_ `(,var))))
 
 (defun gatsby>>normalize-block (block)
+  "Normalize BLOCK."
   (let* ((config (car block)))
 
     (unless (gatsby>>evil-bind-config-p config)
