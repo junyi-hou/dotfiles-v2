@@ -237,6 +237,10 @@ current candidate"
    (:maps minibuffer-mode-map)
    ("C-k" . #'windmove-up)))
 
+(use-package marginalia
+  :ensure (marginalia :host github :repo "minad/marginalia")
+  :hook (elpaca-after-init . marginalia-mode))
+
 (use-package lolipop
   :if (and (eq system-type 'darwin) (functionp #'window-cursor-info))
   :ensure

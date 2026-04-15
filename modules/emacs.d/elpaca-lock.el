@@ -297,6 +297,16 @@
                           :source "elpaca-menu-lock-file" :protocol https :inherit t
                           :depth treeless :ref
                           "9cbdaf5ddfe825c04ffa306dde6bdfea9ab6dff3"))
+ (marginalia :source "elpaca-menu-lock-file" :recipe
+             (:package "marginalia" :repo "minad/marginalia" :fetcher github :files
+                       ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"
+                        "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el" "docs/dir"
+                        "docs/*.info" "docs/*.texi" "docs/*.texinfo"
+                        (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
+                                  "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
+                       :source "elpaca-menu-lock-file" :protocol https :inherit t :depth
+                       treeless :host github :ref
+                       "51a79bb82355d0ce0ee677151f041a3aba8cbfca"))
  (markdown-mode :source "elpaca-menu-lock-file" :recipe
                 (:package "markdown-mode" :fetcher github :repo "jrblevin/markdown-mode"
                           :files
