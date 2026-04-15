@@ -26,6 +26,7 @@ tree = "*"        # passage needs it
 python = "==3.12"
 rage = "*"
 eza = "*"
+gh = "*"
 fd-find = "*"
 ripgrep = "*"
 nodejs = "*"      # for acp

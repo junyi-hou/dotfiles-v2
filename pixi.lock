@@ -18,6 +18,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/codebook-lsp-0.3.31-hece2397_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/eza-0.23.4-hb17b654_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/fd-find-10.3.0-hdab8a38_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/gh-2.88.1-h76a2195_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/harper-1.2.0-he16cf4b_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/icu-75.1-he02047a_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/ld_impl_linux-64-2.45.1-default_hbd61a6d_101.conda
@@ -68,6 +69,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/codebook-lsp-0.3.31-h2f8c113_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/eza-0.23.4-h8d80559_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/fd-find-10.3.0-h0ca00b2_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/gh-2.88.1-h01237fd_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/gmp-6.3.0-h7bae524_2.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/harper-1.2.0-h8efe6ca_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/icu-75.1-hfee45f7_0.conda
@@ -987,6 +989,26 @@ packages:
   license_family: MOZILLA
   size: 16705
   timestamp: 1733327494780
+- conda: https://conda.anaconda.org/conda-forge/linux-64/gh-2.88.1-h76a2195_0.conda
+  sha256: 78f9fbbf18272e92e62bc1672d34178760ced73edc1e818ebd5fd00296b5df88
+  md5: 0290cdefa20d98adb936c465ccb76ad6
+  depends:
+  - __glibc >=2.17,<3.0.a0
+  license: Apache-2.0
+  license_family: APACHE
+  purls: []
+  size: 22875681
+  timestamp: 1773332470542
+- conda: https://conda.anaconda.org/conda-forge/osx-arm64/gh-2.88.1-h01237fd_0.conda
+  sha256: ed5ac50ece778e035d7739dc7547023c0391b44d20b98d7ef473b06cbdb5d040
+  md5: 1bb23382c23eae0e52a48bfd4c3cd5e6
+  depends:
+  - __osx >=11.0
+  license: Apache-2.0
+  license_family: APACHE
+  purls: []
+  size: 21742200
+  timestamp: 1773332985739
 - conda: https://conda.anaconda.org/conda-forge/osx-arm64/gmp-6.3.0-h7bae524_2.conda
   sha256: 76e222e072d61c840f64a44e0580c2503562b009090f55aa45053bf1ccb385dd
   md5: eed7278dfbab727b56f2c0b64330814b
