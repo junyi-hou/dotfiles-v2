@@ -11,11 +11,14 @@
   :config
   ;; Create a new project type whose roots are defined in `gatsby>project-list'.
   (defvar gatsby>project-list '()
+
     "List of project root directories for custom project detection.")
   (cl-defstruct gatsby>project
     root)
+
   (cl-defmethod project-root ((project gatsby>project))
     (gatsby>project-root project))
+
   (defun gatsby>project-try (dir)
     "Check if DIR is a subfolder of any paths defined in `gatsby>project-list'."
     (when gatsby>project-list
@@ -27,40 +30,53 @@
                         (string-prefix-p expanded-project expanded-dir))
                (make-gatsby>project :root expanded-project))))
          gatsby>project-list))))
+
   (add-hook 'project-find-functions #'gatsby>project-try -10))
 
-;; (gatsby>use-internal-package smerge-mode
-;;   :evil-bind
-;;   ((:maps (normal visual))
-;;    ("SPC ]" . #'smerge-next)
-;;    ("SPC [" . #'smerge-prev)
-;;    ("SPC m" . #'smerge-keep-current)
-;;    ("SPC M" . #'smerge-keep-all)))
+(use-package projtree
+  :ensure (:host github :repo "petergardfjall/emacs-projtree")
+  :custom-face (button ((t (:inherit default))))
+  :custom
+  (projtree-show-git-status nil)
+  (projtree-profiling-enabled nil)
+  :config
+  ;; don't use project-known-project-list to identify the root
+  (defun gatsby>>projtree-root (buffer)
+    "Return the root of the project in BUFFER using `project-root'."
+    (when (buffer-live-p buffer)
+      (with-current-buffer buffer
+        (let* ((buf-file (buffer-file-name buffer))
+               ;; Note: for a non-file buffer (like `*scratch*') we consider its
+               ;; project tree root to be default-directory.
+               (buffer-dir (file-name-directory (or buf-file default-directory)))
+               (project (project-current nil buffer-dir)))
+          (if project
+              (project-root project)
+            nil)))))
 
-;; (use-package projtree
-;;  :ensure (:host github :repo "petergardfjall/emacs-projtree")
-;;  :custom
-;;  (projtree-show-git-status nil)
-;;  (projtree-profiling-enabled nil)
-;;  :config
-;;  ;; don't use project-known-project-list to identify the root
-;;  (defun gatsby>>projtree-root (buffer)
-;;      "Return the root of the project in BUFFER using `project-root'."
-;;      (when (buffer-live-p buffer)
-;;          (with-current-buffer buffer
-;;              (let* ((buf-file (buffer-file-name buffer))
-;;                           ;; Note: for a non-file buffer (like `*scratch*') we consider its
-;;                           ;; project tree root to be default-directory.
-;;                           (buffer-dir (file-name-directory (or buf-file default-directory)))
-;;                           (project (project-current nil buffer-dir)))
-;;                  (if project
-;;                          (project-root project)
-;;                      nil)))))
+  (advice-add #'projtree--project-root :override #'gatsby>>projtree-root)
 
-;;  (gatsby>defcommand gatsby>projtree-open-or-toggle ()
-;;      (message "%s" (button-at (point))))
+  (gatsby>defcommand gatsby>projtree-open-in-new-window ()
+    "Open the file at `point' in the projtree.
+If the prefix argument NEW-WINDOW is non nil, force to open it in a new window."
+    (let* ((pos (point))
+           (btn (button-at pos))
+           (path (get-text-property pos 'tabulated-list-id))
+           (inhibit-read-only t))
+      (button-put
+       btn 'action
+       (lambda (_)
+         (with-selected-window (get-largest-window nil nil t)
+           (gatsby>switch-to-buffer-new-window (find-file-noselect path)))))
+      (button-activate pos)))
 
-;;  (advice-add #'projtree--project-root :override #'gatsby>>projtree-root))
+  :evil-bind
+  ((:maps normal)
+   ("SPC o d" . #'projtree-open)
+   (:maps projtree-buffer-map)
+   ("M-RET" . #'gatsby>projtree-open-in-new-window)
+   ([remap evil-open-fold] . #'push-button)
+   ([remap evil-close-fold] . #'push-button)))
 
 (use-package envrc
   :ensure (:host github :repo "purcell/envrc")
