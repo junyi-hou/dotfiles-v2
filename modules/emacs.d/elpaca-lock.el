@@ -290,6 +290,17 @@
                    (:exclude "lisp/magit-section.el"))
                   :source "elpaca-menu-lock-file" :protocol https :inherit t :depth
                   treeless :host github :ref "9cbdaf5ddfe825c04ffa306dde6bdfea9ab6dff3"))
+ (magit-delta :source "elpaca-menu-lock-file" :recipe
+              (:package "magit-delta" :fetcher github :repo "dandavison/magit-delta"
+                        :files
+                        ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"
+                         "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el"
+                         "docs/dir" "docs/*.info" "docs/*.texi" "docs/*.texinfo"
+                         (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
+                                   "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
+                        :source "elpaca-menu-lock-file" :protocol https :inherit t
+                        :depth treeless :host github :ref
+                        "5fc7dbddcfacfe46d3fd876172ad02a9ab6ac616"))
  (magit-section :source "elpaca-menu-lock-file" :recipe
                 (:package "magit-section" :fetcher github :repo "magit/magit" :files
                           ("lisp/magit-section.el" "docs/magit-section.texi"
@@ -483,6 +494,16 @@
                       :source "elpaca-menu-lock-file" :protocol https :inherit t :depth
                       treeless :host github :repo "lewang/ws-butler" :ref
                       "67c49cfdf5a5a9f28792c500c8eb0017cfe74a3a"))
+ (xterm-color :source "elpaca-menu-lock-file" :recipe
+              (:package "xterm-color" :repo "atomontage/xterm-color" :fetcher github
+                        :files
+                        ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"
+                         "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el"
+                         "docs/dir" "docs/*.info" "docs/*.texi" "docs/*.texinfo"
+                         (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
+                                   "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
+                        :source "elpaca-menu-lock-file" :protocol https :inherit t
+                        :depth treeless :ref "86fab1d247eb5ebe6b40fa5073a70dfa487cd465"))
  (zmq :source "elpaca-menu-lock-file" :recipe
       (:package "zmq" :fetcher github :repo "nnicandro/emacs-zmq" :files
                 (:defaults "Makefile" "src") :source "elpaca-menu-lock-file" :protocol

@@ -27,6 +27,7 @@ python = "==3.12"
 rage = "*"
 eza = "*"
 gh = "*"
+git-delta = "*"
 fd-find = "*"
 ripgrep = "*"
 nodejs = "*"      # for acp
