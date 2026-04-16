@@ -16,7 +16,7 @@
         "source": "git",
         "url": "https://github.com/anthropics/claude-plugins-official.git"
       }
-    },
+    }
   },
   "env": {
     "CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS": "TRUE",
