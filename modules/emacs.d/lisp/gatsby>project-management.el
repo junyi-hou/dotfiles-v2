@@ -75,8 +75,8 @@ If the prefix argument NEW-WINDOW is non nil, force to open it in a new window."
    ("SPC o d" . #'projtree-open)
    (:maps projtree-buffer-map)
    ("M-RET" . #'gatsby>projtree-open-in-new-window)
-   ([remap evil-open-fold] . #'push-button)
-   ([remap evil-close-fold] . #'push-button)))
+   ("z o" . #'push-button)
+   ("z c" . #'push-button)))
 
 (use-package envrc
   :ensure (:host github :repo "purcell/envrc")
