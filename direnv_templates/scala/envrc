@@ -1,0 +1,43 @@
+set -euo pipefail
+
+_PROJECT_ROOT=$(pwd)
+_TOOLS="${_PROJECT_ROOT}/.tools"
+
+export COURSIER_INSTALL_DIR=${_TOOLS}/scalar
+
+### CLOJORE
+if [ ! -d ${_TOOLS}/coursier ]; then
+    mkdir -p "${_TOOLS}/coursier/bin"
+    curl -fL https://github.com/coursier/launchers/raw/master/coursier -o ${_TOOLS}/coursier/bin/cs
+    chmod a+x ${_TOOLS}/coursier/bin/cs
+fi
+export PATH="${_TOOLS}/coursier/bin:$PATH"
+
+cs install scala:3.8.3 scalafmt:3.11.0 metals:1.6.7
+
+
+### REPL
+export JUPYTER_PATH="${_TOOLS}/jupyter"
+export UV_NO_MODIFY_PATH=1
+export UV_INSTALL_DIR="${_TOOLS}/bin"
+export UV_NO_PROGRESS=1
+export PATH="${_TOOLS}/bin:$PATH"
+
+if [ ! -f "${_TOOLS}/bin/uv" ]; then
+    echo "uv not found locally, installing..."
+    mkdir -p .tools
+    curl -LsSf https://astral.sh/uv/install.sh | sh -s --
+fi
+
+if [ ! -d "${_TOOLS}/venv" ]; then
+    uv venv "${_TOOLS}/venv" --python "==3.12"
+fi
+
+source "${_TOOLS}/venv/bin/activate"
+uv pip install "jupyter==1.1.1"
+
+# TODO: install scala kernel
+
+# Local Variables:
+# mode: bash-ts
+# End:

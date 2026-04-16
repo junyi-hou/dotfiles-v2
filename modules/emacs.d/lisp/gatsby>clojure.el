@@ -35,12 +35,11 @@
              (or (and (project-current) (project-root (project-current)))
                  default-directory))
             ;; automatically kill buffer if the test succeed
-            ;; (compilation-exit-message-function
-            ;;  (lambda (status code msg)
-            ;;    (when (and (eq status 'exit) (zerop code))
-            ;;      (kill-buffer))
-            ;;    (cons msg code)))
-            )
+            (compilation-exit-message-function
+             (lambda (status code msg)
+               (when (and (eq status 'exit) (zerop code))
+                 (kill-buffer))
+               (cons msg code))))
         (if all
             (progn
               (message "running tests...")
