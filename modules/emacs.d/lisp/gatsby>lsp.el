@@ -188,7 +188,7 @@
 ;; display flymake information in a childframe
 (use-package flymake-childframe
   :ensure (:host github :repo "junyi-hou/flymake-childframe")
-  :hook ((flymake eglot-managed-mode) . flymake-childframe-mode))
+  :hook ((flymake-mode eglot-managed-mode) . flymake-childframe-mode))
 
 (use-package eldoc-mouse
   :ensure (:host github :repo "huangfeiyu/eldoc-mouse")
