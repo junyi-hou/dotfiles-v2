@@ -192,6 +192,7 @@
        :lookup #'consult--line-match
        :initial initial
        :state (consult--jump-state))))
+
   (advice-add #'consult-outline :override #'gatsby>consult-outline)
 
   (gatsby>defcommand gatsby>consult-search-visual-line (beg end)
@@ -211,57 +212,6 @@
    gatsby>consult-search-visual-line
    gatsby>consult-search-visual-outline
    :preview-key 'any)
-
-  ;; during `/' or `?' search, <C-Return> will start a consult search
-  (gatsby>defcommand gatsby>consult-line-from-evil (arg)
-    "Take current search string and run `consult-line' on it.
-  If ARG is non-nil, run `consult-outline' instead."
-    (let ((str isearch-string)
-          (enable-recursive-minibuffers t)
-          (fn
-           (if arg
-               #'consult-outline
-             #'consult-line)))
-      (run-at-time 0 nil fn str)
-      (abort-recursive-edit)))
-
-  ;; save consult search in `search-ring' as well
-  (defvar-local gatsby>>consult-current-input nil)
-
-  (defun gatsby>>consult-add-current-input-to-search-ring (&rest _)
-    "Add the current input to the front of `search-ring' so evil search can pick it up.
-
-  Note: since `evil' uses `regexp-search-ring', so need to pass `t' as the second argument
-  to update the correct ring."
-    (isearch-update-ring (or gatsby>>consult-current-input
-                             (minibuffer-contents-no-properties))
-                         t)
-    (setq-local gatsby>>consult-current-input nil))
-
-  (defun gatsby>>consult-tempoarily-add-to-minibuffer-hooks (fn &rest args)
-    (cl-letf*
-        ((minibuffer-exit-hook
-          `(,@minibuffer-exit-hook gatsby>>consult-add-current-input-to-search-ring))
-         ;; because vertico insert the selection to the minibuffer before it exits
-         ;; need to save the minibuffer-contents before vertico inserts the current selection
-         ((symbol-function #'vertico-exit)
-          (lambda (&optional arg)
-            (interactive "P")
-            (when (and (not arg) (>= vertico--index 0))
-              (setq-local gatsby>consult--current-input
-                          (minibuffer-contents-no-properties))
-              (vertico-insert))
-            (when (vertico--match-p (minibuffer-contents-no-properties))
-              (exit-minibuffer)))))
-      (apply fn args)))
-
-  (advice-add
-   #'consult-line
-   :around #'gatsby>>consult-tempoarily-add-to-minibuffer-hooks)
-
-  (advice-add
-   #'consult-outline
-   :around #'gatsby>>consult-tempoarily-add-to-minibuffer-hooks)
 
   :evil-bind
   ((:maps (motion normal))
