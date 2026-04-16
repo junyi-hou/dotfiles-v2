@@ -80,42 +80,6 @@
           (call-interactively #'comint-previous-prompt))
       (call-interactively #'comint-previous-prompt)))
 
-  ;; (cl-defun gatsby>>agent-shell-header (state &key qualifier bindings)
-  ;;   "A simpler header for agent shell."
-  ;;   (unless state
-  ;;     (error "STATE is required"))
-  ;;   (let* ((mode
-  ;;           (when-let* ((mode-id (map-nested-elt state '(:session :mode-id))))
-  ;;             (or (agent-shell--resolve-session-mode-name
-  ;;                  mode-id
-  ;;                  (agent-shell--get-available-modes state))
-  ;;                 (map-nested-elt state '(:session :mode-id)))))
-  ;;          (model
-  ;;           (or (map-elt
-  ;;                (seq-find
-  ;;                 (lambda (model)
-  ;;                   (string=
-  ;;                    (map-elt model :model-id)
-  ;;                    (map-nested-elt state '(:session :model-id))))
-  ;;                 (map-nested-elt state '(:session :models)))
-  ;;                :name)
-  ;;               (map-nested-elt state '(:session :model-id)) "uninitiated"))
-  ;;          (context-usage (or (agent-shell--context-usage-indicator) "")))
-  ;;     (format "%s %s %s"
-  ;;             (propertize model 'font-lock-face 'font-lock-negation-char-face)
-  ;;             (if mode
-  ;;                 (propertize (format "(%s)" mode) 'font-lock-face 'font-lock-type-face)
-  ;;               "")
-  ;;             context-usage)))
-
-  ;; (advice-add #'agent-shell--make-header :override #'gatsby>>agent-shell-header)
-  ;; (advice-add
-  ;;  #'agent-shell-anthropic--claude-code-ascii-art
-  ;;  :override
-  ;;  (lambda ()
-  ;;    ""
-  ;;    "[claude code]"))
-
   :evil-bind
   ((:maps normal)
    ("SPC a a" . #'gatsby>agent-shell-toggle)
