@@ -16,7 +16,7 @@ build:
 	@bash ./scripts/install-emacs-macos.sh
 
 java:
-	@bash ./scripts/install-java.sh
+	@python -m scripts.install_java
 
 claude:
 	@python -m scripts.install -m claude profile bash_profile zprofile
