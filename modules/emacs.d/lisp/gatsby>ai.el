@@ -117,6 +117,8 @@ If COMMAND is not nil, use it instead of `claude'."
 
   (gatsby>defcommand gatsby>claude-cli-commit ()
     "Automatically generate commit message for currently staged files."
+    (unless (magit-anything-staged-p)
+      (user-error "Nothing staged - can't generate commit message"))
     (message "generating commit message...")
     (let ((magit-buf (magit-get-mode-buffer 'magit-status-mode)))
       (gatsby>>claude-cli
