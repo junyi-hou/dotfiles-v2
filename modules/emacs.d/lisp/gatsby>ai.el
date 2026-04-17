@@ -68,6 +68,72 @@
           (call-interactively #'comint-previous-prompt))
       (call-interactively #'comint-previous-prompt)))
 
+  (cl-defun gatsby>>claude-cli
+      (prompt
+       &key
+       (allowed-tools nil)
+       (command "claude")
+       (callback (lambda (output) (message output))))
+    "Run `claude -p' with PROMPT and ALLOWED-TOOLS.
+If COMMAND is not nil, use it instead of `claude'."
+    (let ((command `(,command "-p" ,prompt "--model" "claude-haiku-4-5"))
+          (proc-buf (generate-new-buffer " *claude-cli-output*")))
+      (make-process
+       :name "claude-cli"
+       :command
+       (if allowed-tools
+           `(,@command "--allowed-tools" ,allowed-tools)
+         command)
+       :buffer proc-buf
+       ;; TRAMP compatible
+       :file-handler t
+       :filter
+       (lambda (proc string)
+         (let ((string
+                (thread-first string (string-split "\n") butlast (string-join "\n"))))
+           (when (buffer-live-p (process-buffer proc))
+             (with-current-buffer (process-buffer proc)
+               (let ((moving (= (point) (process-mark proc))))
+                 (save-excursion
+                   ;; Insert the text, advancing the process marker.
+                   (goto-char (process-mark proc))
+                   (insert string)
+                   (set-marker (process-mark proc) (point)))
+                 (if moving
+                     (goto-char (process-mark proc))))))))
+       :sentinel
+       (lambda (_proc event)
+         ;; when success, return buffer-string of `proc-buf'
+         ;; otherwise signal user-error with the buffer-string of `proc-buf'
+         ;; alawys clean up - kill `proc-buf'
+         (unwind-protect
+             (let ((output
+                    (with-current-buffer proc-buf
+                      (buffer-string))))
+               (if (string= event "finished\n")
+                   (funcall callback output)
+                 (user-error output)))
+           (kill-buffer proc-buf))))))
+
+  (gatsby>defcommand gatsby>claude-cli-commit ()
+    "Automatically generate commit message for currently staged files."
+    (message "generating commit message...")
+    (gatsby>>claude-cli
+     "Analyze currently staged changes and generate a message draft following the **Conventional Commits** specification (`type(scope): description`). Output only the commit message without the markdown quotes."
+     :callback
+     (lambda (s)
+       (make-process
+        :name "commit-using-claude"
+        :command `("git" "commit" "-m" ,s "--edit")
+        :sentinel
+        (lambda (&rest _) (call-interactively #'magit-refresh-all))))
+     :allowed-tools "Bash(git diff *)"))
+
+  (with-eval-after-load 'magit
+    (transient-append-suffix
+     'magit-commit #'magit-commit-create
+     '("g" "Create commit with claude-generated message" gatsby>claude-cli-commit)))
+
   :evil-bind
   ((:maps normal)
    ("SPC a a" . #'gatsby>agent-shell-toggle)
