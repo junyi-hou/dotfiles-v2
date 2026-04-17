@@ -118,16 +118,21 @@ If COMMAND is not nil, use it instead of `claude'."
   (gatsby>defcommand gatsby>claude-cli-commit ()
     "Automatically generate commit message for currently staged files."
     (message "generating commit message...")
-    (gatsby>>claude-cli
-     "Analyze currently staged changes and generate a message draft following the **Conventional Commits** specification (`type(scope): description`). Output only the commit message without the markdown quotes."
-     :callback
-     (lambda (s)
-       (make-process
-        :name "commit-using-claude"
-        :command `("git" "commit" "-m" ,s "--edit")
-        :sentinel
-        (lambda (&rest _) (call-interactively #'magit-refresh-all))))
-     :allowed-tools "Bash(git diff *)"))
+    (let ((magit-buf (magit-get-mode-buffer 'magit-status-mode)))
+      (gatsby>>claude-cli
+       "Analyze currently staged changes and generate a message draft following the **Conventional Commits** specification (`type(scope): description`). Output only the commit message without the markdown quotes."
+       :callback
+       (lambda (s)
+         (make-process
+          :name "commit-using-claude"
+          :command `("git" "commit" "-m" ,s "--edit")
+          :connection-type 'pty
+          :sentinel
+          (lambda (&rest _)
+            (when magit-buf
+              (with-current-buffer magit-buf
+                (magit-refresh))))))
+       :allowed-tools "Bash(git diff *)")))
 
   (with-eval-after-load 'magit
     (transient-append-suffix
