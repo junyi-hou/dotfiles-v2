@@ -27,18 +27,6 @@
    agent-shell-anthropic-start-claude-code
    gatsby>agent-shell-toggle)
   :config
-  (setq agent-shell-anthropic-claude-environment
-        (agent-shell-make-environment-variables
-         "ANTHROPIC_AUTH_TOKEN"
-         (thread-first
-          "direnv exec %s passage show openrouter-api"
-          (format (expand-file-name gatsby>dotfiles-repo-location))
-          (shell-command-to-string)
-          (string-trim)
-          (string-split "\n")
-          (last)
-          (car))))
-
   (gatsby>defcommand gatsby>agent-shell-toggle (resume)
     (let* ((project-root (and (project-current) (project-root (project-current))))
            (current-client

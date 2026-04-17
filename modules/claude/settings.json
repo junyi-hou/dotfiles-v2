@@ -1,10 +1,13 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "model": "google/gemini-3-flash-preview",
+  "env": {
+    "CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS": "TRUE"
+  },
   "attribution": {
     "commit": "",
     "pr": ""
   },
+  "model": "claude-haiku-4-5-20251001",
   "enabledPlugins": {
     "skill-creator@claude-plugins-official": true,
     "code-review@claude-plugins-official": true,
@@ -17,10 +20,5 @@
         "url": "https://github.com/anthropics/claude-plugins-official.git"
       }
     }
-  },
-  "env": {
-    "CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS": "TRUE",
-    "ANTHROPIC_BASE_URL": "https://openrouter.ai/api",
-    "ANTHROPIC_API_KEY": ""
   }
 }
