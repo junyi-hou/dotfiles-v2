@@ -16,6 +16,11 @@ alias ls="ls -G"
 alias ll="ls -alGh"
 alias tree="eza --tree"
 
+# aliasing `emacs` in mac os
+if [[ "$(uname)" == "Darwin" ]]; then
+    alias emacs="/Applications/Emacs.app/Contents/MacOS/Emacs"
+fi
+
 if [[ "$INSIDE_EMACS" = 'ghostel' ]]; then
     # Open a file in Emacs from the terminal
     ff() { ghostel_cmd find-file-other-window "$@"; }
