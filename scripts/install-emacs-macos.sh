@@ -35,3 +35,7 @@ LDFLAGS="-I/opt/homebrew/Cellar/libgccjit/15.2.0/include -L-I/opt/homebrew/Cella
 LIBRARY_PATH="/opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/15" \
 ./configure --with-native-compilation --with-tree-sitter --enable-mac-app=yes --enable-mac-self-contained
 make -j10 && make install
+
+# install emacs runnable
+mkdir -p "$HOME/.local/bin"
+ln -sf "/Applications/Emacs.app/Contents/MacOS/Emacs.sh" "$HOME/.local/bin/emacs"
