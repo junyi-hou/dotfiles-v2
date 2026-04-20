@@ -278,7 +278,8 @@ If there is an idle eshell in the same PWD, switch to that window."
         (prog1 (eshell 'Z)
           (evil-insert-state)))))
 
-  :commands gatsby>eshell-open-or-switch)
+  :evil-bind ((:maps normal) ("SPC o s" . #'gatsby>eshell-open-or-switch)))
+
 
 ;; TODO
 ;; 1/ scrolling/ghostel-copy-mode

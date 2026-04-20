@@ -19,6 +19,10 @@
   :hook (elpaca-after-init . evil-mode)
   :config
 
+  ;; Remove evil's default SPC→evil-forward-char from motion state so all
+  ;; :evil-bind blocks can freely use SPC as a prefix key.
+  (define-key evil-motion-state-map (kbd "SPC") nil)
+
   (evil-define-motion gatsby>evil-next-three-lines ()
     "Jump to the next 3 visual line"
     (evil-next-visual-line 3))
@@ -113,7 +117,6 @@
    (:maps (motion normal))
    ("<tab>" . #'evil-jump-item)
    (:maps (motion normal visual))
-   ("SPC" . nil)
    ("SPC k" . #'delete-window)
    ("SPC w" . #'evil-write)
    ("SPC q" . #'gatsby>kill-buffer)
@@ -123,7 +126,6 @@
    ("SPC o b" . #'switch-to-buffer)
    ("SPC o f" . #'find-file)
    ("SPC o m" . #'gatsby>switch-to-message)
-   ("SPC o s" . #'gatsby>eshell-open-or-switch)
    (:maps visual)
    ("<tab>" . #'gatsby>evil-visual-tab)
    (:maps insert)
