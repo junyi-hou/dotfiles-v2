@@ -58,14 +58,14 @@
   (gatsby>defcommand gatsby>agent-shell-next-prompt-or-permission ()
     (if (map-elt (agent-shell--state) :tool-calls)
         (unless (call-interactively #'agent-shell-next-permission-button)
-          (call-interactively #'comint-previous-prompt))
-      (call-interactively #'comint-next-prompt)))
+          (call-interactively #'agent-shell-next-item))
+      (call-interactively #'agent-shell-next-item)))
 
   (gatsby>defcommand gatsby>agent-shell-prev-prompt-or-permission ()
     (if (map-elt (agent-shell--state) :tool-calls)
         (unless (call-interactively #'agent-shell-previous-permission-button)
-          (call-interactively #'comint-previous-prompt))
-      (call-interactively #'comint-previous-prompt)))
+          (call-interactively #'agent-shell-previous-item))
+      (call-interactively #'agent-shell-previous-item)))
 
   (cl-defun gatsby>>claude-cli
       (prompt
