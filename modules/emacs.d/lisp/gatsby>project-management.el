@@ -138,7 +138,7 @@ If the prefix argument NEW-WINDOW is non nil, force to open it in a new window."
         (cond
          ((equal "envrc" (file-name-base file))
           (copy-file file (file-name-concat destination ".envrc") 1))
-         ((equal "dir-locals.el" (file-name-base file))
+         ((equal "dir-locals" (file-name-base file))
           (copy-file file (file-name-concat destination ".dir-locals.el") 1))
          ((equal "gitignore" (file-name-base file))
           (let ((gitignore (file-name-concat destination ".gitignore")))
