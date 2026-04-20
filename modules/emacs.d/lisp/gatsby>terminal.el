@@ -136,7 +136,6 @@
             _args))
         (apply #'eshell/cd `(,host)))))
 
-  ;; FIXME: this does not work?
   (defun gatsby>eshell-cd (cd &rest args)
     "Make `eshell/cd' tramp-aware and project-friendly."
     (let* ((host (file-remote-p default-directory))
@@ -305,13 +304,13 @@ If there is an idle eshell in the same PWD, switch to that window."
               default-directory)))
       (call-interactively #'ghostel)))
 
-  (defun gatsby>>ghostel-exit-copy-mode-after-move (&rest _)
-    (ghostel-copy-mode-exit))
+  ;; (defun gatsby>>ghostel-exit-copy-mode-after-move (&rest _)
+  ;;   (ghostel-copy-mode-exit))
 
-  (advice-add
-   #'ghostel-previous-prompt
-   :after #'gatsby>>ghostel-exit-copy-mode-after-move)
-  (advice-add #'ghostel-next-prompt :after #'gatsby>>ghostel-exit-copy-mode-after-move)
+  ;; (advice-add
+  ;;  #'ghostel-previous-prompt
+  ;;  :after #'gatsby>>ghostel-exit-copy-mode-after-move)
+  ;; (advice-add #'ghostel-next-prompt :after #'gatsby>>ghostel-exit-copy-mode-after-move)
 
   (gatsby>defcommand gatsby>ghostel-send-tab ()
     (ghostel--send-key "\t"))

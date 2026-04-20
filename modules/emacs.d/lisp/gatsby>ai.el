@@ -19,7 +19,6 @@
    '(display-buffer-in-side-window (side . right) (window-width . 0.33) (slot . 0)))
   (agent-shell-file-completion-enabled t)
   (agent-shell-session-strategy 'new)
-  (agent-shell-header-style 'text)
   (agent-shell-preferred-agent-config 'claude-code)
   :commands
   (agent-shell--start
