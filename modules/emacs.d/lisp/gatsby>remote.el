@@ -38,8 +38,8 @@
   :ensure (:host github :repo "ArthurHeymans/emacs-tramp-rpc")
   :after tramp
   :config
-  (defun gatsby>>rpc-eshell/ssh (&rest args)
-    "Use tramp-rpc for ssh."
+  (defun eshell/rpc (&rest args)
+    "Connect to a remote host via tramp-rpc in eshell."
     (let* ((_args
             (thread-last
              args
@@ -49,11 +49,9 @@
       (if (> (length _args) 1)
           (user-error
            (format
-            "eshell/ssh accepts only one argument in the form of user@hostname, got %s instead"
+            "eshell/rpc accepts only one argument in the form of user@hostname, got %s instead"
             _args))
-        (apply #'eshell/cd `(,host)))))
-
-  (advice-add #'eshell/ssh :override #'gatsby>>rpc-eshell/ssh))
+        (apply #'eshell/cd `(,host))))))
 
 
 (provide 'gatsby>remote)
