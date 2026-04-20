@@ -4,11 +4,19 @@
 
 ;;; Code:
 
-(eval-when-compile
-  (require 'cl-lib)
-  (require 'cl-seq)
-  (require 'subr-x)
-  (require 'treesit))
+(require 'cl-lib)
+(require 'cl-seq)
+(require 'subr-x)
+(require 'treesit)
+
+(declare-function elpaca-write-lock-file "elpaca")
+(declare-function elpaca--queued "elpaca")
+(declare-function elpaca-get "elpaca")
+(declare-function elpaca<-repo-dir "elpaca")
+(declare-function elpaca-rebuild "elpaca")
+(declare-function elpaca-wait "elpaca")
+
+(defvar gatsby>dotfiles-repo-location)
 
 (defmacro gatsby>use-internal-package (name &rest args)
   "So I don't need to type `:ensure nil' every time."
@@ -24,8 +32,7 @@ Usage:
   (gatsby>defcommand foo () ...) -> (defun foo () (interactive) ...)
   (gatsby>defcommand foo (beg end) ...) -> (defun foo (beg end) (interactive \"r\") ...)
   (gatsby>defcommand foo (sth) ...) -> (defun foo (sth) (interactive \"P\") ...)
-  (gatsby>defcommand foo (:x f) ...) -> (defun foo (x) (interactive (list f) ...))
-"
+  (gatsby>defcommand foo (:x f) ...) -> (defun foo (x) (interactive (list f) ...))"
   (declare
    (doc-string 3) (indent defun)
    (debug
@@ -99,10 +106,17 @@ before saving to the cache file."
                 (print-level nil))
             (pp
              (thread-last
-              `(,@items ,new-item)
-              (cl-remove-duplicates)
+              `(,@items
+                ,(if (symbolp new-item)
+                     (symbol-name new-item)
+                   new-item))
+              ((lambda (x) (cl-remove-duplicates x :test #'equal)))
               (cl-remove-if-not #'identity)
-              ((lambda (n list) (last list n)) max-length))
+              ((lambda (n list)
+                 (if n
+                     (last list n)
+                   list))
+               max-length))
              (current-buffer)))
           ;; Don't use write-file; we don't want this buffer to visit it.
           (write-region (point-min) (point-max) cache-file))
@@ -131,35 +145,9 @@ Otherwise, always create a new window by splitting."
         (select-window new-window norecord)
         (switch-to-buffer buffer norecord)))))
 
-(defun gatsby>plist-to-hash-table-recursive (plist &optional test)
-  "Recursively convert a property list PLIST to a hash table with string keys.
-
-Nested plists within PLIST will be converted to nested hash tables.
-This is useful for converting complex data structures like those
-derived from JSON. Plist keys (which are typically symbols) are
-converted to strings.
-
-A value is treated as a nested plist if it is a non-empty list
-with an even number of elements.
-
-The optional argument TEST specifies the hash table's test function
-(e.g., 'eq, 'eql, or 'equal). Defaults to 'equal."
-  (when plist
-    (let ((table (make-hash-table :test (or test #'equal))))
-      (cl-loop
-       for (key value) on plist by #'cddr do
-       (let* ((processed-value
-               ;; Heuristic: Is the value a plist that should be converted?
-               (if (and (listp value) (> (length value) 0) (cl-evenp (length value)))
-                   (gatsby>plist-to-hash-table-recursive value test)
-                 value))
-              (key-string (substring (symbol-name key) 1)))
-         (puthash key-string processed-value table)))
-      table)))
-
-;; putting modes in evil-STATE-state-modes
-;; should bind to `evil-mode-hook'
 (defun gatsby>>put-mode-to-evil-state (modes state)
+  "Putting MODES in evil STATE mode maps (e.g., `evil-normal-state-map').
+should bind to `evil-mode-hook'"
   (let ((list (intern (format "evil-%s-state-modes" (symbol-name state))))
         (other-modes (cdr-safe modes)))
     (if other-modes
@@ -205,9 +193,8 @@ The optional argument TEST specifies the hash table's test function
 
 (add-hook 'kill-emacs-hook #'gatsby>>update-elpaca-lock-file)
 
-(defun gatsby>update-emacs-package ()
+(gatsby>defcommand gatsby>update-emacs-package ()
   "Choose from a list of installed package, go into the elpaca repo folder, run git pull and elpaca rebuild."
-  (interactive)
   (let* ((queued (elpaca--queued))
          (packages (mapcar #'car queued))
          (package (completing-read "Update package: " packages nil t))
@@ -220,14 +207,16 @@ The optional argument TEST specifies the hash table's test function
               (pkg-name package))
           (message "Updating %s in %s..." pkg-name repo)
           (set-process-sentinel
-           (start-process "elpaca-git-pull" (format "*elpaca-update-%s*" pkg-name) "git" "pull")
+           (start-process "elpaca-git-pull" (format "*elpaca-update-%s*" pkg-name) "git"
+                          "pull")
            (lambda (proc event)
              (when (string-match-p "finished" event)
                (message "Git pull finished for %s. Rebuilding..." pkg-name)
                (elpaca-rebuild pkg-id)
                (elpaca-wait)
                (gatsby>>update-elpaca-lock-file)
-               (message "Elpaca update and lock file update finished for %s" pkg-name)))))
+               (message "Elpaca update and lock file update finished for %s"
+                        pkg-name)))))
       (error "Repository for %s not found" package))))
 
 (provide 'gatsby>>utility)
