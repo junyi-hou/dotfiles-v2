@@ -40,14 +40,17 @@
                 (with-current-buffer b
                   (file-equal-p default-directory project-root)))))))
       (cond
-       ((and resume (not current-client))
+       (resume
         (agent-shell--start
          :no-focus nil
          :config (agent-shell--resolve-preferred-config)
          :new-session t
          :session-strategy 'prompt))
        ((not current-client)
-        (call-interactively #'agent-shell))
+        (agent-shell--start
+         :no-focus nil
+         :config (agent-shell--resolve-preferred-config)
+         :new-session t))
        (t
         (display-buffer current-client agent-shell-display-action)
         (switch-to-buffer-other-window current-client)
