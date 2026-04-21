@@ -119,7 +119,7 @@ If COMMAND is not nil, use it instead of `claude'."
     (message "generating commit message...")
     (let ((magit-buf (magit-get-mode-buffer 'magit-status-mode)))
       (gatsby>>claude-cli
-       "Analyze currently staged changes and generate a message draft following the **Conventional Commits** specification (`type(scope): description`). Output only the commit message without the markdown quotes."
+       "Analyze currently staged changes and generate a message draft following the **Conventional Commits** specification (`type(scope): description`). Output only the commit message and nothing else."
        :callback
        (lambda (s)
          (make-process
