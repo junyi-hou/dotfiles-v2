@@ -302,8 +302,11 @@ If the prefix argument NEW-WINDOW is non nil, force to open it in a new window."
     (magit-status-mode-map
      magit-diff-mode-map magit-log-mode-map magit-revision-mode-map)
     :states motion)
-   ("SPC r" . #'magit-refresh-buffer)
-   (:maps git-rebase-mode-map :states motion)
+   ("SPC r" . #'magit-refresh-buffer)))
+
+(gatsby>use-internal-package git-rebase
+  :evil-bind
+  ((:maps git-rebase-mode-map :states motion)
    ("p" . #'git-rebase-pick)
    ("e" . #'git-rebase-edit)
    ("l" . #'git-rebase-label)

@@ -75,7 +75,7 @@
     (unless (gatsby>>evil-bind-config-p config)
       ;; no config block found,use default
       (setq
-       block `((:maps global-map) ,@ (car block))
+       block `((:maps global-map) ,(car block))
        config '(:maps global-map)))
 
     (let ((maps (gatsby>>ensure-list (plist-get config :maps)))
@@ -128,21 +128,27 @@
 (defun use-package-autoloads/:evil-bind (name _keyword args)
   "Generate autoloads for commands bound in :evil-bind.
 Extract all command symbols from ARGS and generate autoload declarations."
-  (let ((commands
-         ;; format: off
-         (cl-loop for arg in args
-                  ;; Skip configuration plists like (:map ...) or (:states ...)
-                  unless (gatsby>>evil-bind-config-p arg)
-                  when (and (listp arg)
-                            (eq (car arg) :block))
-                  append (cl-loop for item in (cdddr arg)
-                                  for i from 0
-                                  when (and (cl-oddp i)
-                                            (symbolp item)
-                                            (not (keywordp item)))
-                                  collect item))))
-    ;; format: on
-    (cl-remove-duplicates (delq nil commands))))
+  (thread-last
+   args
+   (use-package-split-list-at-keys :block)
+   (cl-remove-if-not #'identity)
+   (mapcar (lambda (ls) (butlast (nreverse ls) 2)))
+   (mapcar
+    (lambda (x)
+      (cl-labels ((fn
+                   (ls)
+                   (when ls
+                     (cons (car ls) (fn (cddr ls))))))
+        (fn x))))
+   (apply #'append)
+   (mapcar
+    (lambda (c)
+      (if (eq (car-safe c) 'function)
+          (cadr c)
+        c)))
+   (cl-remove-duplicates)
+   (cl-remove-if-not #'identity)
+   (mapcar (lambda (c) (cons c 'command)))))
 
 (setq use-package-keywords
       (cl-loop
