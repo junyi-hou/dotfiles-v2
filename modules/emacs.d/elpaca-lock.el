@@ -330,19 +330,10 @@
                           :source "elpaca-menu-lock-file" :protocol https :inherit t
                           :depth treeless :host github :ref
                           "92802fae9ebbc8c2e4c281c06dcdbd74b8bca80e"))
- (markdown-ts-mode :source "elpaca-menu-lock-file" :recipe
-                   (:package "markdown-ts-mode" :repo "LionyxML/markdown-ts-mode"
-                             :fetcher github :files
-                             ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo"
-                              "doc/dir" "doc/*.info" "doc/*.texi" "doc/*.texinfo"
-                              "lisp/*.el" "docs/dir" "docs/*.info" "docs/*.texi"
-                              "docs/*.texinfo"
-                              (:exclude ".dir-locals.el" "test.el" "tests.el"
-                                        "*-test.el" "*-tests.el" "LICENSE" "README*"
-                                        "*-pkg.el"))
-                             :source "elpaca-menu-lock-file" :protocol https :inherit t
-                             :depth treeless :host github :ref
-                             "2f1ee8b94cdf53cebc31ae08ecfbba846193d5e1"))
+ (md-ts-mode :source "elpaca-menu-lock-file" :recipe
+             (:source "elpaca-menu-lock-file" :protocol https :inherit t :depth treeless
+                      :host github :repo "dnouri/md-ts-mode" :package "md-ts-mode" :ref
+                      "8644e1f5391d6915c386440807f2ff421a8d5c5b"))
  (msgpack :source "elpaca-menu-lock-file" :recipe
           (:package "msgpack" :fetcher github :repo "xuchunyang/msgpack.el" :files
                     ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"

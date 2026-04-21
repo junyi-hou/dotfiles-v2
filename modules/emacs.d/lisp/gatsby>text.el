@@ -9,13 +9,13 @@
   :ensure (:host github :repo "jrblevin/markdown-mode")
   :commands (markdown-insert-gfm-code-block markdown-insert-link))
 
-(use-package markdown-ts-mode
-  :ensure (:host github :repo "LionyxML/markdown-ts-mode")
-  :mode ("\\.md\\'" . markdown-ts-mode)
+(use-package md-ts-mode
+  :ensure (:host github :repo "dnouri/md-ts-mode")
+  :mode ("\\.md\\'" . md-ts-mode-maybe)
   :hook
   ;; (markdown-ts-mode . eglot-ensure)
-  (markdown-ts-mode . corfu-mode)
-  (markdown-ts-mode . display-line-numbers-mode)
+  (md-ts-mode . corfu-mode)
+  (md-ts-mode . display-line-numbers-mode)
   :init
   ;; treesitter
   (gatsby>install-treesitter-grammar

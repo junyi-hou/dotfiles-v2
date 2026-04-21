@@ -29,7 +29,7 @@ emacs-lisp-mode
          ";;; " (file-name-nondirectory (or (buffer-file-name) (buffer-name)))
          " ends here" n)
 
-markdown-ts-mode
+md-ts-mode
 (link (call-interactively #'markdown-insert-link))
 (src (call-interactively #'markdown-insert-gfm-code-block))
 
