@@ -8,6 +8,7 @@ from scripts._lib import logger
 LIST_OF_PLUGINS = [
     "skill-creator@claude-plugins-official",
     "code-review@claude-plugins-official",
+    "context7@claude-plugins-official",
 ]
 
 LIST_OF_MARKETPLACES = [

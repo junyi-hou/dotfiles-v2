@@ -20,11 +20,6 @@
   (agent-shell-file-completion-enabled t)
   (agent-shell-session-strategy 'new)
   (agent-shell-preferred-agent-config 'claude-code)
-  :commands
-  (agent-shell--start
-   agent-shell-anthropic-make-claude-code-config
-   agent-shell-anthropic-start-claude-code
-   gatsby>agent-shell-toggle)
   :config
   (gatsby>defcommand gatsby>agent-shell-toggle (resume)
     (let* ((project-root (and (project-current) (project-root (project-current))))
