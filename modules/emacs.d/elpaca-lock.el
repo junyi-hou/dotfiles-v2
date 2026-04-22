@@ -17,7 +17,7 @@
                                    "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
                         :source "elpaca-menu-lock-file" :protocol https :inherit t
                         :depth treeless :host github :ref
-                        "1e5d17598d191386ee02998199b77d0f70866820"))
+                        "023ad9caaf9b66162d58c6189e61622ee95d13c8"))
  (agent-shell-tramp :source "elpaca-menu-lock-file" :recipe
                     (:source "elpaca-menu-lock-file" :protocol https :inherit t :depth
                              treeless :host github :repo "junyi-hou/agent-shell-tramp"
