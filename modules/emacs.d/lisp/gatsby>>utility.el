@@ -193,23 +193,53 @@ should bind to `evil-mode-hook'"
 
 (add-hook 'kill-emacs-hook #'gatsby>>update-elpaca-lock-file)
 
+
+(defun gatsby>>run-process-with-callback (commands &optional buffer final-sentinel)
+  "Run COMMANDS sequentially. The FINAL-SENTINEL is attached to the last process."
+  (when commands
+    (let* ((command (car commands))
+           (rest (cdr commands))
+           (proc (apply #'start-process "git-task" buffer (car command) (cdr command))))
+      (if (null rest)
+          ;; If this is the last command, attach the custom sentinel
+          (when final-sentinel
+            (set-process-sentinel proc final-sentinel))
+
+        ;; Otherwise, use a sequence-manager sentinel to trigger the next step
+        (set-process-sentinel
+         proc
+         (lambda (p event)
+           (if (string= event "finished\n")
+               (gatsby>>run-process-with-callback rest buffer final-sentinel)
+             (message "Sequence halted: %s failed with %s"
+                      (process-command p)
+                      event))))))))
+
 (gatsby>defcommand gatsby>update-emacs-package ()
-  "Choose from a list of installed package, go into the elpaca repo folder, run git pull and elpaca rebuild."
+  "Go into the elpaca repo of an installed package, do git pull and elpaca rebuild."
   (let* ((queued (elpaca--queued))
          (packages (mapcar #'car queued))
          (package (completing-read "Update package: " packages nil t))
          (id (intern package))
          (e (elpaca-get id))
-         (repo (elpaca<-repo-dir e)))
+         (repo (elpaca<-repo-dir e))
+         (branch (map-elt (elpaca<-recipe e) :branch)))
     (if (and repo (file-directory-p repo))
         (let ((default-directory repo)
               (pkg-id id)
               (pkg-name package))
           (message "Updating %s in %s..." pkg-name repo)
-          (set-process-sentinel
-           (start-process "elpaca-git-pull" (format "*elpaca-update-%s*" pkg-name) "git"
-                          "pull")
-           (lambda (proc event)
+
+          (unless branch
+            (setq branch
+                  (string-trim
+                   (shell-command-to-string
+                    "git remote show origin | grep \"HEAD branch\" | cut -d' ' -f5"))))
+
+          (gatsby>>run-process-with-callback
+           `(("git" "checkout" ,branch) ("git" "pull"))
+           (format "*lepaca-update-%s" pkg-name)
+           (lambda (_proc event)
              (when (string-match-p "finished" event)
                (message "Git pull finished for %s. Rebuilding..." pkg-name)
                (elpaca-rebuild pkg-id)
