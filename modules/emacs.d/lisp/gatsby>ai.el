@@ -51,19 +51,29 @@
         (switch-to-buffer-other-window current-client)
         (evil-insert-state)))))
 
-  ;; "<" and ">" jumps to prev/next permission button if there's a pending permission ask,
-  ;; else go to next/prev prompt
   (gatsby>defcommand gatsby>agent-shell-next-prompt-or-permission ()
-    (if (map-elt (agent-shell--state) :tool-calls)
-        (unless (call-interactively #'agent-shell-next-permission-button)
-          (call-interactively #'agent-shell-next-item))
-      (call-interactively #'agent-shell-next-item)))
+    "Jump to the next permission button if there's a pending permission ask.
+     Else go to next/prev prompt"
+    (cl-letf*
+        ( ;; Make sure `self-insert-command' does not get trigger when in the last prompt
+         ((symbol-function #'shell-maker-point-at-last-prompt-p)
+          (lambda (&rest _) nil)))
+      (if (map-elt (agent-shell--state) :tool-calls)
+          (unless (call-interactively #'agent-shell-next-permission-button)
+            (call-interactively #'agent-shell-next-item))
+        (call-interactively #'agent-shell-next-item))))
 
   (gatsby>defcommand gatsby>agent-shell-prev-prompt-or-permission ()
-    (if (map-elt (agent-shell--state) :tool-calls)
-        (unless (call-interactively #'agent-shell-previous-permission-button)
-          (call-interactively #'agent-shell-previous-item))
-      (call-interactively #'agent-shell-previous-item)))
+    "Jump to the prev permission button if there's a pending permission ask.
+     Else go to next/prev prompt"
+    (cl-letf*
+        ( ;; Make sure `self-insert-command' does not get trigger when in the last prompt
+         ((symbol-function #'shell-maker-point-at-last-prompt-p)
+          (lambda (&rest _) nil)))
+      (if (map-elt (agent-shell--state) :tool-calls)
+          (unless (call-interactively #'agent-shell-previous-permission-button)
+            (agent-shell-previous-item))
+        (agent-shell-previous-item))))
 
   (cl-defun gatsby>>claude-cli
       (prompt
@@ -147,8 +157,6 @@ If COMMAND is not nil, use it instead of `claude'."
    ("RET" . #'comint-accumulate)
    ("M-RET" . #'comint-send-input)
    ("C-r" . #'agent-shell-search-history)
-   ;; ("M-j" . #'comint-previous-input)
-   ;; ("M-k" . #'comint-next-input)
    (:maps agent-shell-mode-map :states (normal visual insert))
    ("C-c C-l" . #'comint-clear-buffer)
    ("C-c C-c" . #'agent-shell-interrupt)
