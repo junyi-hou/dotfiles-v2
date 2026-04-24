@@ -12,7 +12,9 @@
 
 (use-package agent-shell
   :ensure (:host github :repo "xenodium/agent-shell")
-  :hook (agent-shell-mode . corfu-mode)
+  :hook
+  (agent-shell-mode . corfu-mode)
+  (agent-shell-mode . gatsby>>agent-shell-move-to-premission-button-when-asking)
   :custom-face (header-line ((t :inherit default)))
   :custom
   (agent-shell-display-action
@@ -103,6 +105,16 @@ With prefix argument CONFIG, select a config from `gatsby>agent-shell-configs'."
      :new-session t
      :session-strategy 'prompt))
 
+  (defun gatsby>>agent-shell-move-to-permission-button (event)
+    (goto-char (point-max))
+    (text-property-search-backward 'agent-shell-permission-button t t))
+
+  (defun gatsby>>agent-shell-move-to-premission-button-when-asking ()
+    (agent-shell-subscribe-to
+     :shell-buffer (current-buffer)
+     :event 'permission-request
+     :on-event #'gatsby>>agent-shell-move-to-permission-button))
+
   (gatsby>defcommand gatsby>agent-shell-next-prompt-or-permission ()
     "Jump to the next permission button if there's a pending permission ask.
      Else go to next/prev prompt"
@@ -115,7 +127,6 @@ With prefix argument CONFIG, select a config from `gatsby>agent-shell-configs'."
             (call-interactively #'agent-shell-next-item))
         (call-interactively #'agent-shell-next-item))))
 
-  ;; TODO: move to permission button when there's pending permissions
   (gatsby>defcommand gatsby>agent-shell-prev-prompt-or-permission ()
     "Jump to the prev permission button if there's a pending permission ask.
      Else go to next/prev prompt"
