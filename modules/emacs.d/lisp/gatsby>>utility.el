@@ -195,7 +195,8 @@ should bind to `evil-mode-hook'"
 
 
 (defun gatsby>>run-process-with-callback (commands &optional buffer final-sentinel)
-  "Run COMMANDS sequentially. The FINAL-SENTINEL is attached to the last process."
+  "Run COMMANDS sequentially. The FINAL-SENTINEL is attached to the last process.
+Return the final process ran."
   (when commands
     (let* ((command (car commands))
            (rest (cdr commands))
@@ -203,7 +204,8 @@ should bind to `evil-mode-hook'"
       (if (null rest)
           ;; If this is the last command, attach the custom sentinel
           (when final-sentinel
-            (set-process-sentinel proc final-sentinel))
+            (set-process-sentinel proc final-sentinel)
+            proc)
 
         ;; Otherwise, use a sequence-manager sentinel to trigger the next step
         (set-process-sentinel
@@ -211,9 +213,10 @@ should bind to `evil-mode-hook'"
          (lambda (p event)
            (if (string= event "finished\n")
                (gatsby>>run-process-with-callback rest buffer final-sentinel)
-             (message "Sequence halted: %s failed with %s"
-                      (process-command p)
-                      event))))))))
+             (message "Process failed: `%s' failed with %s"
+                      (string-join (process-command p) " ")
+                      event))))
+        proc))))
 
 (gatsby>defcommand gatsby>update-emacs-package ()
   "Go into the elpaca repo of an installed package, do git pull and elpaca rebuild."
@@ -225,9 +228,15 @@ should bind to `evil-mode-hook'"
          (repo (elpaca<-repo-dir e))
          (branch (map-elt (elpaca<-recipe e) :branch)))
     (if (and repo (file-directory-p repo))
-        (let ((default-directory repo)
-              (pkg-id id)
-              (pkg-name package))
+        (let* ((default-directory repo)
+               (pkg-id id)
+               (pkg-name package)
+               (log-buffer (get-buffer-create (format "*elpaca-update-%s*" pkg-name))))
+
+          (with-current-buffer log-buffer
+            (let ((inhibit-read-only t))
+              (erase-buffer)))
+
           (message "Updating %s in %s..." pkg-name repo)
 
           (unless branch
@@ -237,16 +246,17 @@ should bind to `evil-mode-hook'"
                     "git remote show origin | grep \"HEAD branch\" | cut -d' ' -f5"))))
 
           (gatsby>>run-process-with-callback
-           `(("git" "checkout" ,branch) ("git" "pull"))
-           (format "*lepaca-update-%s" pkg-name)
+           `(("git" "diff-index" "--quiet" "HEAD" "--") ;; check if the repo is dirty
+             ("git" "checkout" ,branch) ("git" "pull"))
+           log-buffer
            (lambda (_proc event)
              (when (string-match-p "finished" event)
                (message "Git pull finished for %s. Rebuilding..." pkg-name)
                (elpaca-rebuild pkg-id)
                (elpaca-wait)
                (gatsby>>update-elpaca-lock-file)
-               (message "Elpaca update and lock file update finished for %s"
-                        pkg-name)))))
+               (message "Elpaca update and lock file update finished for %s" pkg-name)
+               (kill-buffer log-buffer)))))
       (error "Repository for %s not found" package))))
 
 (provide 'gatsby>>utility)

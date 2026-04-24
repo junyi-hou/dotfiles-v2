@@ -253,5 +253,131 @@
       (set-window-configuration initial-config)
       (kill-buffer test-buffer))))
 
+;; Tests for gatsby>update-emacs-package
+
+(defun gatsby-test--make-git-repo ()
+  "Create a temp git repo with an initial commit. Return its path."
+  (let ((dir (make-temp-file "gatsby-test-repo" t)))
+    (let ((default-directory dir))
+      (call-process "git" nil nil nil "init" "-b" "main")
+      (call-process "git" nil nil nil "config" "user.email" "test@test.com")
+      (call-process "git" nil nil nil "config" "user.name" "Test")
+      (with-temp-file (expand-file-name "README" dir)
+        (insert "initial"))
+      (call-process "git" nil nil nil "commit" "-am" "initial"))
+    dir))
+
+(defun gatsby-test--make-fake-elpaca (repo-dir recipe)
+  "Create a fake elpaca struct with REPO-DIR and RECIPE.
+Field positions match elpaca's cl-defstruct definition:
+  0:type 1:id 2:package 3:order 4:statuses 5:repo-dir 6:build-dir
+  7:mono-repo 8:main 9:files 10:build-steps 11:recipe ..."
+  (list 'elpaca
+        'test-pkg nil nil nil  ; id package order statuses
+        repo-dir               ; repo-dir (position 5)
+        nil nil nil nil nil    ; build-dir mono-repo main files build-steps
+        recipe                 ; recipe (position 11)
+        nil nil nil nil        ; blocking blockers dependencies dependents
+        0 nil t nil nil nil))  ; queue-id queue-time init process log builtp
+
+(ert-deftest gatsby>update-emacs-package--custom-branch ()
+  "When recipe has :branch, use it for git checkout."
+  (let* ((repo (make-temp-file "gatsby-pkg" t))
+         (fake-e (gatsby-test--make-fake-elpaca repo '(:branch "custom-branch")))
+         captured-commands)
+    (unwind-protect
+        (cl-letf (((symbol-function 'elpaca--queued) (lambda () `((test-pkg . ,fake-e))))
+                  ((symbol-function 'completing-read) (lambda (&rest _) "test-pkg"))
+                  ((symbol-function 'elpaca-get) (lambda (_) fake-e))
+                  ((symbol-function 'shell-command-to-string) (lambda (_) ""))
+                  ((symbol-function 'gatsby>>run-process-with-callback)
+                   (lambda (cmds &rest _) (setq captured-commands cmds))))
+          (gatsby>update-emacs-package)
+          (should (equal (cadr captured-commands) '("git" "checkout" "custom-branch")))
+          (should (equal (caddr captured-commands) '("git" "pull"))))
+      (delete-directory repo t))))
+
+(ert-deftest gatsby>update-emacs-package--no-branch-configured ()
+  "When recipe has no :branch, detect the default branch from git remote."
+  (let* ((repo (make-temp-file "gatsby-pkg" t))
+         (fake-e (gatsby-test--make-fake-elpaca repo nil))
+         captured-commands)
+    (unwind-protect
+        (cl-letf (((symbol-function 'elpaca--queued) (lambda () `((test-pkg . ,fake-e))))
+                  ((symbol-function 'completing-read) (lambda (&rest _) "test-pkg"))
+                  ((symbol-function 'elpaca-get) (lambda (_) fake-e))
+                  ((symbol-function 'shell-command-to-string)
+                   (lambda (cmd)
+                     (if (string-match-p "remote show" cmd) "main\n" "")))
+                  ((symbol-function 'gatsby>>run-process-with-callback)
+                   (lambda (cmds &rest _) (setq captured-commands cmds))))
+          (gatsby>update-emacs-package)
+          (should (equal (cadr captured-commands) '("git" "checkout" "main"))))
+      (delete-directory repo t))))
+
+(ert-deftest gatsby>update-emacs-package--different-branch ()
+  "When currently on a different branch, checkout to the configured locked branch."
+  (let ((repo (gatsby-test--make-git-repo))
+        captured-commands)
+    (unwind-protect
+        (progn
+          (let ((default-directory repo))
+            (call-process "git" nil nil nil "checkout" "-b" "other-branch"))
+          (let* ((fake-e (gatsby-test--make-fake-elpaca repo '(:branch "main"))))
+            (cl-letf (((symbol-function 'elpaca--queued) (lambda () `((test-pkg . ,fake-e))))
+                      ((symbol-function 'completing-read) (lambda (&rest _) "test-pkg"))
+                      ((symbol-function 'elpaca-get) (lambda (_) fake-e))
+                      ((symbol-function 'shell-command-to-string) (lambda (_) ""))
+                      ((symbol-function 'gatsby>>run-process-with-callback)
+                       (lambda (cmds &rest _) (setq captured-commands cmds))))
+              (gatsby>update-emacs-package)
+              (should (equal (cadr captured-commands) '("git" "checkout" "main"))))))
+      (delete-directory repo t))))
+
+(ert-deftest gatsby>update-emacs-package--detached-head ()
+  "When in detached HEAD with no configured branch, detect default branch from remote."
+  (let ((repo (gatsby-test--make-git-repo))
+        captured-commands)
+    (unwind-protect
+        (progn
+          (let* ((default-directory repo)
+                 (commit (string-trim
+                          (with-output-to-string
+                            (call-process "git" nil standard-output nil "rev-parse" "HEAD")))))
+            (call-process "git" nil nil nil "checkout" commit))
+          (let* ((fake-e (gatsby-test--make-fake-elpaca repo nil)))
+            (cl-letf (((symbol-function 'elpaca--queued) (lambda () `((test-pkg . ,fake-e))))
+                      ((symbol-function 'completing-read) (lambda (&rest _) "test-pkg"))
+                      ((symbol-function 'elpaca-get) (lambda (_) fake-e))
+                      ((symbol-function 'shell-command-to-string)
+                       (lambda (cmd)
+                         (if (string-match-p "remote show" cmd) "main\n" "")))
+                      ((symbol-function 'gatsby>>run-process-with-callback)
+                       (lambda (cmds &rest _) (setq captured-commands cmds))))
+              (gatsby>update-emacs-package)
+              (should (equal (cadr captured-commands) '("git" "checkout" "main"))))))
+      (delete-directory repo t))))
+
+(ert-deftest gatsby>update-emacs-package--uncommitted-changes ()
+  "When uncommitted changes conflict with the checkout target, git checkout
+fails, the sequence halts, and elpaca-rebuild is never called."
+  (let ((repo (gatsby-test--make-git-repo)))
+    (unwind-protect
+        (let ((default-directory repo))
+          ;; Create feature branch with different README content
+          (with-temp-file (expand-file-name "README" repo)
+            (insert "dirty content"))
+          (let* ((fake-e (gatsby-test--make-fake-elpaca repo '(:branch "main"))))
+            (cl-letf (((symbol-function 'elpaca--queued) (lambda () `((test-pkg . ,fake-e))))
+                      ((symbol-function 'completing-read) (lambda (&rest _) "test-pkg"))
+                      ((symbol-function 'elpaca-get) (lambda (_) fake-e))
+                      ((symbol-function 'elpaca-wait) #'ignore)
+                      ((symbol-function 'gatsby>>update-elpaca-lock-file) #'ignore))
+              ;; Wait while the process is still running
+              (let ((proc (gatsby>update-emacs-package)))
+                (while (accept-process-output proc 0.1))
+                (should-not (= 0 (process-exit-status proc)))))))
+      (delete-directory repo t))))
+
 (provide 'gatsby-utility-test)
 ;;; gatsby-utility-test.el ends here
