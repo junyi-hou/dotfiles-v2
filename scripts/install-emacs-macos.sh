@@ -39,3 +39,4 @@ make -j10 && make install
 # install emacs runnable
 mkdir -p "$HOME/.local/bin"
 ln -sf "/Applications/Emacs.app/Contents/MacOS/Emacs.sh" "$HOME/.local/bin/emacs"
+ln -sf "/Applications/Emacs.app/Contents/MacOS/bin/emacsclient" "$HOME/.local/bin/emacsclient"

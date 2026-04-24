@@ -3,13 +3,7 @@ if [ -f "$HOME/.zprofile.backup" ]; then
     source "$HOME/.zprofile.backup"
 fi
 
-# If install according to the README, this will work
-if [[ "$(uname)" == "Darwin" ]]; then
-    export EDITOR="/Applications/Emacs.app/Contents/MacOS/bin/emacsclient -r -a ''"
-else
-    # we are in Linux
-    export EDITOR="emacsclient -r -a ''"
-fi
+export EDITOR="emacsclient -r -a ''"
 
 # mac setting
 if [[ "$(uname)" == "Darwin" ]]; then
