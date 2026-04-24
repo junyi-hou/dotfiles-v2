@@ -67,11 +67,16 @@
       (compile command)))
 
   (gatsby>defcommand gatsby>jupyter-eval-region-or-cell (from-top)
+    "Evaluate the active region or the current cell.
+If the region is active, pass it to `jupyter-eval-string' and exit to
+normal state.  Otherwise evaluate from the previous cell separator (or
+`point-min' when FROM-TOP is non-nil) to the next cell separator (or
+`point-max' when none follows)."
     (if (region-active-p)
         (let ((b (region-beginning))
               (e (region-end)))
-          (jupyter-eval-string (buffer-substring-no-properties b e))
-          (evil-normal-state))
+          (prog1 (jupyter-eval-string (buffer-substring-no-properties b e))
+            (evil-normal-state)))
       (let* ((cell-regexp (format "^%s\\+\\(.\\)*\n" comment-start))
              (b
               (save-excursion
