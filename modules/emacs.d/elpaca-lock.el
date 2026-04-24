@@ -330,10 +330,6 @@
                           :source "elpaca-menu-lock-file" :protocol https :inherit t
                           :depth treeless :host github :ref
                           "92802fae9ebbc8c2e4c281c06dcdbd74b8bca80e"))
- (md-ts-mode :source "elpaca-menu-lock-file" :recipe
-             (:source "elpaca-menu-lock-file" :protocol https :inherit t :depth treeless
-                      :host github :repo "dnouri/md-ts-mode" :package "md-ts-mode" :ref
-                      "8644e1f5391d6915c386440807f2ff421a8d5c5b"))
  (msgpack :source "elpaca-menu-lock-file" :recipe
           (:package "msgpack" :fetcher github :repo "xuchunyang/msgpack.el" :files
                     ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"

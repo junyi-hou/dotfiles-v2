@@ -7,31 +7,34 @@
 
 (use-package markdown-mode
   :ensure (:host github :repo "jrblevin/markdown-mode")
-  :commands (markdown-insert-gfm-code-block markdown-insert-link))
-
-(use-package md-ts-mode
-  :ensure (:host github :repo "dnouri/md-ts-mode")
-  :mode ("\\.md\\'" . md-ts-mode-maybe)
   :hook
-  ;; (markdown-ts-mode . eglot-ensure)
-  (md-ts-mode . corfu-mode)
-  (md-ts-mode . display-line-numbers-mode)
-  :init
-  ;; treesitter
-  (gatsby>install-treesitter-grammar
-   'markdown "https://github.com/tree-sitter-grammars/tree-sitter-markdown"
-   "v0.4.1" "tree-sitter-markdown/src")
-  (gatsby>install-treesitter-grammar
-   'markdown-inline "https://github.com/tree-sitter-grammars/tree-sitter-markdown"
-   "v0.4.1" "tree-sitter-markdown-inline/src")
+  (markdown-mode . corfu-mode)
+  (markdown-mode . display-line-numbers-mode))
 
-  ;; lsp
-  ;; TODO: this breaks capf
-  ;; (with-eval-after-load 'eglot
-  ;;   (add-to-list 'eglot-server-programs '(markdown-ts-mode "markdown-oxide")))
-  :config
-  ;; this provides useful commands like `markdown-insert-link'
-  (require 'markdown-mode))
+;; FIXME: this cause issues in agent-shell folding/invisible text property
+;; (use-package md-ts-mode
+;;   :ensure (:host github :repo "dnouri/md-ts-mode")
+;;   :mode ("\\.md\\'" . md-ts-mode-maybe)
+;;   :hook
+;;   ;; (markdown-ts-mode . eglot-ensure)
+;;   (md-ts-mode . corfu-mode)
+;;   (md-ts-mode . display-line-numbers-mode)
+;;   :init
+;;   ;; treesitter
+;;   (gatsby>install-treesitter-grammar
+;;    'markdown "https://github.com/tree-sitter-grammars/tree-sitter-markdown"
+;;    "v0.4.1" "tree-sitter-markdown/src")
+;;   (gatsby>install-treesitter-grammar
+;;    'markdown-inline "https://github.com/tree-sitter-grammars/tree-sitter-markdown"
+;;    "v0.4.1" "tree-sitter-markdown-inline/src")
+
+;;   ;; lsp
+;;   ;; TODO: this breaks capf
+;;   ;; (with-eval-after-load 'eglot
+;;   ;;   (add-to-list 'eglot-server-programs '(markdown-ts-mode "markdown-oxide")))
+;;   :config
+;;   ;; this provides useful commands like `markdown-insert-link'
+;;   (require 'markdown-mode))
 
 (use-package typst-ts-mode
   :ensure (:host sourcehut :repo "meow_king/typst-ts-mode")
