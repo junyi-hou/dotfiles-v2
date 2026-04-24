@@ -21,8 +21,59 @@
   (agent-shell-session-strategy 'new)
   (agent-shell-preferred-agent-config 'claude-code)
   :config
-  (gatsby>defcommand gatsby>agent-shell-toggle (resume)
-    (let* ((project-root (and (project-current) (project-root (project-current))))
+
+  (defcustom gatsby>agent-shell-default-config (agent-shell--resolve-preferred-config)
+    "The default config"
+    :type 'alist
+    :group 'gatsby)
+
+  (defcustom gatsby>agent-shell-configs
+    `(("default" . ,gatsby>agent-shell-default-config)
+      ("local-agent" . gatsby>>agent-shell-make-config))
+    "List of agent-shell configs available for profile selection."
+    :type 'alist
+    :group 'gatsby)
+
+  (cl-defun gatsby>>agent-shell-make-config (&optional url)
+    (let ((url (or url (completing-read "ANTHROPIC_BASE_URL= " nil))))
+      (agent-shell-make-agent-config
+       :identifier 'claude-code
+       :mode-line-name "Claude"
+       :buffer-name "Claude"
+       :shell-prompt "Claude> "
+       :shell-prompt-regexp "Claude> "
+       :icon-name "claudecode.png"
+       :welcome-function #'agent-shell-anthropic--claude-code-welcome-message
+       :client-maker
+       (lambda (buffer)
+         (let* ((agent-shell-anthropic-claude-environment
+                 (agent-shell-make-environment-variables
+                  "ANTHROPIC_BASE_URL" url
+                  ;; "https://o9vqf53br3317w-11434.proxy.runpod.net"
+                  "ANTHROPIC_API_KEY" "" "ANTHROPIC_OAUTH_TOKEN" "ollama")))
+           (agent-shell-anthropic-make-claude-client :buffer buffer)))
+       :default-model-id #'ignore
+       :default-session-mode-id #'ignore
+       :install-instructions "Self hosting!")))
+
+  (defun gatsby>>agent-shell-select-config ()
+    (let ((cfg
+           (map-elt
+            gatsby>agent-shell-configs
+            (completing-read "Agent config: " (mapcar #'car gatsby>agent-shell-configs)
+                             nil t))))
+      (if (functionp cfg)
+          (funcall cfg)
+        cfg)))
+
+  (gatsby>defcommand gatsby>agent-shell-start-or-switch (config)
+    "Switch to existing agent shell for current project, or start a new one.
+With prefix argument CONFIG, select a config from `gatsby>agent-shell-configs'."
+    (let* ((cfg
+            (if config
+                (gatsby>>agent-shell-select-config)
+              gatsby>agent-shell-default-config))
+           (project-root (and (project-current) (project-root (project-current))))
            (current-client
             (thread-last
              (buffer-list) (seq-filter #'buffer-live-p)
@@ -34,22 +85,23 @@
               (lambda (b)
                 (with-current-buffer b
                   (file-equal-p default-directory project-root)))))))
-      (cond
-       (resume
-        (agent-shell--start
-         :no-focus nil
-         :config (agent-shell--resolve-preferred-config)
-         :new-session t
-         :session-strategy 'prompt))
-       ((not current-client)
-        (agent-shell--start
-         :no-focus nil
-         :config (agent-shell--resolve-preferred-config)
-         :new-session t))
-       (t
+      (if (not current-client)
+          (agent-shell--start :no-focus nil :config cfg :new-session t)
         (display-buffer current-client agent-shell-display-action)
         (switch-to-buffer-other-window current-client)
-        (evil-insert-state)))))
+        (evil-insert-state))))
+
+  (gatsby>defcommand gatsby>agent-shell-resume (config)
+    "Start a new agent shell session using prompt strategy.
+With prefix argument CONFIG, select a config from `gatsby>agent-shell-configs'."
+    (agent-shell--start
+     :no-focus nil
+     :config
+     (if config
+         (gatsby>>agent-shell-select-config)
+       gatsby>agent-shell-default-config)
+     :new-session t
+     :session-strategy 'prompt))
 
   (gatsby>defcommand gatsby>agent-shell-next-prompt-or-permission ()
     "Jump to the next permission button if there's a pending permission ask.
@@ -63,6 +115,7 @@
             (call-interactively #'agent-shell-next-item))
         (call-interactively #'agent-shell-next-item))))
 
+  ;; TODO: move to permission button when there's pending permissions
   (gatsby>defcommand gatsby>agent-shell-prev-prompt-or-permission ()
     "Jump to the prev permission button if there's a pending permission ask.
      Else go to next/prev prompt"
@@ -150,7 +203,8 @@ If COMMAND is not nil, use it instead of `claude'."
 
   :evil-bind
   ((:maps normal)
-   ("SPC a a" . #'gatsby>agent-shell-toggle)
+   ("SPC a a" . #'gatsby>agent-shell-start-or-switch)
+   ("SPC a r" . #'gatsby>agent-shell-resume)
    (:maps (visual normal))
    ("SPC a s" . #'agent-shell-send-file)
    (:maps agent-shell-mode-map :states insert)
