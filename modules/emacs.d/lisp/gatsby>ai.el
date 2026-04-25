@@ -12,9 +12,7 @@
 
 (use-package agent-shell
   :ensure (:host github :repo "xenodium/agent-shell")
-  :hook
-  (agent-shell-mode . corfu-mode)
-  (agent-shell-mode . gatsby>>agent-shell-move-to-premission-button-when-asking)
+  :hook (agent-shell-mode . corfu-mode)
   :custom-face (header-line ((t :inherit default)))
   :custom
   (agent-shell-display-action
@@ -105,28 +103,45 @@ With prefix argument CONFIG, select a config from `gatsby>agent-shell-configs'."
      :new-session t
      :session-strategy 'prompt))
 
-  (defun gatsby>>agent-shell-move-to-permission-button (event)
-    (goto-char (point-max))
-    (text-property-search-backward 'agent-shell-permission-button t t))
+  (defun gatsby>>agent-shell-pending-permission-p ()
+    (map-some
+     (lambda (_id data) (map-elt data :permission-request-id))
+     (map-elt (agent-shell--state) :tool-calls)))
 
-  (defun gatsby>>agent-shell-move-to-premission-button-when-asking ()
-    (agent-shell-subscribe-to
-     :shell-buffer (current-buffer)
-     :event 'permission-request
-     :on-event #'gatsby>>agent-shell-move-to-permission-button))
+  (defun gatsby>>agent-shell-activate-permission-button (char-str)
+    "Find and activate the most recent permission button whose navigatable char is CHAR-STR.
+Returns non-nil if a button was found and activated."
+    (save-excursion
+      (goto-char (point-max))
+      (catch 'found
+        (while t
+          (let ((match
+                 (text-property-search-backward 'agent-shell-permission-button t t)))
+            (unless match
+              (throw 'found nil))
+            (when (string= (string (char-after)) char-str)
+              (let* ((map (get-text-property (point) 'keymap))
+                     (action (and map (lookup-key map (kbd "RET")))))
+                (when action
+                  (call-interactively action)
+                  (throw 'found t)))))))))
 
-  (defun gatsby>>agent-shell-on-permission-button-p ()
-    (get-text-property (point) 'agent-shell-permission-button))
+  (gatsby>defcommand gatsby>agent-shell-permission-allow-once ()
+    "Allow once (y) if pending permission, else yank."
+    (if (gatsby>>agent-shell-pending-permission-p)
+        (gatsby>>agent-shell-activate-permission-button "y")
+      (call-interactively #'evil-yank)))
 
-  (gatsby>defcommand gatsby>agent-shell-scroll-down ()
-    "Scroll down half-page, unless point is on a permission button."
-    (unless (gatsby>>agent-shell-on-permission-button-p)
-      (call-interactively #'evil-scroll-down)))
+  (gatsby>defcommand gatsby>agent-shell-permission-allow-always ()
+    "Allow always (!) if pending permission, else no-op."
+    (when (gatsby>>agent-shell-pending-permission-p)
+      (gatsby>>agent-shell-activate-permission-button "!")))
 
-  (gatsby>defcommand gatsby>agent-shell-scroll-up ()
-    "Scroll up half-page, unless point is on a permission button."
-    (unless (gatsby>>agent-shell-on-permission-button-p)
-      (call-interactively #'evil-scroll-up)))
+  (gatsby>defcommand gatsby>agent-shell-permission-view-diff ()
+    "View diff (v) if pending permission with diff, else enter visual mode."
+    (unless (and (gatsby>>agent-shell-pending-permission-p)
+                 (gatsby>>agent-shell-activate-permission-button "v"))
+      (call-interactively #'evil-visual-char)))
 
   (gatsby>defcommand gatsby>agent-shell-next-prompt-or-permission ()
     "Jump to the next permission button if there's a pending permission ask.
@@ -239,10 +254,11 @@ If COMMAND is not nil, use it instead of `claude'."
    ("C-c C-l" . #'comint-clear-buffer)
    ("C-c C-c" . #'agent-shell-interrupt)
    (:maps agent-shell-mode-map :states normal)
+   ("y" . #'gatsby>agent-shell-permission-allow-once)
+   ("!" . #'gatsby>agent-shell-permission-allow-always)
+   ("v" . #'gatsby>agent-shell-permission-view-diff)
    (">" . #'gatsby>agent-shell-next-prompt-or-permission)
    ("<" . #'gatsby>agent-shell-prev-prompt-or-permission)
-   ("C-d" . #'gatsby>agent-shell-scroll-down)
-   ("C-u" . #'gatsby>agent-shell-scroll-up)
    ("z o" . #'agent-shell-ui-toggle-fragment-at-point)
    ("z c" . #'agent-shell-ui-toggle-fragment-at-point)
    ("m" . #'agent-shell-set-session-mode)
