@@ -45,7 +45,16 @@
 
 (use-package cape
   :ensure (:host github :repo "minad/cape")
-  :init (add-hook 'completion-at-point-functions #'cape-file))
+  :hook (corfu-mode . gatsby>>init-cape)
+  :init
+  (defun gatsby>>init-cape (&rest _)
+    (setq-local completion-at-point-functions
+                (let ((pos (seq-position completion-at-point-functions t)))
+                  (if pos
+                      (append (seq-take completion-at-point-functions pos)
+                              '(cape-file)
+                              (seq-drop completion-at-point-functions pos))
+                    (append completion-at-point-functions '(cape-file)))))))
 
 (use-package orderless
   :ensure (:host github :repo "oantolin/orderless")
@@ -157,9 +166,13 @@
 
   (defun gatsby>>init-tempel (&rest _)
     "Put tempel-expand next to `gatsby>insert-tab' in `gatsby>tab-commands'."
+
+    ;; this allow completing partially typed tempel shortcuts
+    (add-hook 'completion-at-point-functions #'gatsby>tempel-capf nil t)
+
+    ;; this allow expanding the tempel from fully expaned shortcuts
     (setq gatsby>tab-commands
-          '(gatsby>insert-tab gatsby>tempel-expand completion-at-point))
-    (add-hook 'completion-at-point-functions #'gatsby>tempel-capf nil t))
+          '(gatsby>insert-tab gatsby>tempel-expand completion-at-point)))
 
   (defun gatsby>tempel-capf ()
     "Auto complete the current templates"
