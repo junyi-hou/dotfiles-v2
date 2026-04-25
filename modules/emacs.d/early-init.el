@@ -102,9 +102,6 @@
 ;; Install use-package support
 (elpaca elpaca-use-package (elpaca-use-package-mode))
 
-;; for lsp-mode
-(setenv "LSP_USE_PLISTS" "true")
-
 ;; mode-line
 (defvar gatsby>right-mode-line '((:eval (gatsby>>mode-line-vc-info)) mode-name))
 

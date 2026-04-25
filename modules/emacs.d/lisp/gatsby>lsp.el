@@ -63,46 +63,6 @@
   (completion-styles '(orderless basic))
   (completion-category-overrides '((file (styles partial-completion)))))
 
-;; (use-package lsp-mode
-;;   :ensure (:host github :repo "emacs-lsp/lsp-mode")
-;;   :preface (setq lsp-use-plists t)
-;;   :custom-face
-;;   (lsp-face-highlight-read ((t :inherit underline)))
-;;   (lsp-face-highlight-write ((t :inherit underline)))
-;;   :custom
-;;   ;; increase data read from subrocess
-;;   (read-process-output-max (* 1024 1024))
-;;   ;; lsp functionalities
-;;   (lsp-diagnostics-provider :flymake)
-;;   (lsp-lens-enable nil)
-;;   (lsp-modeline-diagnostics-enable nil)
-;;   (lsp-modeline-workspace-status-enable nil)
-;;   (lsp-modeline-code-actions-enable nil)
-;;   (lsp-headerline-breadcrumb-enable nil)
-;;   (lsp-signature-render-documentation t)
-;;   (lsp-signature-auto-activate nil)
-;;   (lsp-enable-file-watchers nil)
-;;   (lsp-enable-snippet nil)
-;;   (lsp-auto-guess-root t)
-;;   :config
-;;   (gatsby>defcommand gatsby>lsp-toggle-format-before-save ()
-;;     "Toggle LSP format-before-save. With prefix arg ON, enable if positive."
-;;     (let ((enable (not (memq #'lsp-format-buffer before-save-hook))))
-;;       (if enable
-;;           (when (lsp-feature? "textDocument/formatting")
-;;             (add-hook 'before-save-hook #'lsp-format-buffer nil t)
-;;             (message "LSP format-before-save enabled"))
-;;         (remove-hook 'before-save-hook #'lsp-format-buffer t)
-;;         (message "LSP format-before-save disabled"))))
-;;   :hook (lsp-managed-mode . gatsby>lsp-toggle-format-before-save)
-;;   :evil-bind
-;;   ((:maps (normal visual))
-;;    ("SPC r a" . #'lsp-execute-code-action)
-;;    ("SPC r l" . #'xref-find-definitions)
-;;    ("SPC r L" . #'xref-find-references)
-;;    ("SPC r b" . #'xref-go-back)
-;;    ("SPC r f" . #'xref-go-forward)))
-
 (use-package eglot
   :ensure (:host github :repo "joaotavora/eglot" :inherit nil)
   :custom
