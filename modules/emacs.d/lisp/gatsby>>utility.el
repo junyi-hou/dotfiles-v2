@@ -13,6 +13,7 @@
 (declare-function elpaca--queued "elpaca")
 (declare-function elpaca-get "elpaca")
 (declare-function elpaca<-repo-dir "elpaca")
+(declare-function elpaca<-recipe "elpaca")
 (declare-function elpaca-rebuild "elpaca")
 (declare-function elpaca-wait "elpaca")
 
@@ -258,6 +259,36 @@ Return the final process ran."
                (message "Elpaca update and lock file update finished for %s" pkg-name)
                (kill-buffer log-buffer)))))
       (error "Repository for %s not found" package))))
+
+(gatsby>defcommand gatsby>sync-packages-to-lock-file ()
+  "Checkout every installed elpaca package to the ref recorded in the lock file."
+  (let* ((lock-file
+          (expand-file-name
+           (file-name-concat gatsby>dotfiles-repo-location
+                             "modules/emacs.d/elpaca-lock.el")))
+         (lock-entries
+          (with-temp-buffer
+            (insert-file-contents lock-file)
+            (read (current-buffer))))
+         (ref-table (make-hash-table :test #'eq)))
+    (pcase-dolist (`(,pkg . ,props) lock-entries)
+      (when-let ((ref (plist-get (plist-get props :recipe) :ref)))
+        (puthash pkg ref ref-table)))
+    (dolist (pkg (hash-table-keys ref-table))
+      (when-let* ((e (elpaca-get pkg))
+                  (repo (elpaca<-repo-dir e))
+                  ((file-directory-p repo))
+                  (ref (gethash pkg ref-table)))
+        (let ((default-directory repo))
+          (gatsby>>run-process-with-callback
+           `(("git" "checkout" ,ref))
+           nil
+           (lambda (_proc event)
+             (if (string-match-p "finished" event)
+                 (progn
+                   (message "Synced %s to %s, rebuilding..." pkg ref)
+                   (elpaca-rebuild pkg))
+               (message "Failed to sync %s: %s" pkg event)))))))))
 
 (provide 'gatsby>>utility)
 ;;; gatsby>>utility.el ends here

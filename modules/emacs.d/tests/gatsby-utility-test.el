@@ -379,5 +379,103 @@ fails, the sequence halts, and elpaca-rebuild is never called."
                 (should-not (= 0 (process-exit-status proc)))))))
       (delete-directory repo t))))
 
+;; Tests for gatsby>sync-packages-to-lock-file
+
+(defun gatsby-test--write-lock-file (dir entries)
+  "Write ENTRIES as elpaca lock file at DIR/modules/emacs.d/elpaca-lock.el."
+  (let* ((lock-dir (expand-file-name "modules/emacs.d" dir))
+         (lock-file (expand-file-name "elpaca-lock.el" lock-dir)))
+    (make-directory lock-dir t)
+    (with-temp-file lock-file
+      (let ((print-length nil) (print-level nil))
+        (pp entries (current-buffer))))))
+
+(ert-deftest gatsby>sync-packages-to-lock-file--calls-git-checkout-with-locked-refs ()
+  "Each package with :ref in lock file gets git checkout called with that ref."
+  (let* ((tmp (make-temp-file "gatsby-sync" t))
+         (repo-a (make-temp-file "repo-a" t))
+         (repo-b (make-temp-file "repo-b" t))
+         captured-calls
+         (gatsby>dotfiles-repo-location tmp))
+    (gatsby-test--write-lock-file
+     tmp
+     `((pkg-a :recipe (:ref "aaa111aaa111"))
+       (pkg-b :recipe (:ref "bbb222bbb222"))))
+    (unwind-protect
+        (cl-letf (((symbol-function 'elpaca-get)
+                   (lambda (pkg)
+                     (cond ((eq pkg 'pkg-a) (gatsby-test--make-fake-elpaca repo-a nil))
+                           ((eq pkg 'pkg-b) (gatsby-test--make-fake-elpaca repo-b nil)))))
+                  ((symbol-function 'gatsby>>run-process-with-callback)
+                   (lambda (cmds &rest _) (push cmds captured-calls))))
+          (gatsby>sync-packages-to-lock-file)
+          (should (= (length captured-calls) 2))
+          (should (cl-some (lambda (cmds)
+                             (equal (car cmds) '("git" "checkout" "aaa111aaa111")))
+                           captured-calls))
+          (should (cl-some (lambda (cmds)
+                             (equal (car cmds) '("git" "checkout" "bbb222bbb222")))
+                           captured-calls)))
+      (delete-directory tmp t)
+      (delete-directory repo-a t)
+      (delete-directory repo-b t))))
+
+(ert-deftest gatsby>sync-packages-to-lock-file--skips-entries-without-ref ()
+  "Packages whose lock entry has no :ref are not processed."
+  (let* ((tmp (make-temp-file "gatsby-sync" t))
+         (repo (make-temp-file "repo" t))
+         captured-calls
+         (gatsby>dotfiles-repo-location tmp))
+    (gatsby-test--write-lock-file
+     tmp
+     `((pkg-with-ref :recipe (:ref "abc123"))
+       (pkg-no-ref :recipe (:fetcher github))))
+    (unwind-protect
+        (cl-letf (((symbol-function 'elpaca-get)
+                   (lambda (pkg)
+                     (when (eq pkg 'pkg-with-ref)
+                       (gatsby-test--make-fake-elpaca repo nil))))
+                  ((symbol-function 'gatsby>>run-process-with-callback)
+                   (lambda (cmds &rest _) (push cmds captured-calls))))
+          (gatsby>sync-packages-to-lock-file)
+          (should (= (length captured-calls) 1))
+          (should (equal (caar captured-calls) '("git" "checkout" "abc123"))))
+      (delete-directory tmp t)
+      (delete-directory repo t))))
+
+(ert-deftest gatsby>sync-packages-to-lock-file--skips-uninstalled-packages ()
+  "Packages in lock file but not installed (elpaca-get returns nil) are skipped."
+  (let* ((tmp (make-temp-file "gatsby-sync" t))
+         captured-calls
+         (gatsby>dotfiles-repo-location tmp))
+    (gatsby-test--write-lock-file
+     tmp
+     `((not-installed :recipe (:ref "abc123"))))
+    (unwind-protect
+        (cl-letf (((symbol-function 'elpaca-get) (lambda (_) nil))
+                  ((symbol-function 'gatsby>>run-process-with-callback)
+                   (lambda (cmds &rest _) (push cmds captured-calls))))
+          (gatsby>sync-packages-to-lock-file)
+          (should (null captured-calls)))
+      (delete-directory tmp t))))
+
+(ert-deftest gatsby>sync-packages-to-lock-file--skips-missing-repo-dirs ()
+  "Packages whose repo directory does not exist on disk are skipped."
+  (let* ((tmp (make-temp-file "gatsby-sync" t))
+         captured-calls
+         (gatsby>dotfiles-repo-location tmp))
+    (gatsby-test--write-lock-file
+     tmp
+     `((pkg-missing :recipe (:ref "abc123"))))
+    (unwind-protect
+        (cl-letf (((symbol-function 'elpaca-get)
+                   (lambda (_)
+                     (gatsby-test--make-fake-elpaca "/tmp/gatsby-nonexistent-repo-xyz" nil)))
+                  ((symbol-function 'gatsby>>run-process-with-callback)
+                   (lambda (cmds &rest _) (push cmds captured-calls))))
+          (gatsby>sync-packages-to-lock-file)
+          (should (null captured-calls)))
+      (delete-directory tmp t))))
+
 (provide 'gatsby-utility-test)
 ;;; gatsby-utility-test.el ends here
