@@ -115,6 +115,19 @@ With prefix argument CONFIG, select a config from `gatsby>agent-shell-configs'."
      :event 'permission-request
      :on-event #'gatsby>>agent-shell-move-to-permission-button))
 
+  (defun gatsby>>agent-shell-on-permission-button-p ()
+    (get-text-property (point) 'agent-shell-permission-button))
+
+  (gatsby>defcommand gatsby>agent-shell-scroll-down ()
+    "Scroll down half-page, unless point is on a permission button."
+    (unless (gatsby>>agent-shell-on-permission-button-p)
+      (call-interactively #'evil-scroll-down)))
+
+  (gatsby>defcommand gatsby>agent-shell-scroll-up ()
+    "Scroll up half-page, unless point is on a permission button."
+    (unless (gatsby>>agent-shell-on-permission-button-p)
+      (call-interactively #'evil-scroll-up)))
+
   (gatsby>defcommand gatsby>agent-shell-next-prompt-or-permission ()
     "Jump to the next permission button if there's a pending permission ask.
      Else go to next/prev prompt"
@@ -228,6 +241,8 @@ If COMMAND is not nil, use it instead of `claude'."
    (:maps agent-shell-mode-map :states normal)
    (">" . #'gatsby>agent-shell-next-prompt-or-permission)
    ("<" . #'gatsby>agent-shell-prev-prompt-or-permission)
+   ("C-d" . #'gatsby>agent-shell-scroll-down)
+   ("C-u" . #'gatsby>agent-shell-scroll-up)
    ("z o" . #'agent-shell-ui-toggle-fragment-at-point)
    ("z c" . #'agent-shell-ui-toggle-fragment-at-point)
    ("m" . #'agent-shell-set-session-mode)
