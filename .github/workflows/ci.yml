@@ -23,13 +23,13 @@ jobs:
 
       - uses: purcell/setup-emacs@master
         with:
-          - version: ${{ matrix.emacs_version }}
+          version: ${{ matrix.emacs_version }}
 
       - name: Run Emacs tests
         working-directory: modules/emacs.d
         run: bash run-tests.sh
 
-  script-test:
+  unit-test:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -50,3 +50,96 @@ jobs:
 
       - name: Run tests
         run: make test
+
+  install-dotfiles-test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-26
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run dotfiles install script
+        run: python -m scripts.install
+
+      - name: Verify dotfiles installation
+        run: |
+          test -L "$HOME/dotfiles-v2"
+          test -L "$HOME/.gitconfig"
+
+  install-java-test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-26
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install direnv
+        run: |
+          curl -sfL https://direnv.net/install.sh | bash
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Load environment variables
+        run: |
+          direnv allow .
+          direnv export gha > "$GITHUB_ENV"
+
+      - name: Run Java install script
+        run: python -m scripts.install_java
+
+      - name: Verify Java installation
+        run: .tools/java/bin/java --version
+
+  build-emacs-macos:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build emacs-mac
+        run: make build
+
+      - name: Verify Emacs installation
+        run: |
+          $HOME/.local/bin/emacs --version
+          test -L "$HOME/.local/bin/emacsclient"
+
+  install-claude-test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-26
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install direnv
+        run: |
+          curl -sfL https://direnv.net/install.sh | bash
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Load environment variables
+        run: |
+          direnv allow .
+          direnv export gha > "$GITHUB_ENV"
+          # .envrc only activates 'dev'; also add 'all' for Node.js
+          echo "$PWD/.pixi/envs/all/bin" >> "$GITHUB_PATH"
+
+      - name: Run Claude install script
+        run: python -m scripts.install_claude
+
+      - name: Verify Claude installation
+        run: claude --version
