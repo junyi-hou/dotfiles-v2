@@ -25,6 +25,22 @@ jobs:
         with:
           version: ${{ matrix.emacs_version }}
 
+      - name: Install direnv
+        run: |
+          if command -v apt-get &>/dev/null; then
+            sudo apt-get install -y direnv
+          else
+            brew install direnv
+          fi
+
+      - name: Load environment variables
+        run: |
+          direnv allow .
+          direnv export gha > "$GITHUB_ENV"
+
+      - name: Run install script
+        run: make install
+
       - name: Run Emacs tests
         working-directory: modules/emacs.d
         run: bash run-tests.sh
@@ -88,8 +104,11 @@ jobs:
 
       - name: Install direnv
         run: |
-          curl -sfL https://direnv.net/install.sh | bash
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          if command -v apt-get &>/dev/null; then
+            sudo apt-get install -y direnv
+          else
+            brew install direnv
+          fi
 
       - name: Load environment variables
         run: |
@@ -97,7 +116,7 @@ jobs:
           direnv export gha > "$GITHUB_ENV"
 
       - name: Run Java install script
-        run: python -m scripts.install_java
+        run: make java
 
       - name: Verify Java installation
         run: .tools/java/bin/java --version
@@ -128,8 +147,11 @@ jobs:
 
       - name: Install direnv
         run: |
-          curl -sfL https://direnv.net/install.sh | bash
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          if command -v apt-get &>/dev/null; then
+            sudo apt-get install -y direnv
+          else
+            brew install direnv
+          fi
 
       - name: Load environment variables
         run: |
@@ -139,7 +161,7 @@ jobs:
           echo "$PWD/.pixi/envs/all/bin" >> "$GITHUB_PATH"
 
       - name: Run Claude install script
-        run: python -m scripts.install_claude
+        run: make claude
 
       - name: Verify Claude installation
         run: claude --version
