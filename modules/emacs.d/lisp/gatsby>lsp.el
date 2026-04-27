@@ -51,9 +51,10 @@
     (setq-local completion-at-point-functions
                 (let ((pos (seq-position completion-at-point-functions t)))
                   (if pos
-                      (append (seq-take completion-at-point-functions pos)
-                              '(cape-file)
-                              (seq-drop completion-at-point-functions pos))
+                      (append
+                       (seq-take completion-at-point-functions pos)
+                       '(cape-file)
+                       (seq-drop completion-at-point-functions pos))
                     (append completion-at-point-functions '(cape-file)))))))
 
 (use-package orderless
@@ -64,7 +65,7 @@
   (completion-category-overrides '((file (styles partial-completion)))))
 
 (use-package eglot
-  :ensure (:host github :repo "joaotavora/eglot" :inherit nil)
+  :ensure (:host github :repo "joaotavora/eglot")
   :custom
   ;; increase data read from subrocess
   (read-process-output-max (* 1024 1024))
