@@ -244,11 +244,17 @@ current candidate"
 (use-package lolipop
   :if (and (eq system-type 'darwin) (functionp #'window-cursor-info))
   :ensure
-  (:host
-   github
-   :repo "RadioNoiseE/lolipop"
-   :pre-build (("make clean") ("make"))
-   :files ("lolipop-mode.el" "lolipop-core.dylib"))
+  `(:host
+    github
+    :repo "junyi-hou/lolipop"
+    :branch "increase-animation-speed"
+    :pre-build
+    ,(pcase system-type
+       ('darwin '(("make clean") ("make"))))
+    :files
+    ,(pcase system-type
+       ('darwin '("lolipop.el" "lolipop-core.dylib"))
+       (_ '("lolipop.el"))))
   :hook (elpaca-after-init . lolipop-mode))
 
 (use-package page-break-lines

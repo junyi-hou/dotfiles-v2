@@ -86,8 +86,9 @@
                         :depth treeless :host github :ref
                         "ad9b1bd1c21e25f044a4d2c3db41734666b00d16"))
  (eglot :source "elpaca-menu-lock-file" :recipe
-        (:source nil :host github :repo "joaotavora/eglot" :inherit nil :package "eglot"
-                 :ref "ad7e201bb6d892895b07048f809fe336f6935109"))
+        (:source "elpaca-menu-lock-file" :host github :repo "joaotavora/eglot" :inherit
+                 t :package "eglot" :ref "ad7e201bb6d892895b07048f809fe336f6935109"
+                 :protocol https :depth treeless))
  (eglot-tempel :source "elpaca-menu-lock-file" :recipe
                (:package "eglot-tempel" :fetcher github :repo "fejfighter/eglot-tempel"
                          :files
@@ -279,10 +280,10 @@
                   "2a89ba755b0459914a44b1ffa793e57f759a5b85"))
  (lolipop :source "elpaca-menu-lock-file" :recipe
           (:source "elpaca-menu-lock-file" :protocol https :inherit t :depth treeless
-                   :host github :repo "RadioNoiseE/lolipop" :pre-build
-                   (("make clean") ("make")) :files
-                   ("lolipop-mode.el" "lolipop-core.dylib") :package "lolipop" :ref
-                   "d8653cd5f63798b0869f6bee36a8a05a53277ed7"))
+                   :host github :repo "junyi-hou/lolipop" :branch
+                   "increase-animation-speed" :pre-build (("make clean") ("make"))
+                   :files ("lolipop.el" "lolipop-core.dylib") :package "lolipop" :ref
+                   "2814689b6a327d6ff94606b853629708bbf866ef"))
  (magit :source "elpaca-menu-lock-file" :recipe
         (:package "magit" :fetcher github :repo "magit/magit" :files
                   ("lisp/magit*.el" "lisp/git-*.el" "docs/magit.texi" "docs/AUTHORS.md"
