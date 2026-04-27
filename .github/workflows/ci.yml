@@ -35,6 +35,11 @@ jobs:
       - name: Build emacs-mac
         run: make build
 
+      - name: Verify Emacs installation
+        run: |
+          $HOME/.local/bin/emacs --version
+          test -L "$HOME/.local/bin/emacsclient"
+
       - name: Run Emacs tests
         working-directory: modules/emacs.d
         run: bash run-tests.sh
@@ -114,19 +119,6 @@ jobs:
 
       - name: Verify Java installation
         run: .tools/java/bin/java --version
-
-  build-emacs-macos:
-    runs-on: macos-26
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build emacs-mac
-        run: make build
-
-      - name: Verify Emacs installation
-        run: |
-          $HOME/.local/bin/emacs --version
-          test -L "$HOME/.local/bin/emacsclient"
 
   install-claude-test:
     runs-on: ${{ matrix.os }}
