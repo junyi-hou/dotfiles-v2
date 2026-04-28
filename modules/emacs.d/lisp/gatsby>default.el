@@ -74,10 +74,10 @@ Otherwise splits vertically, returning bottom window."
   (add-hook 'kill-buffer-query-functions #'gatsby>>bury-not-kill)
 
   (defun gatsby>>newline (newline-fun &rest args)
-    "When calling `newline', check whether current line is a comment line.
-If so, automatically indent and insert `comment-start-skip' after calling `newline' for
-the first call.  Delete the auto-inserted comment for the second call.  Otherwise call
-`newline' as default."
+    "When calling `newline', check whether current line is a comment line.  If so,
+automatically indent and insert `comment-start-skip' after calling `newline' for
+the first call.  Delete the auto-inserted comment for the second call.
+Otherwise call `newline' as default."
     (let* ( ;; line - the current line as string
            (line
             (buffer-substring-no-properties
