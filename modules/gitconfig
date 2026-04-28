@@ -10,7 +10,6 @@ email = junyi.yi.hou@gmail.com
 
 [delta]
     side-by-side = true
-    line-numbers = true
 
 [merge]
     conflictStyle = zdiff3
