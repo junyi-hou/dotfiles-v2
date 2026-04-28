@@ -3,6 +3,13 @@
 (require 'ert)
 (require 'gatsby>>utility)
 
+;; Stubs for elpaca struct accessors — real ones come from cl-defstruct in elpaca.el
+;; (field offsets must match: 0=tag 1=id 2=package 3=order 4=statuses 5=repo-dir ... 11=recipe)
+(unless (fboundp 'elpaca<-repo-dir)
+  (defun elpaca<-repo-dir (e) (nth 5 e)))
+(unless (fboundp 'elpaca<-recipe)
+  (defun elpaca<-recipe (e) (nth 11 e)))
+
 ;; Macro expansion tests
 
 (ert-deftest gatsby>use-internal-package--basic-expansion ()
