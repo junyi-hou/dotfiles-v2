@@ -246,9 +246,15 @@ Return the final process ran."
                    (shell-command-to-string
                     "git remote show origin | grep \"HEAD branch\" | cut -d' ' -f5"))))
 
+          (let* ((current-branch
+                  (string-trim (shell-command-to-string "git rev-parse --abbrev-ref HEAD")))
+                 (commands
+                  `(("git" "diff-index" "--quiet" "HEAD" "--")
+                    ,@(unless (string= current-branch branch)
+                        `(("git" "checkout" ,branch)))
+                    ("git" "pull"))))
           (gatsby>>run-process-with-callback
-           `(("git" "diff-index" "--quiet" "HEAD" "--") ;; check if the repo is dirty
-             ("git" "checkout" ,branch) ("git" "pull"))
+           commands
            log-buffer
            (lambda (_proc event)
              (when (string-match-p "finished" event)
@@ -257,7 +263,7 @@ Return the final process ran."
                (elpaca-wait)
                (gatsby>>update-elpaca-lock-file)
                (message "Elpaca update and lock file update finished for %s" pkg-name)
-               (kill-buffer log-buffer)))))
+               (kill-buffer log-buffer))))))
       (error "Repository for %s not found" package))))
 
 (gatsby>defcommand gatsby>sync-packages-to-lock-file ()
