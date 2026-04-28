@@ -30,10 +30,15 @@ fi
 
 ./autogen.sh
 
+NATIVE_COMP_FLAG="--with-native-compilation"
+if [ "${CI:-}" = "true" ]; then
+    NATIVE_COMP_FLAG=""
+fi
+
 CFLAGS="-O2 -mcpu=native -I/opt/homebrew/Cellar/libgccjit/15.2.0/include" \
 LDFLAGS="-I/opt/homebrew/Cellar/libgccjit/15.2.0/include -L-I/opt/homebrew/Cellar/libgccjit/15.2.0/lib/gcc/15" \
 LIBRARY_PATH="/opt/homebrew/Cellar/gcc/15.2.0/lib/gcc/15" \
-./configure --with-native-compilation --with-tree-sitter --enable-mac-app=yes --enable-mac-self-contained
+./configure $NATIVE_COMP_FLAG --with-tree-sitter --enable-mac-app=yes --enable-mac-self-contained
 make -j10 && make install
 
 # install emacs runnable
