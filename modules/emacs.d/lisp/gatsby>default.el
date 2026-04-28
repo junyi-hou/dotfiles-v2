@@ -103,6 +103,7 @@ the first call.  Delete the auto-inserted comment for the second call.  Otherwis
 
 (gatsby>use-internal-package server
   :hook (elpaca-after-init . gatsby>>start-server)
+  :commands (server-running-p)
   :config
   (defun gatsby>>start-server (&rest _)
     (if (server-running-p)
