@@ -145,8 +145,7 @@ the first call.  Delete the auto-inserted comment for the second call.  Otherwis
   (advice-add #'compile :after #'gatsby>>make-compilation-buffer-name-unique)
   (advice-add #'compile :after #'gatsby>>compile-comint)
 
-  (defun gatsby>compilation-delete-buffer-if-process-finished ()
-    (interactive)
+  (gatsby>defcommand gatsby>compilation-delete-buffer-if-process-finished ()
     (if (get-buffer-process (current-buffer))
         (call-interactively #'delete-window)
       (call-interactively #'kill-buffer-and-window)))
