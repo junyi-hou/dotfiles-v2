@@ -302,11 +302,11 @@
                   :protocol https :inherit t :depth treeless :ref
                   "2a89ba755b0459914a44b1ffa793e57f759a5b85" :id llama :type git))
  (lolipop :source "elpaca-menu-lock-file" :recipe
-          (:source "elpaca-menu-lock-file" :protocol https :inherit t :depth treeless
-                   :host github :repo "junyi-hou/lolipop" :branch
-                   "increase-animation-speed" :pre-build (("make clean") ("make"))
-                   :files ("lolipop.el" "lolipop-core.dylib") :package "lolipop" :ref
-                   "2814689b6a327d6ff94606b853629708bbf866ef" :id lolipop :type git))
+          (:source "elpaca-menu-lock-file" :package "lolipop" :id lolipop :host github
+                   :repo "junyi-hou/lolipop" :branch "increase-animation-speed" :build
+                   (:before elpaca-build-link gatsby>>make-lolipop) :files
+                   (:defaults "lolipop-core.dylib") :type git :protocol https :inherit t
+                   :depth treeless :ref "2814689b6a327d6ff94606b853629708bbf866ef"))
  (magit :source "elpaca-menu-lock-file" :recipe
         (:package "magit" :fetcher github :repo "magit/magit" :files
                   ("lisp/magit*.el" "lisp/git-*.el" "docs/magit.texi" "docs/AUTHORS.md"
