@@ -247,23 +247,25 @@ Return the final process ran."
                     "git remote show origin | grep \"HEAD branch\" | cut -d' ' -f5"))))
 
           (let* ((current-branch
-                  (string-trim (shell-command-to-string "git rev-parse --abbrev-ref HEAD")))
+                  (string-trim
+                   (shell-command-to-string "git rev-parse --abbrev-ref HEAD")))
                  (commands
                   `(("git" "diff-index" "--quiet" "HEAD" "--")
-                    ,@(unless (string= current-branch branch)
-                        `(("git" "checkout" ,branch)))
+                    ,@
+                    (unless (string= current-branch branch)
+                      `(("git" "checkout" ,branch)))
                     ("git" "pull"))))
-          (gatsby>>run-process-with-callback
-           commands
-           log-buffer
-           (lambda (_proc event)
-             (when (string-match-p "finished" event)
-               (message "Git pull finished for %s. Rebuilding..." pkg-name)
-               (elpaca-rebuild pkg-id)
-               (elpaca-wait)
-               (gatsby>>update-elpaca-lock-file)
-               (message "Elpaca update and lock file update finished for %s" pkg-name)
-               (kill-buffer log-buffer))))))
+            (gatsby>>run-process-with-callback
+             commands
+             log-buffer
+             (lambda (_proc event)
+               (when (string-match-p "finished" event)
+                 (message "Git pull finished for %s. Rebuilding..." pkg-name)
+                 (elpaca-rebuild pkg-id)
+                 (elpaca-wait)
+                 (gatsby>>update-elpaca-lock-file)
+                 (message "Elpaca update and lock file update finished for %s" pkg-name)
+                 (kill-buffer log-buffer))))))
       (error "Repository for %s not found" package))))
 
 (gatsby>defcommand gatsby>sync-packages-to-lock-file ()
@@ -278,7 +280,7 @@ Return the final process ran."
             (read (current-buffer))))
          (ref-table (make-hash-table :test #'eq)))
     (pcase-dolist (`(,pkg . ,props) lock-entries)
-      (when-let ((ref (plist-get (plist-get props :recipe) :ref)))
+      (when-let* ((ref (plist-get (plist-get props :recipe) :ref)))
         (puthash pkg ref ref-table)))
     (dolist (pkg (hash-table-keys ref-table))
       (when-let* ((e (elpaca-get pkg))
@@ -286,15 +288,18 @@ Return the final process ran."
                   ((file-directory-p repo))
                   (ref (gethash pkg ref-table)))
         (let ((default-directory repo))
-          (gatsby>>run-process-with-callback
-           `(("git" "checkout" ,ref))
-           nil
-           (lambda (_proc event)
-             (if (string-match-p "finished" event)
-                 (progn
-                   (message "Synced %s to %s, rebuilding..." pkg ref)
-                   (elpaca-rebuild pkg))
-               (message "Failed to sync %s: %s" pkg event)))))))))
+          (gatsby>>run-process-with-callback `(("git" "checkout" ,ref))
+                                             nil
+                                             (lambda (_proc event)
+                                               (if (string-match-p "finished" event)
+                                                   (progn
+                                                     (message
+                                                      "Synced %s to %s, rebuilding..."
+                                                      pkg ref)
+                                                     (elpaca-rebuild pkg))
+                                                 (message "Failed to sync %s: %s"
+                                                          pkg
+                                                          event)))))))))
 
 (provide 'gatsby>>utility)
 ;;; gatsby>>utility.el ends here
