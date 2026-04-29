@@ -19,25 +19,69 @@
       (let ((result (gatsby>split-window-sensibly)))
         (should (equal result 'split-result))))))
 
-(ert-deftest gatsby>>compilation-sentinel--non-zero-exit-calls-display-buffer ()
-  "Test that display-buffer is called on non-zero exit status."
-  (let ((display-buffer-called nil))
-    (cl-letf (((symbol-function 'display-buffer) (lambda (&rest _) (setq display-buffer-called t))))
-      (let ((mock-process (make-process :name "test" :buffer "*test*" :command '("true"))))
-        (cl-letf (((symbol-function 'process-exit-status) (lambda (_) 1))
-                  ((symbol-function 'process-buffer) (lambda (_) (get-buffer "*test*"))))
-          (gatsby>>compilation-sentinel mock-process nil)
-          (should display-buffer-called))))))
+(defun gatsby>>test--wait-compilation (buf)
+  "Block until the compilation process in BUF has exited."
+  (when-let ((proc (get-buffer-process buf)))
+    (while (process-live-p proc)
+      (accept-process-output proc 0.1))))
 
-(ert-deftest gatsby>>compilation-sentinel--zero-exit-no-display ()
-  "Test that display-buffer is not called on zero exit status."
-  (let ((display-buffer-called nil))
-    (cl-letf (((symbol-function 'display-buffer) (lambda (&rest _) (setq display-buffer-called t))))
-      (let ((mock-process (make-process :name "test" :buffer "*test*" :command '("true"))))
-        (cl-letf (((symbol-function 'process-exit-status) (lambda (_) 0))
-                  ((symbol-function 'process-buffer) (lambda (_) (get-buffer "*test*"))))
-          (gatsby>>compilation-sentinel mock-process nil)
-          (should-not display-buffer-called))))))
+(ert-deftest gatsby>>compilation-start-no-popup--non-comint-no-window ()
+  "Non-comint compilation does not display the buffer in any window."
+  (let ((buf (compile "sleep 1")))
+    (unwind-protect
+        (should-not (get-buffer-window buf))
+      (cl-letf (((symbol-function #'y-or-n-p) (lambda (&rest _) t)))
+        (ignore-errors (kill-process (get-buffer-process buf)))
+        (when (buffer-live-p buf) (kill-buffer buf))))))
+
+(ert-deftest gatsby>>compilation-start-no-popup--comint-creates-window ()
+  "Comint compilation creates a new window showing the buffer."
+  (let ((windows-before (length (window-list))))
+    (compile "true" t)
+    (unwind-protect
+        (should (> (length (window-list)) windows-before))
+      (delete-other-windows))))
+
+(ert-deftest gatsby>>compilation-sentinel--zero-exit-kills-buffer ()
+  "Successful compile (exit 0) kills the compilation buffer."
+  (let ((buf (compile "true")))
+    (gatsby>>test--wait-compilation buf)
+    (should-not (buffer-live-p buf))))
+
+(ert-deftest gatsby>>compilation-sentinel--nonzero-exit-shows-buffer ()
+  "Failed compile (exit > 0) keeps the buffer alive."
+  (let ((buf (compile "false")))
+    (gatsby>>test--wait-compilation buf)
+    (unwind-protect
+        (should (buffer-live-p buf))
+      (when (buffer-live-p buf) (kill-buffer buf)))))
+
+(ert-deftest gatsby>compilation-delete-buffer-if-process-finished--running-process ()
+  "Buffer with a running process: delete-window is called."
+  (let ((called nil)
+        (buf (compile "sleep 5")))
+    (unwind-protect
+        (with-current-buffer buf
+          (cl-letf (((symbol-function 'call-interactively)
+                     (lambda (fn &rest _) (setq called fn))))
+            (gatsby>compilation-delete-buffer-if-process-finished))
+          (should (eq called #'delete-window)))
+      (cl-letf (((symbol-function #'y-or-n-p) (lambda (&rest _) t)))
+        (ignore-errors (kill-process (get-buffer-process buf)))
+        (when (buffer-live-p buf) (kill-buffer buf))))))
+
+(ert-deftest gatsby>compilation-delete-buffer-if-process-finished--finished-process ()
+  "Buffer whose process has finished: kill-buffer-and-window is called."
+  (let ((called nil)
+        (buf (compile "false")))
+    (gatsby>>test--wait-compilation buf)
+    (unwind-protect
+        (with-current-buffer buf
+          (cl-letf (((symbol-function 'call-interactively)
+                     (lambda (fn &rest _) (setq called fn))))
+            (gatsby>compilation-delete-buffer-if-process-finished))
+          (should (eq called #'kill-buffer-and-window)))
+      (when (buffer-live-p buf) (kill-buffer buf)))))
 
 (ert-deftest gatsby>>newline--non-comment-line ()
   "Non-comment line: call newline-fun without inserting extra text."

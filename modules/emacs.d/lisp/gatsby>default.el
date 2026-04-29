@@ -135,33 +135,45 @@ Otherwise call `newline' as default."
                      (seq-find
                       (lambda (b) (equal (buffer-name b) name)) (buffer-list))))
           (kill-buffer old-buffer))
-        (rename-buffer name))))
-
-  (defun gatsby>>compile-comint (cmd &optional comint)
-    "Put point at the end and switch to normal state."
-    (goto-char (point-max))
-    (evil-normal-state))
+        (rename-buffer (format "*%s*" name)))))
 
   (advice-add #'compile :after #'gatsby>>make-compilation-buffer-name-unique)
-  (advice-add #'compile :after #'gatsby>>compile-comint)
 
   (gatsby>defcommand gatsby>compilation-delete-buffer-if-process-finished ()
+    "Delete window if a process is running, otherwise kill buffer and window."
     (if (get-buffer-process (current-buffer))
         (call-interactively #'delete-window)
       (call-interactively #'kill-buffer-and-window)))
 
   (defun gatsby>>compilation-start-no-popup (fun &rest args)
-    (cl-letf (((symbol-function #'display-buffer) #'ignore))
-      (apply fun args)))
+    "Advice for `compilation-start' to suppress popup for non-comint compilations.
+Comint-mode compilations are shown in a new window; all others run silently."
+    (pcase args
+      ;; show compilation buffer if comint mode
+      (`(,_ t . ,_)
+       (gatsby>switch-to-buffer-new-window (apply fun args))
+       (goto-char (point-max)))
+      (_
+       (cl-letf (((symbol-function #'display-buffer) #'ignore))
+         (apply fun args)))))
 
   (advice-add #'compilation-start :around #'gatsby>>compilation-start-no-popup)
 
-  (defun gatsby>>compilation-sentinel (proc _)
-    "Pop the compilation buffer if the process errored out"
-    (unless (= (process-exit-status proc) 0)
-      (display-buffer (process-buffer proc) '(nil (allow-no-window . t)))))
+  (defun gatsby>>compilation-sentinel (orig-fn &rest args)
+    "Advice for `compilation-sentinel' to manage buffer visibility on process exit.
+Failed compilations pop up; successful ones are killed."
+    (pcase-let* ((`(,proc ,msg) args)
+                 (exit-status (process-exit-status proc))
+                 (buf (process-buffer proc)))
+      (apply orig-fn args)
+      ;; when we manually killing a compile buffer, buf will become #<killed-buffer> and
+      ;; pop-to-buffer/kill-buffer is irrelevant.
+      (when (buffer-live-p buf)
+        (if (> exit-status 0)
+            (pop-to-buffer buf)
+          (kill-buffer buf)))))
 
-  (advice-add #'compilation-sentinel :before #'gatsby>>compilation-sentinel)
+  (advice-add #'compilation-sentinel :around #'gatsby>>compilation-sentinel)
 
   :evil-bind
   ((:maps compilation-shell-minor-mode-map :states normal)
