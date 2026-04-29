@@ -16,7 +16,10 @@
   (evil-want-C-u-scroll t)
   (evil-want-C-u-delete t)
   (evil-want-C-w-delete t)
-  :hook (elpaca-after-init . evil-mode)
+  (evil-insert-state-message nil)
+  :hook
+  (elpaca-after-init . evil-mode)
+  (minibuffer-setup . evil-insert-state)
   :config
 
   ;; Remove evil's default SPC→evil-forward-char from motion state so all
