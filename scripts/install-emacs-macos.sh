@@ -11,9 +11,9 @@ brew install gcc pkgconf texinfo autoconf libgccjit librsvg
 brew install tree-sitter@0.25
 brew link --overwrite tree-sitter@0.25
 
-git clone -b emacs-mac-30_1_exp https://github.com/jdtsmith/emacs-mac.git
+git clone -b emacs-mac-gnu_master_exp https://github.com/jdtsmith/emacs-mac.git
 cd emacs-mac
-git checkout 26c1548f5969564a185967c27ad2353a1f1093d5
+git checkout df4e43d51c36275c4d6c133b44e7789d08d7de59
 
 # Apply patches if they exist
 if [ -d "../patches" ]; then
