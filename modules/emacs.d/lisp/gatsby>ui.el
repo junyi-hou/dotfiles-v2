@@ -242,19 +242,21 @@ current candidate"
   :hook (elpaca-after-init . marginalia-mode))
 
 (use-package lolipop
+  :preface
+  (defun gatsby>>make-lolipop (e)
+    (elpaca--signal e "Building" 'building)
+    (let* ((default-directory (elpaca<-source-dir e)))
+      (call-process "make")
+      (elpaca--continue-build e)))
+
   :if (and (eq system-type 'darwin) (functionp #'window-cursor-info))
   :ensure
-  `(:host
-    github
-    :repo "junyi-hou/lolipop"
-    :branch "increase-animation-speed"
-    :pre-build
-    ,(pcase system-type
-       ('darwin '(("make clean") ("make"))))
-    :files
-    ,(pcase system-type
-       ('darwin '("lolipop.el" "lolipop-core.dylib"))
-       (_ '("lolipop.el"))))
+  (:host
+   github
+   :repo "junyi-hou/lolipop"
+   :branch "increase-animation-speed"
+   :build (:before elpaca-build-link gatsby>>make-lolipop)
+   :files (:defaults "lolipop-core.dylib"))
   :hook (elpaca-after-init . lolipop-mode))
 
 (use-package page-break-lines
