@@ -9,10 +9,11 @@
 (gatsby>use-internal-package project
   :custom (vc-follow-symlinks t)
   :config
+
   ;; Create a new project type whose roots are defined in `gatsby>project-list'.
   (defvar gatsby>project-list '()
-
     "List of project root directories for custom project detection.")
+
   (cl-defstruct gatsby>project
     root)
 
@@ -31,52 +32,41 @@
                (make-gatsby>project :root expanded-project))))
          gatsby>project-list))))
 
-  (add-hook 'project-find-functions #'gatsby>project-try -10))
+  (add-hook 'project-find-functions #'gatsby>project-try -10)
 
-(use-package projtree
-  :ensure (:host github :repo "petergardfjall/emacs-projtree")
-  :custom-face (button ((t (:inherit default))))
-  :custom
-  (projtree-show-git-status nil)
-  (projtree-profiling-enabled nil)
-  :config
-  ;; don't use project-known-project-list to identify the root
-  (defun gatsby>>projtree-root (buffer)
-    "Return the root of the project in BUFFER using `project-root'."
-    (when (buffer-live-p buffer)
-      (with-current-buffer buffer
-        (let* ((buf-file (buffer-file-name buffer))
-               ;; Note: for a non-file buffer (like `*scratch*') we consider its
-               ;; project tree root to be default-directory.
-               (buffer-dir (file-name-directory (or buf-file default-directory)))
-               (project (project-current nil buffer-dir)))
-          (if project
-              (project-root project)
-            nil)))))
+  ;; run tests
+  (defvar-local gatsby>project-tests-command nil
+    "Shell command string to run all tests in the current project.
+Set this in .dir-locals.el, e.g. (\"clj\" \"-T:build\" \"test\").")
+  (put 'gatsby>project-tests-command 'safe-local-variable #'listp)
 
-  (advice-add #'projtree--project-root :override #'gatsby>>projtree-root)
+  (defvar-local gatsby>get-individual-test-function nil
+    "Function called interactively to select and return a command for a single test.
+The function takes no arguments, prompts the user for a test to run, and returns
+a list of strings suitable for passing to `compile', e.g. (\"clj\" \"-M:test\" \"-n\" \"my.ns\").")
+  (put 'gatsby>get-individual-test-function 'safe-local-variable #'listp)
 
-  (gatsby>defcommand gatsby>projtree-open-in-new-window ()
-    "Open the file at `point' in the projtree.
-If the prefix argument NEW-WINDOW is non nil, force to open it in a new window."
-    (let* ((pos (point))
-           (btn (button-at pos))
-           (path (get-text-property pos 'tabulated-list-id))
-           (inhibit-read-only t))
-      (button-put
-       btn 'action
-       (lambda (_)
-         (with-selected-window (get-largest-window nil nil t)
-           (gatsby>switch-to-buffer-new-window (find-file-noselect path)))))
-      (button-activate pos)))
+  (gatsby>defcommand gatsby>run-test (test-file)
+    "Run project tests using `gatsby>project-tests-command'.
+With a prefix argument TEST-FILE, call `gatsby>get-individual-test-function' to
+interactively select a single test to run instead."
+    (let ((default-directory
+           (or (and (project-current) (project-root (project-current)))
+               default-directory))
+          (cmd gatsby>project-tests-command))
+      (unless cmd
+        (user-error
+         "Do not know now to run this for this project, set `gatsby>project-tests-command' first"))
 
-  :evil-bind
-  ((:maps normal)
-   ("SPC o d" . #'projtree-open)
-   (:maps projtree-buffer-map)
-   ("M-RET" . #'gatsby>projtree-open-in-new-window)
-   ("z o" . #'push-button)
-   ("z c" . #'push-button)))
+      (when (and test-file (functionp gatsby>get-individual-test-function))
+        (setq cmd (funcall gatsby>get-individual-test-function)))
+
+      (message "running tests...")
+      (compile (if (listp cmd)
+                   (mapconcat #'shell-quote-argument cmd " ")
+                 cmd))))
+
+  :evil-bind ((:maps normal) ("SPC o p" . #'project-find-file) ("SPC r t" . #'gatsby>run-test)))
 
 (use-package envrc
   :ensure (:host github :repo "purcell/envrc")

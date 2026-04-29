@@ -26,30 +26,29 @@
   (defun gatsby>>clojure-setup-local-var ()
     (setq-local gatsby>comint-command "clj")
     (setq-local comment-start ";;")
-    (setq-local tab-width 2))
+    (setq-local tab-width 2)
+    (setq-local gatsby>project-tests-command '("clj" "-T:build" "test"))
+    (setq-local gatsby>get-individual-test-function #'gatsby>>clojure-list-tests))
 
   :config
-  (gatsby>defcommand gatsby>clojure-run-test (all)
-    (save-excursion
-      (let ((default-directory
-             (or (and (project-current) (project-root (project-current)))
-                 default-directory)))
-        (if all
-            (progn
-              (message "running tests...")
-              (compile "clj -T:build test"))
-          (let ((test-to-run
-                 (thread-last
-                  (completing-read
-                   "Run test: " (directory-files-recursively "test" ".+_test\\.clj"))
-                  (replace-regexp-in-string "\\.clj$" "")
-                  (replace-regexp-in-string "^test/" "")
-                  (replace-regexp-in-string "/" ".")
-                  (replace-regexp-in-string "_" "-"))))
-            (message "running tests...")
-            (compile
-             (concat "clj -M:test -m cognitect.test-runner -n " test-to-run)))))))
-  :evil-bind ((:maps clojure-ts-mode-map :states normal) ("SPC r t" . #'gatsby>clojure-run-test)))
+  (defun gatsby>>clojure-list-tests ()
+    (let* ((default-directory
+            (or (and (project-current) (project-root (project-current)))
+                default-directory))
+           (list-of-ns
+            (mapcar
+             (lambda (file)
+               (let ((ns
+                      (thread-last
+                       file
+                       (replace-regexp-in-string "\\.clj$" "")
+                       (replace-regexp-in-string "^test/" "")
+                       (replace-regexp-in-string "/" ".")
+                       (replace-regexp-in-string "_" "-"))))
+                 ns))
+             (directory-files-recursively "test" ".+_test\\.clj")))
+           (ns (completing-read "Run test: " list-of-ns)))
+      `("clj" "-M:test" "-m" "cognitech.test-runner" "-n" ,ns))))
 
 ;; TODO: use this or cider for better completion, etc to have better completion/doc supports
 ;; (use-package inf-clojure

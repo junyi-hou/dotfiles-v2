@@ -124,5 +124,32 @@ Binds `fixture-template-dir' (the selected template) and `fixture-dest-dir'."
           (gatsby>envrc-init-from-template nil)))
       (should (string= allow-dir fixture-dest-dir)))))
 
+(ert-deftest gatsby>run-test--errors-when-no-command ()
+  "Raise user-error when `gatsby>project-tests-command' is not set."
+  (let ((gatsby>project-tests-command nil))
+    (should-error (gatsby>run-test nil) :type 'user-error)))
+
+(ert-deftest gatsby>run-test--compiles-command-without-prefix ()
+  "Call `compile' with `gatsby>project-tests-command' when no prefix arg."
+  (let ((gatsby>project-tests-command '("make" "test"))
+        (gatsby>get-individual-test-function nil)
+        (compiled nil))
+    (cl-letf (((symbol-function 'compile) (lambda (cmd) (setq compiled cmd)))
+              ((symbol-function 'message) #'ignore)
+              ((symbol-function 'project-current) (lambda (&rest _) nil)))
+      (gatsby>run-test nil))
+    (should (equal compiled "make test"))))
+
+(ert-deftest gatsby>run-test--uses-individual-test-function-with-prefix ()
+  "Call `gatsby>get-individual-test-function' and compile its result when prefix arg is given."
+  (let ((gatsby>project-tests-command '("make" "test"))
+        (gatsby>get-individual-test-function (lambda () '("make" "test:one")))
+        (compiled nil))
+    (cl-letf (((symbol-function 'compile) (lambda (cmd) (setq compiled cmd)))
+              ((symbol-function 'message) #'ignore)
+              ((symbol-function 'project-current) (lambda (&rest _) nil)))
+      (gatsby>run-test '(4)))
+    (should (equal compiled (format "make %s"(shell-quote-argument "test:one"))))))
+
 (provide 'gatsby-project-management-test)
 ;;; gatsby-project-management-test.el ends here
