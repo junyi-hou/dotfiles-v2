@@ -10,10 +10,13 @@
   :ensure (:host github :repo "junyi-hou/agent-shell-tramp")
   :config (agent-shell-tramp-mode 1))
 
+(defun gatsby>>agent-shell-remap-header-line ()
+  (face-remap-add-relative 'header-line :inherit 'default))
+
 (use-package agent-shell
   :ensure (:host github :repo "xenodium/agent-shell")
-  :hook (agent-shell-mode . corfu-mode)
-  :custom-face (header-line ((t :inherit default)))
+  :hook ((agent-shell-mode . corfu-mode)
+         (agent-shell-mode . gatsby>>agent-shell-remap-header-line))
   :custom
   (agent-shell-display-action
    '(display-buffer-in-side-window (side . right) (window-width . 0.33) (slot . 0)))
