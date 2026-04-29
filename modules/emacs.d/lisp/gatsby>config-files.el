@@ -3,6 +3,7 @@
 ;;; Commentary:
 
 ;;; Code:
+(require 'gatsby>>utility)
 
 (gatsby>use-internal-package yaml-ts-mode
   :mode ("\\.ya?ml\\'" . yaml-ts-mode)
@@ -30,15 +31,16 @@
 (gatsby>use-internal-package json-ts-mode
   :mode ("\\.json\\'" . json-ts-mode)
   :init
-  (defun gatsby>>json-add-formatting-hook ()
-    (add-hook 'before-save-hook #'json-pretty-print-buffer nil t))
-
   (gatsby>install-treesitter-grammar
    'json "https://github.com/tree-sitter/tree-sitter-json"
    "v0.24.8")
   :hook
   (json-ts-mode . gatsby>>json-add-formatting-hook)
-  (json-ts-mode . display-line-numbers-mode))
+  (json-ts-mode . display-line-numbers-mode)
+  :commands (json-pretty-print-buffer)
+  :config
+  (defun gatsby>>json-add-formatting-hook ()
+    (add-hook 'before-save-hook #'json-pretty-print-buffer nil t)))
 
 (gatsby>use-internal-package toml-ts-mode
   :mode ("\\.toml\\'" . toml-ts-mode)
