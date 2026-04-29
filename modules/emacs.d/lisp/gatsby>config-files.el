@@ -40,14 +40,6 @@
   (json-ts-mode . gatsby>>json-add-formatting-hook)
   (json-ts-mode . display-line-numbers-mode))
 
-;; protofub-ts-mode upstream is down as of 2025-10-13
-;; (use-package protobuf-ts-mode
-;;   :ensure (:host github :repo "emacsattic/protobuf-ts")
-;;   :mode ("\\.proto\\'" . protobuf-ts-mode)
-;;   :init
-;;   ;; use the treywood fork of the protobuf syntex
-;;  (gatsby>install-treesitter-grammar 'proto "https://github.com/mitchellh/tree-sitter-proto"))
-
 (gatsby>use-internal-package toml-ts-mode
   :mode ("\\.toml\\'" . toml-ts-mode)
   :init

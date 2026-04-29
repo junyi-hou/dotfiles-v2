@@ -384,10 +384,6 @@
                                 "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
                      :source "elpaca-menu-lock-file" :protocol https :inherit t :depth
                      treeless :ref "d93828bf6c36383c365bd564ad3bab5a4403804c"))
- (projtree :source "elpaca-menu-lock-file" :recipe
-           (:source "elpaca-menu-lock-file" :protocol https :inherit t :depth treeless
-                    :host github :repo "petergardfjall/emacs-projtree" :package
-                    "projtree" :ref "d25fd871ad1e627c6d5c878bf9964cc38e365f2f"))
  (s :source "elpaca-menu-lock-file" :recipe
     (:package "s" :fetcher github :repo "magnars/s.el" :files
               ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"
