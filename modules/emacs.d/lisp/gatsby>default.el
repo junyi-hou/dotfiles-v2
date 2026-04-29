@@ -121,6 +121,7 @@ Otherwise call `newline' as default."
   (require 'ansi-color)
   (defun gatsby>>colorize-compilation-buffer ()
     (ansi-color-apply-on-region compilation-filter-start (point-max)))
+  :commands (define-compilation-mode)
 
   :hook (compilation-filter . gatsby>>colorize-compilation-buffer)
 
