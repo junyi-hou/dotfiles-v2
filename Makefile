@@ -9,8 +9,11 @@ uninstall:
 update-secret:
 	@python -m scripts.install -m passage
 
-test:
+test-scripts:
 	@pytest ./test_scripts
+
+test-emacs:
+	@bash ./modules/emacs.d/run-tests.sh
 
 build:
 	@bash ./scripts/install-emacs-macos.sh

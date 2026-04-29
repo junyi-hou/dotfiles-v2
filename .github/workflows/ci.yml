@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  emacs-test:
+  emacs-integration-test:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -14,7 +14,7 @@ jobs:
         os:
           - macos-26
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install direnv
         run: |
@@ -41,10 +41,9 @@ jobs:
           test -L "$HOME/.local/bin/emacsclient"
 
       - name: Run Emacs tests
-        working-directory: modules/emacs.d
-        run: bash run-tests.sh
+        run: make test-emacs
 
-  unit-test:
+  scripts-unit-test:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -53,7 +52,7 @@ jobs:
           - ubuntu-latest
           - macos-26
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -64,9 +63,9 @@ jobs:
         run: pip install pytest
 
       - name: Run tests
-        run: make test
+        run: make test-scripts
 
-  install-dotfiles-test:
+  install-dotfiles-integration-test:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -75,7 +74,7 @@ jobs:
           - ubuntu-latest
           - macos-26
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -90,7 +89,7 @@ jobs:
           test -L "$HOME/dotfiles-v2"
           test -L "$HOME/.gitconfig"
 
-  install-java-test:
+  install-java-integration-test:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -99,7 +98,7 @@ jobs:
           - ubuntu-latest
           - macos-26
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install direnv
         run: |
@@ -120,7 +119,7 @@ jobs:
       - name: Verify Java installation
         run: .tools/java/bin/java --version
 
-  install-claude-test:
+  install-claude-integration-test:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -129,7 +128,7 @@ jobs:
           - ubuntu-latest
           - macos-26
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install direnv
         run: |
