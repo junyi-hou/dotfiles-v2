@@ -29,9 +29,9 @@
    ("SPC q" . #'kill-buffer-and-window)
    ("SPC e l" . #'eval-last-sexp)
    (:maps (motion normal visual))
-   ("SPC h" . nil)
    ("SPC h f" . #'helpful-callable)
    ("SPC h k" . #'helpful-key)
+   ("SPC h m" . #'describe-keymap)
    ("SPC h v" . #'helpful-variable)))
 
 (use-package elisp-autofmt
