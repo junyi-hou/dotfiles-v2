@@ -15,8 +15,10 @@
 
 (use-package agent-shell
   :ensure (:host github :repo "xenodium/agent-shell")
-  :hook ((agent-shell-mode . corfu-mode)
-         (agent-shell-mode . gatsby>>agent-shell-remap-header-line))
+  :hook
+  ((agent-shell-mode . corfu-mode)
+   (agent-shell-mode . gatsby>>agent-shell-remap-header-line)
+   (diff-mode . gatsby>>agent-shell-enable-permission-in-diff))
   :custom
   (agent-shell-display-action
    '(display-buffer-in-side-window (side . right) (window-width . 0.33) (slot . 0)))
@@ -24,6 +26,11 @@
   (agent-shell-session-strategy 'new)
   (agent-shell-preferred-agent-config 'claude-code)
   :config
+
+  ;; diff-mode integration
+  (defun gatsby>>agent-shell-enable-permission-in-diff ()
+    (when (string-match-p "\\*agent-shell-diff\\*" (buffer-name))
+      (evil-emacs-state)))
 
   (defcustom gatsby>agent-shell-default-config (agent-shell--resolve-preferred-config)
     "The default config"
