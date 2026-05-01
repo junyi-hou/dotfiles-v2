@@ -142,7 +142,7 @@ Otherwise call `newline' as default."
 
   (gatsby>defcommand gatsby>compilation-delete-buffer-if-process-finished ()
     "Delete window if a process is running, otherwise kill buffer and window."
-    (if (get-buffer-process (current-buffer))
+    (if (process-live-p (get-buffer-process (current-buffer)))
         (call-interactively #'delete-window)
       (call-interactively #'kill-buffer-and-window)))
 
