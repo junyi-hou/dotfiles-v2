@@ -54,18 +54,15 @@ Usage:
            ((and plist (guard (plistp plist)))
             (let ((keys '())
                   (values '()))
+              ;; format: off
               (cl-loop
-               for
-               (k v)
-               on
-               plist
-               by
-               #'cddr
-               do
+               for (k v) on plist by #'cddr do
                (push (intern (substring (symbol-name k) 1)) keys)
                (push v values))
+
               (setq args (nreverse keys))
               `(interactive (list ,@values))))
+           ;; format: on
            (_ (user-error "[gatsby>defcommdn] malformed argument list")))))
     `(defun ,name ,args
        ,docstring
