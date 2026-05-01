@@ -433,10 +433,9 @@
                            "docs/*.texinfo"
                            (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
                                      "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
-                          :source "elpaca-menu-lock-file" :protocol https :inherit t
-                          :depth treeless :host github :ref
-                          "c7671e10419261ef70b1820d3b970ad39f6fcfe2" :id scala-ts-mode
-                          :type git))
+                          :source "elpaca-menu-lock-file" :id scala-ts-mode :host github
+                          :type git :protocol https :inherit t :depth treeless :ref
+                          "c7671e10419261ef70b1820d3b970ad39f6fcfe2"))
  (shell-maker :source "elpaca-menu-lock-file" :recipe
               (:package "shell-maker" :fetcher github :repo "xenodium/shell-maker"
                         :files
