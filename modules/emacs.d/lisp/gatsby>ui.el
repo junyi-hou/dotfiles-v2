@@ -4,6 +4,7 @@
 
 ;;; Code:
 (require 'gatsby>>utility)
+(require 'elpaca)
 
 ;; theme
 (use-package doom-themes
@@ -242,14 +243,14 @@ current candidate"
   :ensure (marginalia :host github :repo "minad/marginalia")
   :hook (elpaca-after-init . marginalia-mode))
 
-(use-package lolipop
-  :preface
-  (defun gatsby>>make-lolipop (e)
-    (elpaca--signal e "Building" 'building)
-    (let* ((default-directory (elpaca<-source-dir e)))
-      (call-process "make")
-      (elpaca--continue-build e)))
+(defun gatsby>>make-lolipop (e)
+  "Custom build step for Lolipop (E)."
+  (elpaca--signal e "Building" 'building)
+  (let* ((default-directory (elpaca<-source-dir e)))
+    (call-process "make")
+    (elpaca--continue-build e)))
 
+(use-package lolipop
   :if (and (eq system-type 'darwin) (functionp #'window-cursor-info))
   :ensure
   (:host
