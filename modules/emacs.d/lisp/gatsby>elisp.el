@@ -6,6 +6,12 @@
 
 (require 'gatsby>>utility)
 
+(add-to-list 'safe-local-eval-forms
+             '(setq-local elisp-flymake-byte-compile-load-path
+                          (append '("." "./lisp" "../lisp")
+                                  (seq-filter #'file-directory-p
+                                              (directory-files "~/.emacs.d/elpaca/builds" t "^[^.]")))))
+
 (gatsby>use-internal-package elisp-mode
   :init
   (defun gatsby>>lisp-set-tab-width (&rest _)
