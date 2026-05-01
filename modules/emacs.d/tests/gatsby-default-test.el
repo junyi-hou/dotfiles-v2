@@ -21,7 +21,7 @@
 
 (defun gatsby>>test--wait-compilation (buf)
   "Block until the compilation process in BUF has exited."
-  (when-let ((proc (get-buffer-process buf)))
+  (when-let* ((proc (get-buffer-process buf)))
     (while (process-live-p proc)
       (accept-process-output proc 0.1))))
 
