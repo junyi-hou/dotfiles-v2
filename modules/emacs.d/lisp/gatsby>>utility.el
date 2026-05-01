@@ -7,12 +7,12 @@
 (require 'cl-lib)
 (require 'cl-seq)
 (require 'subr-x)
+(require 'map)
 (require 'treesit)
 
-(declare-function elpaca-write-lock-file "elpaca")
 (declare-function elpaca--queued "elpaca")
 (declare-function elpaca-get "elpaca")
-(declare-function elpaca<-repo-dir "elpaca")
+(declare-function elpaca-source-dir "elpaca")
 (declare-function elpaca<-recipe "elpaca")
 (declare-function elpaca-rebuild "elpaca")
 (declare-function elpaca-wait "elpaca")
@@ -181,16 +181,6 @@ should bind to `evil-mode-hook'"
                  secret)
     (message "Secret %s copied to the clipboard..." pass-path)))
 
-;; automatically update the elpaca lock file when exiting emacs
-(defun gatsby>>update-elpaca-lock-file ()
-  (let ((lock-file
-         (expand-file-name
-          (file-name-concat gatsby>dotfiles-repo-location
-                            "modules/emacs.d/elpaca-lock.el"))))
-    (elpaca-write-lock-file lock-file)))
-
-(add-hook 'kill-emacs-hook #'gatsby>>update-elpaca-lock-file)
-
 
 (defun gatsby>>run-process-with-callback (commands &optional buffer final-sentinel)
   "Run COMMANDS sequentially. The FINAL-SENTINEL is attached to the last process.
@@ -223,7 +213,7 @@ Return the final process ran."
          (package (completing-read "Update package: " packages nil t))
          (id (intern package))
          (e (elpaca-get id))
-         (repo (elpaca<-repo-dir e))
+         (repo (elpaca-source-dir e))
          (branch (map-elt (elpaca<-recipe e) :branch)))
     (if (and repo (file-directory-p repo))
         (let* ((default-directory repo)
@@ -260,32 +250,27 @@ Return the final process ran."
                  (message "Git pull finished for %s. Rebuilding..." pkg-name)
                  (elpaca-rebuild pkg-id)
                  (elpaca-wait)
-                 (gatsby>>update-elpaca-lock-file)
-                 (message "Elpaca update and lock file update finished for %s" pkg-name)
+                 (message "Elpaca update finished for %s" pkg-name)
                  (kill-buffer log-buffer))))))
       (error "Repository for %s not found" package))))
 
 (gatsby>defcommand gatsby>sync-packages-to-lock-file ()
   "Checkout every installed elpaca package to the ref recorded in the lock file."
-  (let* ((lock-file
-          (expand-file-name
-           (file-name-concat gatsby>dotfiles-repo-location
-                             "modules/emacs.d/elpaca-lock.el")))
-         (lock-entries
+  (let* ((lock-entries
           (with-temp-buffer
-            (insert-file-contents lock-file)
+            (insert-file-contents elpaca-lock-file)
             (read (current-buffer))))
          (ref-table (make-hash-table :test #'eq)))
     (pcase-dolist (`(,pkg . ,props) lock-entries)
-      (when-let* ((ref (plist-get (plist-get props :recipe) :ref)))
+      (when-let* ((ref (map-nested-elt props '(:recipe :ref))))
         (puthash pkg ref ref-table)))
     (dolist (pkg (hash-table-keys ref-table))
       (when-let* ((e (elpaca-get pkg))
-                  (repo (elpaca<-repo-dir e))
+                  (repo (elpaca-source-dir e))
                   ((file-directory-p repo))
                   (ref (gethash pkg ref-table)))
         (let ((default-directory repo))
-          (gatsby>>run-process-with-callback `(("git" "checkout" ,ref))
+          (gatsby>>run-process-with-callback `(("git" "fetch") ("git" "checkout" ,ref))
                                              nil
                                              (lambda (_proc event)
                                                (if (string-match-p "finished" event)
