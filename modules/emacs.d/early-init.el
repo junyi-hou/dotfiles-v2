@@ -91,7 +91,36 @@
 
 (elpaca `(,@elpaca-order))
 
+;; Lock files
 (setq elpaca-lock-file (expand-file-name "elpaca-lock.el" user-emacs-directory))
+
+(defun gatsby>>elpaca-update-lock-alist (lock-contents id recipe)
+  "Return LOCK-CONTENTS with ID entry updated to RECIPE, or appended if absent."
+  (let ((entry `(,id :source "elpaca-menu-lock-file" :recipe ,recipe)))
+    (if (map-elt lock-contents id)
+        (mapcar
+         (lambda (e)
+           (if (eq (car e) id)
+               entry
+             e))
+         lock-contents)
+      (append lock-contents (list entry)))))
+
+(defun gatsby>>elpaca-update-lock-file (e)
+  (elpaca--signal e "Updating lockfile" 'update-lockfile)
+  (let* ((lock-contents
+          (when (file-exists-p elpaca-lock-file)
+            (with-temp-buffer
+              (insert-file-contents elpaca-lock-file)
+              (car (read-from-string (buffer-string))))))
+         (updated
+          (gatsby>>elpaca-update-lock-alist
+           lock-contents (elpaca<-id e) (elpaca<-recipe e))))
+    (with-temp-file elpaca-lock-file
+      (pp updated (current-buffer))))
+  (elpaca--continue-build e))
+
+(add-to-list 'elpaca-default-build-steps #'gatsby>>elpaca-update-lock-file t)
 
 ;; ensure lock file is used to pin package versions
 (when (fboundp 'elpaca-menu-lock-file)
