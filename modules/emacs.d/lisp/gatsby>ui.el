@@ -17,6 +17,7 @@
   :custom-face
   (nobreak-space ((t :foreground unspecified :background unspecified :underline nil)))
   (mode-line-inactive ((t :background ,(doom-color 'bg-alt))))
+  (header-line ((t :inherit default)))
 
   :config
   ;; default UI

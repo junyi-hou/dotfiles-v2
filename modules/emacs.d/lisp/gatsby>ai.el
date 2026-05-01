@@ -10,14 +10,10 @@
   :ensure (:host github :repo "junyi-hou/agent-shell-tramp")
   :config (agent-shell-tramp-mode 1))
 
-(defun gatsby>>agent-shell-remap-header-line ()
-  (face-remap-add-relative 'header-line :inherit 'default))
-
 (use-package agent-shell
   :ensure (:host github :repo "xenodium/agent-shell")
   :hook
   ((agent-shell-mode . corfu-mode)
-   (agent-shell-mode . gatsby>>agent-shell-remap-header-line)
    (diff-mode . gatsby>>agent-shell-enable-permission-in-diff))
   :custom
   (agent-shell-display-action
