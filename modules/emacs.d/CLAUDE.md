@@ -19,4 +19,4 @@ Tests live in `tests/` and use ERT. Each `lisp/gatsby>NAME.el` has a correspondi
 
 ## Package pinning
 
-`elpaca-lock.el` is auto-updated on `kill-emacs` via `gatsby>>update-elpaca-lock-file`. Do not edit it by hand.
+`elpaca-lock.el` records pinned package recipes. It is auto-updated as a build step (`gatsby>>elpaca-update-lock-file` is appended to `elpaca-default-build-steps`) whenever a package is built or installed. On startup, `elpaca-menu-lock-file` reads it to pin versions. Do not edit it by hand.
