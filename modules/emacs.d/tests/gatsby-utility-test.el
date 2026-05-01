@@ -3,13 +3,6 @@
 (require 'ert)
 (require 'gatsby>>utility)
 
-;; Stubs for elpaca struct accessors — real ones come from cl-defstruct in elpaca.el
-;; (field offsets must match: 0=tag 1=id 2=package 3=order 4=statuses 5=repo-dir ... 11=recipe)
-(unless (fboundp 'elpaca<-repo-dir)
-  (defun elpaca<-repo-dir (e) (nth 5 e)))
-(unless (fboundp 'elpaca<-recipe)
-  (defun elpaca<-recipe (e) (nth 11 e)))
-
 ;; Macro expansion tests
 
 (ert-deftest gatsby>use-internal-package--basic-expansion ()
@@ -274,18 +267,18 @@
       (call-process "git" nil nil nil "commit" "-am" "initial"))
     dir))
 
-(defun gatsby-test--make-fake-elpaca (repo-dir recipe)
-  "Create a fake elpaca struct with REPO-DIR and RECIPE.
+(defun gatsby-test--make-fake-elpaca (source-dir recipe)
+  "Create a fake elpaca struct with SOURCE-DIR and RECIPE.
 Field positions match elpaca's cl-defstruct definition:
-  0:type 1:id 2:package 3:order 4:statuses 5:repo-dir 6:build-dir
-  7:mono-repo 8:main 9:files 10:build-steps 11:recipe ..."
+  0:type 1:id 2:package 3:declaration 4:order 5:statuses
+  6:build-dir 7:source-dir 8:main 9:files 10:build-steps 11:recipe ..."
   (list 'elpaca
-        'test-pkg nil nil nil  ; id package order statuses
-        repo-dir               ; repo-dir (position 5)
-        nil nil nil nil nil    ; build-dir mono-repo main files build-steps
-        recipe                 ; recipe (position 11)
-        nil nil nil nil        ; blocking blockers dependencies dependents
-        0 nil t nil nil nil))  ; queue-id queue-time init process log builtp
+        'test-pkg nil nil nil nil  ; id package declaration order statuses
+        nil source-dir             ; build-dir source-dir (position 7)
+        nil nil nil                ; main files build-steps
+        recipe                     ; recipe (position 11)
+        nil nil nil nil            ; blocking blockers dependencies dependents
+        0 nil t nil nil nil))      ; queue-id queue-time init process log builtp
 
 (ert-deftest gatsby>update-emacs-package--custom-branch ()
   "When recipe has :branch, use it for git checkout."
@@ -296,6 +289,7 @@ Field positions match elpaca's cl-defstruct definition:
         (cl-letf (((symbol-function 'elpaca--queued) (lambda () `((test-pkg . ,fake-e))))
                   ((symbol-function 'completing-read) (lambda (&rest _) "test-pkg"))
                   ((symbol-function 'elpaca-get) (lambda (_) fake-e))
+                  ((symbol-function 'elpaca-source-dir) (lambda (e) (nth 7 e)))
                   ((symbol-function 'shell-command-to-string) (lambda (_) ""))
                   ((symbol-function 'gatsby>>run-process-with-callback)
                    (lambda (cmds &rest _) (setq captured-commands cmds))))
@@ -313,6 +307,7 @@ Field positions match elpaca's cl-defstruct definition:
         (cl-letf (((symbol-function 'elpaca--queued) (lambda () `((test-pkg . ,fake-e))))
                   ((symbol-function 'completing-read) (lambda (&rest _) "test-pkg"))
                   ((symbol-function 'elpaca-get) (lambda (_) fake-e))
+                  ((symbol-function 'elpaca-source-dir) (lambda (e) (nth 7 e)))
                   ((symbol-function 'shell-command-to-string)
                    (lambda (cmd)
                      (if (string-match-p "remote show" cmd) "main\n" "")))
@@ -334,6 +329,7 @@ Field positions match elpaca's cl-defstruct definition:
             (cl-letf (((symbol-function 'elpaca--queued) (lambda () `((test-pkg . ,fake-e))))
                       ((symbol-function 'completing-read) (lambda (&rest _) "test-pkg"))
                       ((symbol-function 'elpaca-get) (lambda (_) fake-e))
+                      ((symbol-function 'elpaca-source-dir) (lambda (e) (nth 7 e)))
                       ((symbol-function 'shell-command-to-string)
                        (lambda (cmd)
                          (if (string-match-p "rev-parse" cmd) "other-branch\n" "")))
@@ -352,6 +348,7 @@ Field positions match elpaca's cl-defstruct definition:
         (cl-letf (((symbol-function 'elpaca--queued) (lambda () `((test-pkg . ,fake-e))))
                   ((symbol-function 'completing-read) (lambda (&rest _) "test-pkg"))
                   ((symbol-function 'elpaca-get) (lambda (_) fake-e))
+                  ((symbol-function 'elpaca-source-dir) (lambda (e) (nth 7 e)))
                   ((symbol-function 'shell-command-to-string)
                    (lambda (cmd)
                      (if (string-match-p "rev-parse" cmd) "main\n" "")))
@@ -378,6 +375,7 @@ Field positions match elpaca's cl-defstruct definition:
             (cl-letf (((symbol-function 'elpaca--queued) (lambda () `((test-pkg . ,fake-e))))
                       ((symbol-function 'completing-read) (lambda (&rest _) "test-pkg"))
                       ((symbol-function 'elpaca-get) (lambda (_) fake-e))
+                      ((symbol-function 'elpaca-source-dir) (lambda (e) (nth 7 e)))
                       ((symbol-function 'shell-command-to-string)
                        (lambda (cmd)
                          (if (string-match-p "remote show" cmd) "main\n" "")))
@@ -400,8 +398,8 @@ fails, the sequence halts, and elpaca-rebuild is never called."
             (cl-letf (((symbol-function 'elpaca--queued) (lambda () `((test-pkg . ,fake-e))))
                       ((symbol-function 'completing-read) (lambda (&rest _) "test-pkg"))
                       ((symbol-function 'elpaca-get) (lambda (_) fake-e))
-                      ((symbol-function 'elpaca-wait) #'ignore)
-                      ((symbol-function 'gatsby>>update-elpaca-lock-file) #'ignore))
+                      ((symbol-function 'elpaca-source-dir) (lambda (e) (nth 7 e)))
+                      ((symbol-function 'elpaca-wait) #'ignore))
               ;; Wait while the process is still running
               (let ((proc (gatsby>update-emacs-package)))
                 (while (accept-process-output proc 0.1))
@@ -410,75 +408,71 @@ fails, the sequence halts, and elpaca-rebuild is never called."
 
 ;; Tests for gatsby>sync-packages-to-lock-file
 
-(defun gatsby-test--write-lock-file (dir entries)
-  "Write ENTRIES as elpaca lock file at DIR/modules/emacs.d/elpaca-lock.el."
-  (let* ((lock-dir (expand-file-name "modules/emacs.d" dir))
-         (lock-file (expand-file-name "elpaca-lock.el" lock-dir)))
-    (make-directory lock-dir t)
-    (with-temp-file lock-file
-      (let ((print-length nil) (print-level nil))
-        (pp entries (current-buffer))))))
+(defun gatsby-test--write-lock-file (path entries)
+  "Write ENTRIES as elpaca lock file at PATH."
+  (with-temp-file path
+    (let ((print-length nil) (print-level nil))
+      (pp entries (current-buffer)))))
 
 (ert-deftest gatsby>sync-packages-to-lock-file--calls-git-checkout-with-locked-refs ()
   "Each package with :ref in lock file gets git checkout called with that ref."
-  (let* ((tmp (make-temp-file "gatsby-sync" t))
+  (let* ((lock-file (make-temp-file "gatsby-lock" nil ".el"))
+         (elpaca-lock-file lock-file)
          (repo-a (make-temp-file "repo-a" t))
          (repo-b (make-temp-file "repo-b" t))
-         captured-calls
-         (gatsby>dotfiles-repo-location tmp))
+         (recipes `((pkg-a . ,(gatsby-test--make-fake-elpaca repo-a nil))
+                    (pkg-b . ,(gatsby-test--make-fake-elpaca repo-b nil))))
+         captured-calls)
     (gatsby-test--write-lock-file
-     tmp
+     lock-file
      `((pkg-a :recipe (:ref "aaa111aaa111"))
        (pkg-b :recipe (:ref "bbb222bbb222"))))
     (unwind-protect
-        (cl-letf (((symbol-function 'elpaca-get)
-                   (lambda (pkg)
-                     (cond ((eq pkg 'pkg-a) (gatsby-test--make-fake-elpaca repo-a nil))
-                           ((eq pkg 'pkg-b) (gatsby-test--make-fake-elpaca repo-b nil)))))
+        (cl-letf (((symbol-function 'elpaca-get) (lambda (pkg) (map-elt recipes pkg)))
+                  ((symbol-function 'elpaca-source-dir) (lambda (e) (nth 7 e)))
                   ((symbol-function 'gatsby>>run-process-with-callback)
                    (lambda (cmds &rest _) (push cmds captured-calls))))
           (gatsby>sync-packages-to-lock-file)
           (should (= (length captured-calls) 2))
           (should (cl-some (lambda (cmds)
-                             (equal (car cmds) '("git" "checkout" "aaa111aaa111")))
+                             (equal (cadr cmds) '("git" "checkout" "aaa111aaa111")))
                            captured-calls))
           (should (cl-some (lambda (cmds)
-                             (equal (car cmds) '("git" "checkout" "bbb222bbb222")))
+                             (equal (cadr cmds) '("git" "checkout" "bbb222bbb222")))
                            captured-calls)))
-      (delete-directory tmp t)
+      (delete-file lock-file)
       (delete-directory repo-a t)
       (delete-directory repo-b t))))
 
 (ert-deftest gatsby>sync-packages-to-lock-file--skips-entries-without-ref ()
   "Packages whose lock entry has no :ref are not processed."
-  (let* ((tmp (make-temp-file "gatsby-sync" t))
+  (let* ((lock-file (make-temp-file "gatsby-lock" nil ".el"))
+         (elpaca-lock-file lock-file)
          (repo (make-temp-file "repo" t))
-         captured-calls
-         (gatsby>dotfiles-repo-location tmp))
+         (recipes `((pkg-with-ref . ,(gatsby-test--make-fake-elpaca repo nil))))
+         captured-calls)
     (gatsby-test--write-lock-file
-     tmp
+     lock-file
      `((pkg-with-ref :recipe (:ref "abc123"))
        (pkg-no-ref :recipe (:fetcher github))))
     (unwind-protect
-        (cl-letf (((symbol-function 'elpaca-get)
-                   (lambda (pkg)
-                     (when (eq pkg 'pkg-with-ref)
-                       (gatsby-test--make-fake-elpaca repo nil))))
+        (cl-letf (((symbol-function 'elpaca-get) (lambda (pkg) (map-elt recipes pkg)))
+                  ((symbol-function 'elpaca-source-dir) (lambda (e) (nth 7 e)))
                   ((symbol-function 'gatsby>>run-process-with-callback)
                    (lambda (cmds &rest _) (push cmds captured-calls))))
           (gatsby>sync-packages-to-lock-file)
           (should (= (length captured-calls) 1))
-          (should (equal (caar captured-calls) '("git" "checkout" "abc123"))))
-      (delete-directory tmp t)
+          (should (equal (cadar captured-calls) '("git" "checkout" "abc123"))))
+      (delete-file lock-file)
       (delete-directory repo t))))
 
 (ert-deftest gatsby>sync-packages-to-lock-file--skips-uninstalled-packages ()
   "Packages in lock file but not installed (elpaca-get returns nil) are skipped."
-  (let* ((tmp (make-temp-file "gatsby-sync" t))
-         captured-calls
-         (gatsby>dotfiles-repo-location tmp))
+  (let* ((lock-file (make-temp-file "gatsby-lock" nil ".el"))
+         (elpaca-lock-file lock-file)
+         captured-calls)
     (gatsby-test--write-lock-file
-     tmp
+     lock-file
      `((not-installed :recipe (:ref "abc123"))))
     (unwind-protect
         (cl-letf (((symbol-function 'elpaca-get) (lambda (_) nil))
@@ -486,25 +480,26 @@ fails, the sequence halts, and elpaca-rebuild is never called."
                    (lambda (cmds &rest _) (push cmds captured-calls))))
           (gatsby>sync-packages-to-lock-file)
           (should (null captured-calls)))
-      (delete-directory tmp t))))
+      (delete-file lock-file))))
 
 (ert-deftest gatsby>sync-packages-to-lock-file--skips-missing-repo-dirs ()
   "Packages whose repo directory does not exist on disk are skipped."
-  (let* ((tmp (make-temp-file "gatsby-sync" t))
-         captured-calls
-         (gatsby>dotfiles-repo-location tmp))
+  (let* ((lock-file (make-temp-file "gatsby-lock" nil ".el"))
+         (elpaca-lock-file lock-file)
+         captured-calls)
     (gatsby-test--write-lock-file
-     tmp
+     lock-file
      `((pkg-missing :recipe (:ref "abc123"))))
     (unwind-protect
         (cl-letf (((symbol-function 'elpaca-get)
                    (lambda (_)
                      (gatsby-test--make-fake-elpaca "/tmp/gatsby-nonexistent-repo-xyz" nil)))
+                  ((symbol-function 'elpaca-source-dir) (lambda (e) (nth 7 e)))
                   ((symbol-function 'gatsby>>run-process-with-callback)
                    (lambda (cmds &rest _) (push cmds captured-calls))))
           (gatsby>sync-packages-to-lock-file)
           (should (null captured-calls)))
-      (delete-directory tmp t))))
+      (delete-file lock-file))))
 
 (provide 'gatsby-utility-test)
 ;;; gatsby-utility-test.el ends here
