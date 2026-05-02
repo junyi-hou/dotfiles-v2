@@ -108,14 +108,21 @@
 
 (defun gatsby>>elpaca-update-lock-file (e)
   (elpaca--signal e "Updating lockfile" 'update-lockfile)
-  (let* ((lock-contents
+  (let* ((repo (elpaca-source-dir e))
+         (ref (when (file-directory-p repo)
+                (let ((default-directory repo))
+                  (string-trim (shell-command-to-string "git rev-parse HEAD")))))
+         (recipe (if ref
+                     (plist-put (copy-sequence (elpaca<-recipe e)) :ref ref)
+                   (elpaca<-recipe e)))
+         (lock-contents
           (when (file-exists-p elpaca-lock-file)
             (with-temp-buffer
               (insert-file-contents elpaca-lock-file)
               (car (read-from-string (buffer-string))))))
          (updated
           (gatsby>>elpaca-update-lock-alist
-           lock-contents (elpaca<-id e) (elpaca<-recipe e))))
+           lock-contents (elpaca<-id e) recipe)))
     (with-temp-file elpaca-lock-file
       (pp updated (current-buffer))))
   (elpaca--continue-build e))

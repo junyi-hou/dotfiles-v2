@@ -181,13 +181,13 @@ should bind to `evil-mode-hook'"
                  secret)
     (message "Secret %s copied to the clipboard..." pass-path)))
 
-
 (defun gatsby>>run-process-with-callback (commands &optional buffer final-sentinel)
   "Run COMMANDS sequentially. The FINAL-SENTINEL is attached to the last process.
 Return the final process ran."
   (when commands
     (let* ((command (car commands))
            (rest (cdr commands))
+           (dir default-directory)
            (proc (apply #'start-process "git-task" buffer (car command) (cdr command))))
       (if (null rest)
           ;; If this is the last command, attach the custom sentinel
@@ -200,7 +200,8 @@ Return the final process ran."
          proc
          (lambda (p event)
            (if (string= event "finished\n")
-               (gatsby>>run-process-with-callback rest buffer final-sentinel)
+               (let ((default-directory dir))
+                 (gatsby>>run-process-with-callback rest buffer final-sentinel))
              (message "Process failed: `%s' failed with %s"
                       (string-join (process-command p) " ")
                       event))))
@@ -254,13 +255,23 @@ Return the final process ran."
                  (kill-buffer log-buffer))))))
       (error "Repository for %s not found" package))))
 
-(gatsby>defcommand gatsby>sync-packages-to-lock-file ()
-  "Checkout every installed elpaca package to the ref recorded in the lock file."
+(gatsby>defcommand gatsby>sync-packages-to-lock-file (all)
+  "Update ALL installed packages (from `elpaca--queued') to their locked ref.
+If the prefix arg ALL is not given, query the user for a package to update."
   (let* ((lock-entries
           (with-temp-buffer
             (insert-file-contents elpaca-lock-file)
             (read (current-buffer))))
          (ref-table (make-hash-table :test #'eq)))
+    (unless all
+      (let ((pkg
+             (completing-read
+              "Restore: "
+              (thread-last lock-entries (mapcar #'car) (mapcar #'symbol-name)))))
+        (setq lock-entries
+              (list
+               (seq-find
+                (lambda (e) (equal (symbol-name (car e)) pkg)) lock-entries)))))
     (pcase-dolist (`(,pkg . ,props) lock-entries)
       (when-let* ((ref (map-nested-elt props '(:recipe :ref))))
         (puthash pkg ref ref-table)))
@@ -278,7 +289,8 @@ Return the final process ran."
                                                      (message
                                                       "Synced %s to %s, rebuilding..."
                                                       pkg ref)
-                                                     (elpaca-rebuild pkg))
+                                                     (elpaca-rebuild pkg)
+                                                     (elpaca-wait))
                                                  (message "Failed to sync %s: %s"
                                                           pkg
                                                           event)))))))))
