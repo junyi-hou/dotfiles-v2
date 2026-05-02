@@ -2,4 +2,4 @@
 ;;; For more information see (info "(emacs) Directory Variables")
 
 ((nil . ((gatsby>eglot-auto-format-before-save . t)
-         (gatsby>project-tests-command . ("make" "test-scripts")))))
+         (gatsby>project-tests-command . ("make" "test")))))
