@@ -16,20 +16,26 @@ LIST_OF_MARKETPLACES = [
 ]
 
 
+def _try_install(pkg: str, prog: str) -> bool:
+    if not shutil.which(prog):
+        logger.debug(f"Installing {prog}...")
+        try:
+            run(f"npm install -g {pkg}", shell=True, check=True)
+            logger.debug(f"{prog} installed!")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to install Claude CLI: {e}")
+            return False
+
+    logger.debug(f"{prog} found, skip install")
+    return True
+
+
 def _install_claude() -> bool:
-    try:
-        logger.debug("Installing Claude CLI...")
-        run("npm install -g @anthropic-ai/claude-code", shell=True, check=True)
-        if not shutil.which("claude-agent-acp"):
-            run(
-                "npm install -g @agentclientprotocol/claude-agent-acp",
-                shell=True,
-                check=True,
-            )
-        return True
-    except Exception as e:
-        logger.error(f"Failed to install Claude CLI: {e}")
-        return False
+    return (
+        _try_install("@anthropic-ai/claude-code", "claude")
+        and _try_install("@agentclientprotocol/claude-agent-acp", "claude-agent-acp")
+    )
 
 
 def _check_claude(func):
