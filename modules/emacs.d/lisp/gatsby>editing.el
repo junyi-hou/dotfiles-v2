@@ -16,7 +16,6 @@
   (evil-want-C-u-scroll t)
   (evil-want-C-u-delete t)
   (evil-want-C-w-delete t)
-  (evil-insert-state-message nil)
   :hook
   (elpaca-after-init . evil-mode)
   (minibuffer-setup . evil-insert-state)
@@ -89,16 +88,8 @@
      (t
       (narrow-to-defun))))
 
-  (evil-define-command gatsby>normal-or-motion-state
-    ()
-    "Switch to normal or motion state without recording current command."
-    :repeat abort
-    :suppress-operator
-    t
-    (if (memq major-mode evil-motion-state-modes)
-        (evil-motion-state)
-      (evil-normal-state)))
-  ;; (advice-add #'evil-force-normal-state :override #'gatsby>normal-or-motion-state)
+  (setq evil-insert-state-message nil)
+
   :evil-bind
   ((:maps global-map)
    ("<escape>" . #'gatsby>normal-or-motion-state)
