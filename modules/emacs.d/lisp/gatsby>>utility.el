@@ -154,32 +154,36 @@ should bind to `evil-mode-hook'"
       (add-to-list list modes))))
 
 ;; secret management via `passage'
-(gatsby>defcommand gatsby>retrieve-secret ()
-  (let* ((default-directory gatsby>dotfiles-repo-location)
-         (dir (getenv "PASSAGE_DIR"))
-         (pass-path
-          (thread-last
-           (directory-files-recursively dir "\\.age$")
-           (mapcar
-            (lambda (f)
-              (thread-first f (file-relative-name dir) (file-name-sans-extension))))
-           (completing-read "Getting secret: ")))
-         (secret
-          (thread-last
-           pass-path
-           (format "direnv exec %s passage show %s" default-directory)
-           (shell-command-to-string)
-           ((lambda (l) (string-split l "\n" 'omit-nulls)))
-           (last)
-           (car))))
-    (kill-new secret)
-    (run-at-time 30 nil
-                 (lambda (s)
-                   (gui-set-selection 'CLIPBOARD "")
-                   (setq kill-ring (delete s kill-ring))
-                   (message "Secret cleaned"))
-                 secret)
-    (message "Secret %s copied to the clipboard..." pass-path)))
+(gatsby>defcommand gatsby>retrieve-secret
+  (:secret-path
+   (let* ((default-directory gatsby>dotfiles-repo-location)
+          (dir (getenv "PASSAGE_DIR")))
+     (thread-last
+      (directory-files-recursively dir "\\.age$")
+      (mapcar
+       (lambda (f)
+         (thread-first f (file-relative-name dir) (file-name-sans-extension))))
+      (completing-read "Getting secret: "))))
+  (let ((secret
+         (thread-last
+          secret-path
+          (format "direnv exec %s passage show %s" gatsby>dotfiles-repo-location)
+          (shell-command-to-string)
+          ((lambda (l) (string-split l "\n" 'omit-nulls)))
+          (last)
+          (car))))
+
+    (if (called-interactively-p 'interactive)
+        (progn
+          (kill-new secret)
+          (run-at-time 30 nil
+                       (lambda (s)
+                         (gui-set-selection 'CLIPBOARD "")
+                         (setq kill-ring (delete s kill-ring))
+                         (message "Secret cleaned"))
+                       secret)
+          (message "Secret %s copied to the clipboard..." secret-path))
+      secret)))
 
 (defun gatsby>>run-process-with-callback (commands &optional buffer final-sentinel)
   "Run COMMANDS sequentially. The FINAL-SENTINEL is attached to the last process.
