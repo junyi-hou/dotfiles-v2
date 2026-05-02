@@ -1,3 +1,6 @@
+OPENACP_CONFIG_PATH="$HOME/.config/openacp/config.json"
+export OPENACP_CONFIG_PATH
+
 PATH="$HOME/dotfiles-v2/.pixi/envs/all/bin:$HOME/.local/bin:/bin:$PATH"
 
 if [ -d "$HOME/dotfiles-v2/.tools/java" ]; then
