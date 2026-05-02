@@ -62,9 +62,10 @@ interactively select a single test to run instead."
         (setq cmd (funcall gatsby>get-individual-test-function)))
 
       (message "running tests...")
-      (compile (if (listp cmd)
-                   (mapconcat #'shell-quote-argument cmd " ")
-                 cmd))))
+      (compile
+       (if (listp cmd)
+           (mapconcat #'shell-quote-argument cmd " ")
+         cmd))))
 
   :evil-bind ((:maps normal) ("SPC o p" . #'project-find-file) ("SPC r t" . #'gatsby>run-test)))
 
