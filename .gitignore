@@ -6,8 +6,9 @@
 # emacs source file
 emacs-mac/
 
-# age identity/key file
-modules/passage/identities
+# secrets
+keys/*
+!keys/*.pub
 
 .aider*
 .agent-shell/*

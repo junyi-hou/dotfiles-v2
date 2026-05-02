@@ -17,8 +17,6 @@ pytest = "*"
 ty = "*"
 ruff = "*"
 jupyter = "*"
-tree = "*"        # passage needs it
-
 
 [feature.global.dependencies]
 ## only needed if in the future I want to use pypi to install python packages
@@ -31,6 +29,7 @@ git-delta = "*"
 fd-find = "*"
 ripgrep = "*"
 nodejs = "*"      # for acp
+go-sops = "*"     # for secret management
 
 # lsp
 harper = "*"

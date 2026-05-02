@@ -1,0 +1,44 @@
+#!/usr/bin/env python3
+
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+ENC_FILE = Path.home() / "dotfiles-v2" / "env.json.enc"
+
+
+def decrypt(enc_file: Path) -> dict:
+    result = subprocess.run(
+        [
+            "sops",
+            "--decrypt",
+            "--input-type",
+            "json",
+            "--output-type",
+            "json",
+            str(enc_file),
+        ],
+        capture_output=True,
+        check=True,
+    )
+    return json.loads(result.stdout)
+
+
+def main():
+    if len(sys.argv) < 2:
+        print("usage: run-with-env <command> [args...]", file=sys.stderr)
+        sys.exit(1)
+
+    if not ENC_FILE.exists():
+        print("Cannot find the encrypted env file, exiting", file=sys.stderr)
+        sys.exit(1)
+
+    data = decrypt(ENC_FILE)
+    env = {**os.environ, **data["env"]}
+    os.execvpe(sys.argv[1], sys.argv[1:], env)
+
+
+if __name__ == "__main__":
+    main()
