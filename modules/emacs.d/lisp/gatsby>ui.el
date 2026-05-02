@@ -17,11 +17,11 @@
   :custom-face
   (nobreak-space ((t :foreground unspecified :background unspecified :underline nil)))
   (mode-line-inactive ((t :background ,(doom-color 'bg-alt))))
-  (header-line ((t :inherit default)))
 
   :config
   ;; default UI
   (load-theme 'doom-material-dark t)
+  (set-face-attribute 'header-line nil :inherit 'default)
   (line-number-mode -1)
   (column-number-mode -1)
   (tool-bar-mode -1)
