@@ -50,9 +50,3 @@ rage-keygen >> modules/passage/identities
 If you wants to create new secrets, make sure to do it inside of this repo, so that the new secret is added to `modules/passage/store` instead of the default `$HOME/.passage/store`. After creating the secret, install it with `make update-secret`.
 
 In the future I should create a function to automate this process.
-
-## TODO
-
-1. test remote development experience
-    - add tramp support for agent-shell.el
-    - test tramp for eglot

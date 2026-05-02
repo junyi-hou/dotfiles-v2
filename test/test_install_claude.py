@@ -1,21 +1,6 @@
 from subprocess import CalledProcessError
-from unittest.mock import patch, MagicMock
-from scripts.install_claude import _check_claude, _try_install, install_plugins
-
-
-def test_decorator_already_installed():
-    """Test that decorator doesn't trigger install if claude exists."""
-    mock_func = MagicMock(return_value="success")
-    decorated = _check_claude(mock_func)
-
-    with patch("scripts.install_claude.run") as mock_run:
-        mock_run.return_value.returncode = 0
-        result = decorated("arg1")
-
-        assert result == "success"
-        mock_run.assert_called_once()
-        # Verify it checked --help
-        assert mock_run.call_args[0][0] == ["claude", "--help"]
+from unittest.mock import patch
+from scripts.install_claude import _try_install, install_plugins, pull_marketplaces, LIST_OF_PLUGINS, LIST_OF_MARKETPLACES
 
 
 @patch("scripts.install_claude.shutil.which", return_value=None)
@@ -45,18 +30,18 @@ def test_try_install_returns_false_on_error(mock_run, mock_which):
 
 
 @patch("scripts.install_claude._run_claude")
-@patch("scripts.install_claude.logger")
-def test_install_plugins(mock_logger, mock_run_claude):
-    """Test that it installs all plugins."""
+def test_install_plugins(mock_run_claude):
     install_plugins()
 
-    assert mock_run_claude.call_count == 3
-    mock_run_claude.assert_any_call(
-        ["plugins", "install", "skill-creator@claude-plugins-official"]
-    )
-    mock_run_claude.assert_any_call(
-        ["plugins", "install", "code-review@claude-plugins-official"]
-    )
-    mock_run_claude.assert_any_call(
-        ["plugins", "install", "context7@claude-plugins-official"]
-    )
+    assert mock_run_claude.call_count == len(LIST_OF_PLUGINS)
+    for plugin in LIST_OF_PLUGINS:
+        mock_run_claude.assert_any_call(["plugins", "install", plugin])
+
+
+@patch("scripts.install_claude._run_claude")
+def test_pull_marketplaces(mock_run_claude):
+    pull_marketplaces()
+
+    assert mock_run_claude.call_count == len(LIST_OF_MARKETPLACES)
+    for marketplace in LIST_OF_MARKETPLACES:
+        mock_run_claude.assert_any_call(["plugins", "marketplace", "add", marketplace])

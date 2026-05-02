@@ -5,6 +5,7 @@
 ;;; Code:
 
 (require 'cl-lib)
+(require 'json)
 (require 'cl-seq)
 (require 'subr-x)
 (require 'map)
@@ -153,26 +154,35 @@ should bind to `evil-mode-hook'"
           (add-to-list list mode))
       (add-to-list list modes))))
 
-;; secret management via `passage'
+;; secret management via `sops'
+(defun gatsby>>passage-paths (data &optional prefix)
+  "Return all leaf key paths in DATA as a list of slash-separated strings.
+DATA is a parsed JSON alist from the sops-encrypted file; the top-level
+`sops' metadata key is skipped."
+  (let (paths)
+    (map-do
+     (lambda (key value)
+       (unless (eq key 'sops)
+         (let ((path
+                (if prefix
+                    (format "%s/%s" prefix key)
+                  (format "%s" key))))
+           (if (listp value)
+               (setq paths (append paths (gatsby>>passage-paths value path)))
+             (push path paths)))))
+     data)
+    paths))
+
 (gatsby>defcommand gatsby>retrieve-secret
   (:secret-path
-   (let* ((default-directory gatsby>dotfiles-repo-location)
-          (dir (getenv "PASSAGE_DIR")))
-     (thread-last
-      (directory-files-recursively dir "\\.age$")
-      (mapcar
-       (lambda (f)
-         (thread-first f (file-relative-name dir) (file-name-sans-extension))))
-      (completing-read "Getting secret: "))))
+   (let* ((enc-file (expand-file-name "env.json.enc" gatsby>dotfiles-repo-location))
+          (data (json-read-file enc-file))
+          (paths (gatsby>>passage-paths data)))
+     (completing-read "Getting secret: " paths)))
   (let ((secret
-         (thread-last
-          secret-path
-          (format "direnv exec %s passage show %s" gatsby>dotfiles-repo-location)
-          (shell-command-to-string)
-          ((lambda (l) (string-split l "\n" 'omit-nulls)))
-          (last)
-          (car))))
-
+         (string-trim
+          (shell-command-to-string
+           (format "passage %s" (shell-quote-argument secret-path))))))
     (if (called-interactively-p 'interactive)
         (progn
           (kill-new secret)
@@ -184,6 +194,17 @@ should bind to `evil-mode-hook'"
                        secret)
           (message "Secret %s copied to the clipboard..." secret-path))
       secret)))
+
+(gatsby>defcommand gatsby>edit-secret ()
+  ;; TODO:
+  ;; read the decrpyed env.json.enc into a temp buffer
+  ;; open that temp buffer and allow user to edit the content
+  ;; after user finishing editing the content, user can press C-c to
+  ;; run sops -e TEMP BUFFER > env.json.enc
+  ;; user should not be able to save the buffer into file
+
+  ;; NOTE: no auto-save-mode, no backup, no temp file
+  )
 
 (defun gatsby>>run-process-with-callback (commands &optional buffer final-sentinel)
   "Run COMMANDS sequentially. The FINAL-SENTINEL is attached to the last process.
