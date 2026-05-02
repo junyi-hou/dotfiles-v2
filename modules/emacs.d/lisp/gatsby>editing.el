@@ -90,6 +90,16 @@
 
   (setq evil-insert-state-message nil)
 
+  (evil-define-command gatsby>normal-or-motion-state
+    ()
+    "Switch to normal or motion state without recording current command."
+    :repeat abort
+    :suppress-operator
+    t
+    (if (memq major-mode evil-motion-state-modes)
+        (evil-motion-state)
+      (evil-normal-state)))
+
   :evil-bind
   ((:maps global-map)
    ("<escape>" . #'gatsby>normal-or-motion-state)
