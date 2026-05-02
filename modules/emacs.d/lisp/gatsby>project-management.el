@@ -318,7 +318,7 @@ interactively select a single test to run instead."
   (diff-font-lock-syntax nil)
   :hook (diff-mode . outline-minor-mode)
   :evil-bind
-  ((:maps diff-mode-map :states normal)
+  ((:maps diff-mode-map :states (emacs normal))
    (">" . #'diff-hunk-next)
    ("<" . #'diff-hunk-prev)
    ("a" . #'diff-apply-hunk)

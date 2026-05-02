@@ -26,7 +26,8 @@
   ;; diff-mode integration
   (defun gatsby>>agent-shell-enable-permission-in-diff ()
     (when (string-match-p "\\*agent-shell-diff\\*" (buffer-name))
-      (evil-emacs-state)))
+      ;; Defer so evil's own mode hooks don't overwrite this state afterward.
+      (run-with-idle-timer 0 nil #'evil-emacs-state)))
 
   (defcustom gatsby>agent-shell-default-config (agent-shell--resolve-preferred-config)
     "The default config"
