@@ -1,0 +1,23 @@
+{
+  "defaultAgent": "claude",
+  "agents": {
+    "claude": {
+      "command": "claude-agent-acp",
+      "args": [],
+      "env": {}
+    }
+  },
+  "channels": {
+    "discord": {
+      "enabled": true,
+      "forumChannelId": null,
+      "notificationChannelId": null
+    }
+  },
+  "runMode": "daemon",
+  "security": {
+    "allowedUserIds": [
+      "1084199242714845194"
+    ]
+  }
+}

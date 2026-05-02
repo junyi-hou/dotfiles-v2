@@ -35,6 +35,7 @@ def _install_claude() -> bool:
     return (
         _try_install("@anthropic-ai/claude-code", "claude")
         and _try_install("@agentclientprotocol/claude-agent-acp", "claude-agent-acp")
+        and _try_install("@openacp/cli", "openacp")
     )
 
 
