@@ -27,17 +27,42 @@ def decrypt(enc_file: Path) -> dict:
 
 
 def main():
-    if len(sys.argv) < 2:
-        print("usage: run-with-env <command> [args...]", file=sys.stderr)
+    args = sys.argv[1:]
+
+    if not args:
+        print("usage: run-with-env [ENV...] -- <command> [args...]", file=sys.stderr)
+        print("       run-with-env <command> [args...]", file=sys.stderr)
         sys.exit(1)
+
+    if "--" in args:
+        sep = args.index("--")
+        env_keys = args[:sep]
+        cmd_args = args[sep + 1 :]
+        if not cmd_args:
+            print("usage: run-with-env [ENV...] -- <command> [args...]", file=sys.stderr)
+            sys.exit(1)
+    else:
+        env_keys = []
+        cmd_args = args
 
     if not ENC_FILE.exists():
         print("Cannot find the encrypted env file, exiting", file=sys.stderr)
         sys.exit(1)
 
     data = decrypt(ENC_FILE)
-    env = {**os.environ, **data["env"]}
-    os.execvpe(sys.argv[1], sys.argv[1:], env)
+
+    if env_keys:
+        extra = {}
+        for key in env_keys:
+            if key not in data["env"]:
+                print(f"warning: ENV key '{key}' not found in encrypted env file", file=sys.stderr)
+            else:
+                extra[key] = data["env"][key]
+        env = {**os.environ, **extra}
+    else:
+        env = {**os.environ, **data["env"]}
+
+    os.execvpe(cmd_args[0], cmd_args, env)
 
 
 if __name__ == "__main__":

@@ -81,3 +81,59 @@ class TestRunWithEnv:
                             _, _, env = mock_exec.call_args[0]
                             assert env["EXISTING"] == "yes"
                             assert env["API_KEY"] == "abc123"
+
+    def test_single_env_key_with_separator(self, tmp_path):
+        enc_file = tmp_path / "env.json.enc"
+        enc_file.touch()
+
+        with patch.object(sys, "argv", ["run-with-env", "API_KEY", "--", "printenv"]):
+            with patch.object(self.mod, "ENC_FILE", enc_file):
+                with patch("subprocess.run", return_value=make_sops_mock(FAKE_DATA)):
+                    with patch("os.execvpe") as mock_exec:
+                        self.mod.main()
+                        cmd, args, env = mock_exec.call_args[0]
+                        assert cmd == "printenv"
+                        assert args == ["printenv"]
+                        assert env["API_KEY"] == "abc123"
+                        assert "DEBUG" not in env
+
+    def test_multiple_env_keys_with_separator(self, tmp_path):
+        enc_file = tmp_path / "env.json.enc"
+        enc_file.touch()
+
+        with patch.object(sys, "argv", ["run-with-env", "API_KEY", "DEBUG", "--", "env"]):
+            with patch.object(self.mod, "ENC_FILE", enc_file):
+                with patch("subprocess.run", return_value=make_sops_mock(FAKE_DATA)):
+                    with patch("os.execvpe") as mock_exec:
+                        self.mod.main()
+                        _, _, env = mock_exec.call_args[0]
+                        assert env["API_KEY"] == "abc123"
+                        assert env["DEBUG"] == "true"
+
+    def test_unknown_env_key_warns_and_continues(self, tmp_path, capsys):
+        enc_file = tmp_path / "env.json.enc"
+        enc_file.touch()
+
+        with patch.object(sys, "argv", ["run-with-env", "MISSING_KEY", "--", "env"]):
+            with patch.object(self.mod, "ENC_FILE", enc_file):
+                with patch("subprocess.run", return_value=make_sops_mock(FAKE_DATA)):
+                    with patch("os.execvpe") as mock_exec:
+                        self.mod.main()
+                        mock_exec.assert_called_once()
+                        _, _, env = mock_exec.call_args[0]
+                        assert "MISSING_KEY" not in env
+        captured = capsys.readouterr()
+        assert "warning" in captured.err
+        assert "MISSING_KEY" in captured.err
+
+    def test_separator_with_no_command_exits(self, tmp_path):
+        enc_file = tmp_path / "env.json.enc"
+        enc_file.touch()
+
+        with patch.object(sys, "argv", ["run-with-env", "API_KEY", "--"]):
+            with patch.object(self.mod, "ENC_FILE", enc_file):
+                try:
+                    self.mod.main()
+                    assert False, "expected SystemExit"
+                except SystemExit as e:
+                    assert e.code == 1
