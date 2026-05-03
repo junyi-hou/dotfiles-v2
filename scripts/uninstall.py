@@ -51,7 +51,7 @@ def uninstall(module: str | Path, *, dry_run: bool = True) -> None:
             uninstall(child, dry_run=dry_run)
 
         # if module is dir, install_path must be dir
-        if next(install_path.iterdir(), None) is None:
+        if install_path.is_dir() and next(install_path.iterdir(), None) is None:
             logger.debug(f"{install_path} is empty, removing...")
             install_path.rmdir()
 
