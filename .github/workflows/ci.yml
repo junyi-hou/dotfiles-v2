@@ -63,7 +63,7 @@ jobs:
         run: pip install pytest
 
       - name: Run tests
-        run: make test-scripts
+        run: make test
 
   install-dotfiles-integration-test:
     runs-on: ${{ matrix.os }}
