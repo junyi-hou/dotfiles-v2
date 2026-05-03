@@ -20,6 +20,8 @@
    '(display-buffer-in-side-window (side . right) (window-width . 0.33) (slot . 0)))
   (agent-shell-file-completion-enabled t)
   (agent-shell-session-strategy 'new)
+  (agent-shell-anthropic-claude-acp-command
+   '("run-with-env" "CONTEXT7_API_KEY" "--" "claude-agent-acp"))
   (agent-shell-preferred-agent-config 'claude-code)
   :config
 
