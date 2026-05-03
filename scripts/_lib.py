@@ -9,7 +9,7 @@ logger.setLevel(logging.INFO)
 
 # Create handler to stdout
 handler = logging.StreamHandler(sys.stdout)
-handler.setFormatter(logging.Formatter('%(levelname)s - %(message)s'))
+handler.setFormatter(logging.Formatter("%(levelname)s - %(message)s"))
 logger.addHandler(handler)
 
 
@@ -20,8 +20,8 @@ def git_root(path: str) -> Path:
     """
     Find the root directory of the Git repository in PATH.
 
-    Recursively searches parent directories starting from the given path until 
-    finding a directory containing a '.git' folder. If no Git root is found, 
+    Recursively searches parent directories starting from the given path until
+    finding a directory containing a '.git' folder. If no Git root is found,
     raises a ValueError.
 
     Args:
@@ -45,9 +45,9 @@ def get_backup_path(install_path: Path) -> Path:
     """
     Generate a backup path for an existing install target.
 
-    Creates a backup filename matching the install_path name, adding a preceding 
-    dot if the original filename is not hidden. The backup filename will have 
-    the format: [`.`]name[.backup] 
+    Creates a backup filename matching the install_path name, adding a preceding
+    dot if the original filename is not hidden. The backup filename will have
+    the format: [`.`]name[.backup]
 
     Args:
         install_path (Path): Path of the target being installed
@@ -82,8 +82,8 @@ def move(src: Path, dst: Path, dry_run: bool) -> None:
     """
     Move a file/directory with dry-run capability.
 
-    In dry-run mode, logs the intended move without modifying filesystem. 
-    In execution mode, uses shutil.move for safe move operations that support 
+    In dry-run mode, logs the intended move without modifying filesystem.
+    In execution mode, uses shutil.move for safe move operations that support
     cross-device transfers.
 
     Args:
@@ -104,7 +104,7 @@ def remove_file(path: Path, dry_run: bool) -> None:
     """
     Remove a file with dry-run capability.
 
-    In dry-run mode, logs the intended removal. In execution mode, 
+    In dry-run mode, logs the intended removal. In execution mode,
     deletes the file using Path.unlink().
 
     Args:
@@ -124,8 +124,8 @@ def symlink(from_: Path, to: Path, dry_run: bool) -> None:
     """
     Create a symbolic link with dry-run capability.
 
-    In dry-run mode, logs the intended symlink creation. In execution mode, 
-    creates a symbolic link at 'to' pointing to 'from_'. Both paths must be 
+    In dry-run mode, logs the intended symlink creation. In execution mode,
+    creates a symbolic link at 'to' pointing to 'from_'. Both paths must be
     absolute.
 
     Args:
@@ -138,7 +138,6 @@ def symlink(from_: Path, to: Path, dry_run: bool) -> None:
         return
 
     logger.debug(f"installing {from_} to {to}")
+    to.parent.mkdir(parents=True, exist_ok=True)
     to.symlink_to(from_)
     return
-
-
