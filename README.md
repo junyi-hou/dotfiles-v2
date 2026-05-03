@@ -35,18 +35,16 @@ make install  # places dotfiles to appropriate locations
 
 ## Setup Secrets
 
-Install dependencies:
-```
-brew install gnu-getopt
-```
+Secrets are stored in `env.json.enc` (a SOPS-encrypted JSON file) and managed via [sops](https://github.com/getsops/sops) with an age key, stored at `keys/age`. The `SOPS_AGE_KEY_FILE` environment variable is set to `$HOME/dotfiles-v2/keys/age` automatically via `modules/profile`.
 
-Interacting with secrets are handled via `passage`. To use an existing key (so that the secrets in `modules/passage/store` is usable), copy the (r)age key to `modules/passage/identities`. To use a new key, run
+## Interacting with Secrets
+
+Two scripts are provided in `modules/local/bin/`:
+
+- `passage [key/path]` — decrypt and print a secret value (or the full JSON if no path given). An emacs command `sops-retrieve-secret` takes the key path to a secret and return the secret vaule. If called interactively, it asks users to pick from the secret list and copy the secret value to the clipboard (clean after 30s).
+- `run-with-env [ENV...] -- <command>` — run a command with secrets injected as environment variables; omit `ENV...` to inject all secrets.
+
+To edit secrets:
 ```
-rage-keygen >> modules/passage/identities
+M-x sops-edit-secret
 ```
-
-## Add New Secrets
-
-If you wants to create new secrets, make sure to do it inside of this repo, so that the new secret is added to `modules/passage/store` instead of the default `$HOME/.passage/store`. After creating the secret, install it with `make update-secret`.
-
-In the future I should create a function to automate this process.
