@@ -20,7 +20,17 @@
   ;; lsp
   (with-eval-after-load 'eglot
     (add-to-list
-     'eglot-server-programs '(yaml-ts-mode "yaml-language-server" "--stdio")))
+     'eglot-server-programs
+     `(yaml-ts-mode
+       "direnv"
+       "exec"
+       ,(expand-file-name gatsby>dotfiles-repo-location)
+       "pixi"
+       "run"
+       "-e"
+       "all"
+       "yaml-language-server"
+       "--stdio")))
 
   :hook
   (yaml-ts-mode . display-line-numbers-mode) ;; turn on line-number
