@@ -32,8 +32,10 @@ def _try_install(pkg: str, prog: str) -> bool:
 
 def _install_claude() -> bool:
     return (
-        _try_install("@anthropic-ai/claude-code", "claude")
-        and _try_install("@agentclientprotocol/claude-agent-acp", "claude-agent-acp")
+        _try_install("@anthropic-ai/claude-code@2.1.126", "claude")
+        and _try_install(
+            "@agentclientprotocol/claude-agent-acp@0.30.0", "claude-agent-acp"
+        )
         and _try_install("@openacp/cli", "openacp")
     )
 
