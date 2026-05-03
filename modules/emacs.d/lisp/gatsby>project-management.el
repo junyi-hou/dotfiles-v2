@@ -326,5 +326,13 @@ interactively select a single test to run instead."
    ("A" . #'diff-apply-buffer)
    ("q" . #'kill-buffer-and-window)))
 
+(gatsby>use-internal-package sops-secret-management
+  :custom (sops-enc-file (expand-file-name "env.json.enc" gatsby>dotfiles-repo-location))
+  :evil-bind
+  ((:maps normal)
+   ("SPC p e" . #'sops-edit-secret)
+   ("SPC p g" . #'sops-retrieve-secret)))
+
+
 (provide 'gatsby>project-management)
 ;;; gatsby>project-management.el ends here
