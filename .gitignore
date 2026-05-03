@@ -12,3 +12,4 @@ keys/*
 
 .aider*
 .agent-shell/*
+*.elc
