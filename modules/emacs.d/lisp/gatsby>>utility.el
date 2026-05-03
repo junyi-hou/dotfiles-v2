@@ -196,15 +196,100 @@ DATA is a parsed JSON alist from the sops-encrypted file; the top-level
       secret)))
 
 (gatsby>defcommand gatsby>edit-secret ()
-  ;; TODO:
-  ;; read the decrpyed env.json.enc into a temp buffer
-  ;; open that temp buffer and allow user to edit the content
-  ;; after user finishing editing the content, user can press C-c to
-  ;; run sops -e TEMP BUFFER > env.json.enc
-  ;; user should not be able to save the buffer into file
-
-  ;; NOTE: no auto-save-mode, no backup, no temp file
-  )
+  "Decrypt env.json.enc into a scratch buffer for editing.
+Press C-c C-c to re-encrypt and save. Normal file saves are disabled."
+  (unless (fboundp 'json-ts-mode)
+    (user-error
+     "json-ts-mode is unavailable (requires Emacs 29+ with tree-sitter JSON grammar)"))
+  (let* ((enc-file (expand-file-name "env.json.enc" gatsby>dotfiles-repo-location))
+         (decrypted
+          (shell-command-to-string
+           (format "sops --input-type json --output-type json -d %s"
+                   (shell-quote-argument enc-file))))
+         (buf (get-buffer-create "*edit-secret*")))
+    (with-current-buffer buf
+      (erase-buffer)
+      (insert decrypted)
+      (json-pretty-print-buffer)
+      (json-ts-mode)
+      (setq-local buffer-file-name nil)
+      (setq-local auto-save-default nil)
+      (auto-save-mode -1)
+      (setq-local make-backup-files nil)
+      (setq-local buffer-offer-save nil)
+      (let ((save-fn
+             (lambda ()
+               (interactive)
+               (message "Encrypting the secrets...")
+               (json-pretty-print-buffer)
+               (let* ((content (buffer-string))
+                      (default-directory gatsby>dotfiles-repo-location)
+                      (out-buf (generate-new-buffer " *sops-enc-output*"))
+                      (exit-code
+                       (with-temp-buffer
+                         (insert content)
+                         (call-process-region (point-min) (point-max) "sops"
+                                              nil
+                                              out-buf
+                                              nil
+                                              "-e"
+                                              "--input-type"
+                                              "json"
+                                              "--output-type"
+                                              "json"
+                                              "--config"
+                                              (expand-file-name
+                                               ".sops.yaml"
+                                               gatsby>dotfiles-repo-location)
+                                              "--filename-override"
+                                              "env.json"
+                                              "/dev/stdin"))))
+                 (if (= exit-code 0)
+                     (progn
+                       (write-region
+                        (with-current-buffer out-buf
+                          (buffer-string))
+                        nil enc-file)
+                       (kill-buffer out-buf)
+                       (kill-buffer buf)
+                       (delete-window)
+                       (message "Secrets saved to %s"
+                                (file-name-nondirectory enc-file)))
+                   (let ((err
+                          (with-current-buffer out-buf
+                            (buffer-string))))
+                     (kill-buffer out-buf)
+                     (user-error "sops encryption failed: %s" err))))))
+            (cancel-fn
+             (lambda ()
+               (interactive)
+               (kill-buffer-and-window)
+               (message "Edit cancelled"))))
+        (setq-local header-line-format
+                    '(:eval
+                      (let ((text "     C-c C-c  save & encrypt    C-c C-k  cancel"))
+                        (propertize (concat
+                                     text
+                                     (make-string
+                                      (max 0 (- (window-width) (length text))) ?\s))
+                                    'face '(error :inverse-video t)))))
+        (local-set-key (kbd "C-c C-c") save-fn)
+        (local-set-key (kbd "C-c C-k") cancel-fn)
+        (when (fboundp 'evil-local-set-key)
+          (evil-local-set-key 'normal (kbd "C-c C-c") save-fn)
+          (evil-local-set-key 'insert (kbd "C-c C-c") save-fn)
+          (evil-local-set-key 'normal (kbd "C-c C-k") cancel-fn)
+          (evil-local-set-key 'insert (kbd "C-c C-k") cancel-fn))
+        ;; remap save-buffer and write-file: when buffer-file-name is nil,
+        ;; save-buffer prompts via write-file before ever reaching write-file-functions
+        (let ((no-save
+               (lambda ()
+                 (interactive)
+                 (message "Use C-c C-c to save secrets"))))
+          (local-set-key [remap save-buffer] no-save)
+          (local-set-key [remap write-file] no-save)
+          (local-set-key [remap evil-write] no-save))))
+    (gatsby>switch-to-buffer-new-window buf)))
 
 (defun gatsby>>run-process-with-callback (commands &optional buffer final-sentinel)
   "Run COMMANDS sequentially. The FINAL-SENTINEL is attached to the last process.
