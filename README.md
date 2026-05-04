@@ -21,7 +21,7 @@ brew install direnv
 
 ### Linux
 
-TODO
+Support for linux is pending. But development on a remote linux box is supported (see [this section](#remote-development))
 
 ## Install Configuration
 
@@ -36,18 +36,39 @@ make claude  # install claude-code and acp integration
 make java    # install java (for clojure/scala development)
 ```
 
-## Setup Secrets
+## Remote Development
 
-Secrets are stored in `env.json.enc` (a SOPS-encrypted JSON file) and managed via [sops](https://github.com/getsops/sops) with an age key, stored at `keys/age`. The `SOPS_AGE_KEY_FILE` environment variable is set to `$HOME/dotfiles-v2/keys/age` automatically via `modules/profile`.
+Remote machines are set up via the `deploy` script, which clones the dotfiles repo and provisions secrets in one step:
 
-## Interacting with Secrets
+```sh
+deploy user@host [-p port]
+```
 
-Two scripts are provided in `modules/local/bin/`:
+After setup, connect via TRAMP in Emacs (`C-x C-f /ssh:user@host:/path`). The remote environment will have the full dotfiles configuration including secrets available via `passage` and `run-with-env`.
 
-- `passage [key/path]` — decrypt and print a secret value (or the full JSON if no path given). An emacs command `sops-retrieve-secret` takes the key path to a secret and return the secret vaule. If called interactively, it asks users to pick from the secret list and copy the secret value to the clipboard (clean after 30s).
-- `run-with-env [ENV...] -- <command>` — run a command with secrets injected as environment variables; omit `ENV...` to inject all secrets.
+## Secrets
 
-To edit secrets:
+Secrets are stored in `env.json.enc` (a SOPS-encrypted JSON file, not checked into git) and managed via [sops](https://github.com/getsops/sops) with an age key at `~/.config/age/key`. Set `SOPS_AGE_KEY_FILE=~/.config/age/key` in your shell environment (done automatically via `modules/profile`).
+
+Two CLI tools are available on any machine with secrets deployed:
+
+- `passage [key/path]` — print a secret value (or full JSON if no path given)
+- `run-with-env [ENV...] -- <command>` — run a command with secrets injected as env vars; omit `ENV...` to inject all
+
+### Updating secrets
+
+Secrets can only be edited on the local machine. This is intentional: each remote machine holds its own re-encrypted copy of the secrets, so edits on a remote would diverge and never propagate back. The local machine is the single source of truth.
+
 ```
 M-x sops-edit-secret
 ```
+
+Decrypts into a scratch buffer. `C-c C-c` re-encrypts and saves; `C-c C-k` cancels. `sops-retrieve-secret` lets you pick a secret by path and copies it to the clipboard (cleared after 30s).
+
+After editing, push the updated secrets to each remote:
+
+```sh
+deploy --secret-only user@host
+```
+
+To rotate after a key compromise: change the actual secret values via `sops-edit-secret`, then re-run `deploy --secret-only` for each affected machine.

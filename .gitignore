@@ -7,7 +7,7 @@
 emacs-mac/
 
 # secrets
-keys/*
+env.json.enc
 
 .aider*
 .agent-shell/*
