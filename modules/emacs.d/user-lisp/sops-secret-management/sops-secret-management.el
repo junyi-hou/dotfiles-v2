@@ -37,15 +37,26 @@ DATA is a parsed JSON alist; the top-level `sops' metadata key is skipped."
      data)
     paths))
 
+(defun sops--local-public-key ()
+  "Return the age public key from ~/.config/age/key."
+  (with-temp-buffer
+    (insert-file-contents (expand-file-name "~/.config/age/key"))
+    (goto-char (point-min))
+    (if (re-search-forward "^# public key: \\(.+\\)$" nil t)
+        (match-string 1)
+      (user-error "No public key found in ~/.config/age/key"))))
+
 ;;;###autoload
 (defun sops-retrieve-secret (secret-path)
   "Retrieve the secret at SECRET-PATH via passage and copy it to the clipboard.
 The clipboard is cleared after 30 seconds."
   (interactive
-   (let* ((enc-file (expand-file-name sops-enc-file gatsby>dotfiles-repo-location))
-          (data (json-read-file enc-file))
-          (paths (sops--passage-paths data)))
-     (list (completing-read "Getting secret: " paths))))
+   (let* ((enc-file (expand-file-name sops-enc-file gatsby>dotfiles-repo-location)))
+     (unless (file-exists-p enc-file)
+       (user-error "Encrypted secrets not found: %s" enc-file))
+     (let* ((data (json-read-file enc-file))
+            (paths (sops--passage-paths data)))
+       (list (completing-read "Getting secret: " paths)))))
   (let ((secret (string-trim (shell-command-to-string
                               (format "passage %s" (shell-quote-argument secret-path))))))
     (if (called-interactively-p 'interactive)
@@ -83,9 +94,7 @@ The clipboard is cleared after 30 seconds."
                                    "-e"
                                    "--input-type" "json"
                                    "--output-type" "json"
-                                   "--config"
-                                   (expand-file-name ".sops.yaml" gatsby>dotfiles-repo-location)
-                                   "--filename-override" "env.json"
+                                   "--age" (sops--local-public-key)
                                    "/dev/stdin"))))
       (if (= exit-code 0)
           (progn
@@ -142,6 +151,8 @@ Press C-c C-c to re-encrypt and save.  Normal file saves are disabled."
   (unless (treesit-ready-p 'json t)
     (user-error "Tree-sitter JSON grammar unavailable (requires Emacs 29+ with grammar installed)"))
   (let* ((enc-file (expand-file-name sops-enc-file gatsby>dotfiles-repo-location))
+         (_ (unless (file-exists-p enc-file)
+              (user-error "Encrypted secrets not found: %s" enc-file)))
          (decrypted (shell-command-to-string
                      (format "sops --input-type json --output-type json -d %s"
                              (shell-quote-argument enc-file))))

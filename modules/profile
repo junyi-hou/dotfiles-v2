@@ -1,7 +1,7 @@
 OPENACP_CONFIG_PATH="$HOME/.config/openacp/config.json"
 export OPENACP_CONFIG_PATH
 
-SOPS_AGE_KEY_FILE="$HOME/dotfiles-v2/keys/age"
+SOPS_AGE_KEY_FILE="$HOME/.config/age/key"
 export SOPS_AGE_KEY_FILE
 
 PATH="$HOME/dotfiles-v2/.pixi/envs/all/bin:$HOME/.local/bin:/bin:$PATH"
