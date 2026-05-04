@@ -24,7 +24,7 @@
                     (:source "elpaca-menu-lock-file" :protocol https :inherit t :depth
                              treeless :host github :repo "junyi-hou/agent-shell-tramp"
                              :package "agent-shell-tramp" :ref
-                             "a226677ce95699938db60f69900cdeb1fba0446e" :id
+                             "52e893a538840d258b031f941e687d7552e769e4" :id
                              agent-shell-tramp :type git))
  (cape :source "elpaca-menu-lock-file" :recipe
        (:package "cape" :repo "minad/cape" :fetcher github :files
