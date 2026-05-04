@@ -27,10 +27,13 @@ TODO
 
 Clone this repo:
 ```
-git clone <TBD> /path/to/repo
-cd /path/to/repo
+git clone https://github.com/junyi-hou/dotfiles-v2 /path/to/repo
+cd /path/to/repo/dotfiles-v2
 make build    # this builds & installs emacs-mac
 make install  # places dotfiles to appropriate locations
+
+make claude  # install claude-code and acp integration
+make java    # install java (for clojure/scala development)
 ```
 
 ## Setup Secrets
