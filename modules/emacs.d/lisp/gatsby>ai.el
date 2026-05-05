@@ -22,7 +22,6 @@
   (agent-shell-session-strategy 'new)
   (agent-shell-anthropic-claude-acp-command
    '("run-with-env" "CONTEXT7_API_KEY" "--" "claude-agent-acp"))
-  (agent-shell-preferred-agent-config 'claude-code)
   :config
 
   ;; diff-mode integration
@@ -31,39 +30,54 @@
       ;; Defer so evil's own mode hooks don't overwrite this state afterward.
       (run-with-idle-timer 0 nil #'evil-emacs-state)))
 
-  (defcustom gatsby>agent-shell-default-config (agent-shell--resolve-preferred-config)
+  (defcustom gatsby>agent-shell-default-config
+    (agent-shell-anthropic-make-claude-code-config)
     "The default config"
     :type 'alist
     :group 'gatsby)
 
   (defcustom gatsby>agent-shell-configs
     `(("default" . ,gatsby>agent-shell-default-config)
-      ("local-agent" . gatsby>>agent-shell-make-config))
+      ("local-agent" . gatsby>>agent-shell-self-host-config)
+      ("openrouter" . gatsby>>agent-shell-openrouter-config))
     "List of agent-shell configs available for profile selection."
     :type 'alist
     :group 'gatsby)
 
-  (cl-defun gatsby>>agent-shell-make-config (&optional url)
-    (let ((url (or url (completing-read "ANTHROPIC_BASE_URL= " nil))))
-      (agent-shell-make-agent-config
-       :identifier 'claude-code
-       :mode-line-name "Claude"
-       :buffer-name "Claude"
-       :shell-prompt "Claude> "
-       :shell-prompt-regexp "Claude> "
-       :icon-name "claudecode.png"
-       :welcome-function #'agent-shell-anthropic--claude-code-welcome-message
+  (cl-defun gatsby>>agent-shell-make-custom-config
+      (&rest args &key env-var &allow-other-keys)
+    (let ((config (copy-alist gatsby>agent-shell-default-config))
+          (rest-keys (map-delete args :env-var)))
+      (map-put!
+       config
        :client-maker
        (lambda (buffer)
          (let* ((agent-shell-anthropic-claude-environment
-                 (agent-shell-make-environment-variables
-                  "ANTHROPIC_BASE_URL" url
-                  ;; "https://o9vqf53br3317w-11434.proxy.runpod.net"
-                  "ANTHROPIC_API_KEY" "" "ANTHROPIC_OAUTH_TOKEN" "ollama")))
-           (agent-shell-anthropic-make-claude-client :buffer buffer)))
-       :default-model-id #'ignore
-       :default-session-mode-id #'ignore
-       :install-instructions "Self hosting!")))
+                 (apply #'agent-shell-make-environment-variables env-var)))
+           (agent-shell-anthropic-make-claude-client :buffer buffer))))
+      (message "%s" rest-keys)
+      (map-do (lambda (key value) (map-put! config key value)) rest-keys)
+      config))
+
+  (defun gatsby>>agent-shell-self-host-config (&optional url)
+    (let ((url (or url (completing-read "ANTHROPIC_BASE_URL= " nil))))
+      (gatsby>>agent-shell-make-custom-config
+       :env-var
+       `("ANTHROPIC_BASE_URL"
+         ,url
+         "ANTHROPIC_API_KEY"
+         ""
+         "ANTHROPIC_OAUTH_TOKEN"
+         "ollama"))))
+
+  (defun gatsby>>agent-shell-openrouter-config ()
+    (gatsby>>agent-shell-make-custom-config
+     :env-var
+     `("ANTHROPIC_BASE_URL" "https://openrouter.ai/api" "ANTHROPIC_AUTH_TOKEN"
+       ,(or (sops-retrieve-secret "env/OPENROUTER_API_KEY")
+            (user-error "No OPENROUTER_API_KEY set"))
+       "ANTHROPIC_API_KEY" "")
+     :default-model-id (lambda (&rest _) "deepseek/deepseek-v4-pro")))
 
   (defun gatsby>>agent-shell-select-config ()
     (let ((cfg
