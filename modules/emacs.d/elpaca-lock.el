@@ -149,7 +149,7 @@
                                "extensions/elpaca-use-package.el" :build
                                (:not elpaca--compile-info) :source
                                "elpaca-menu-lock-file" :protocol https :inherit t :depth
-                               treeless :ref "9c9477d1154978d77b6eab9fcd68475826604188"
+                               treeless :ref "abda553407b8769006c241a8b2f0381fe66ad613"
                                :id elpaca-use-package :type git))
  (envrc :source "elpaca-menu-lock-file" :recipe
         (:package "envrc" :fetcher github :repo "purcell/envrc" :files
