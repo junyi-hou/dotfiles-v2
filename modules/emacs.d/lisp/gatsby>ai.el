@@ -89,6 +89,21 @@
           (funcall cfg)
         cfg)))
 
+  (defun gatsby>>agent-shell-current-client ()
+    "Return the buffer of the first found agent-shell client for the current project.
+Return `nil' if no client found."
+    (let* ((project-root (and (project-current) (project-root (project-current)))))
+      (thread-last
+       (buffer-list) (seq-filter #'buffer-live-p)
+       (seq-filter
+        (lambda (b)
+          (with-current-buffer b
+            (eq major-mode 'agent-shell-mode))))
+       (cl-find-if
+        (lambda (b)
+          (with-current-buffer b
+            (file-equal-p default-directory project-root)))))))
+
   (gatsby>defcommand gatsby>agent-shell-start-or-switch (config)
     "Switch to existing agent shell for current project, or start a new one.
 With prefix argument CONFIG, select a config from `gatsby>agent-shell-configs'."
@@ -96,18 +111,7 @@ With prefix argument CONFIG, select a config from `gatsby>agent-shell-configs'."
             (if config
                 (gatsby>>agent-shell-select-config)
               gatsby>agent-shell-default-config))
-           (project-root (and (project-current) (project-root (project-current))))
-           (current-client
-            (thread-last
-             (buffer-list) (seq-filter #'buffer-live-p)
-             (seq-filter
-              (lambda (b)
-                (with-current-buffer b
-                  (eq major-mode 'agent-shell-mode))))
-             (cl-find-if
-              (lambda (b)
-                (with-current-buffer b
-                  (file-equal-p default-directory project-root)))))))
+           (current-client (gatsby>>agent-shell-current-client)))
       (if (not current-client)
           (agent-shell--start :no-focus nil :config cfg :new-session t)
         (display-buffer current-client agent-shell-display-action)
@@ -190,78 +194,105 @@ Returns non-nil if a button was found and activated."
             (agent-shell-previous-item))
         (agent-shell-previous-item))))
 
-  (cl-defun gatsby>>claude-cli
-      (prompt
-       &key
-       (allowed-tools nil)
-       (command "claude")
-       (callback (lambda (output) (message output))))
-    "Run `claude -p' with PROMPT and ALLOWED-TOOLS.
-If COMMAND is not nil, use it instead of `claude'."
-    (let ((command `(,command "-p" ,prompt "--model" "claude-haiku-4-5"))
-          (proc-buf (generate-new-buffer " *claude-cli-output*")))
-      (make-process
-       :name "claude-cli"
-       :command
-       (if allowed-tools
-           `(,@command "--allowed-tools" ,allowed-tools)
-         command)
-       :buffer proc-buf
-       ;; TRAMP compatible
-       :file-handler t
-       :filter
-       (lambda (proc string)
-         (let ((string
-                (thread-first string (string-split "\n") butlast (string-join "\n"))))
-           (when (buffer-live-p (process-buffer proc))
-             (with-current-buffer (process-buffer proc)
-               (let ((moving (= (point) (process-mark proc))))
-                 (save-excursion
-                   ;; Insert the text, advancing the process marker.
-                   (goto-char (process-mark proc))
-                   (insert string)
-                   (set-marker (process-mark proc) (point)))
-                 (if moving
-                     (goto-char (process-mark proc))))))))
-       :sentinel
-       (lambda (_proc event)
-         ;; when success, return buffer-string of `proc-buf'
-         ;; otherwise signal user-error with the buffer-string of `proc-buf'
-         ;; alawys clean up - kill `proc-buf'
-         (unwind-protect
-             (let ((output
-                    (with-current-buffer proc-buf
-                      (buffer-string))))
-               (if (string= event "finished\n")
-                   (funcall callback output)
-                 (user-error output)))
-           (kill-buffer proc-buf))))))
+  (defun gatsby>>agent-shell-last-text-output ()
+    "Return plain text of last agent-shell response, stripping fragment blocks.
+Must be called from within an agent-shell buffer."
+    (save-excursion
+      (goto-char (process-mark (get-buffer-process (current-buffer))))
+      (forward-line -1)
+      (agent-shell-previous-item)
+      (re-search-forward comint-prompt-regexp nil 'noerror)
+      (forward-line -1)
+      (let ((end (point))
+            (start
+             (progn
+               (text-property-search-backward 'agent-shell-ui-state)
+               (point))))
+        (let ((s (string-trim (buffer-substring-no-properties start end))))
+          (cond
+           ((string-match
+             "\\`[ \t\n]*```[a-zA-Z]*\n\\(\\(?:.\\|\n\\)*\\)```[ \t\n]*\\'" s)
+            (string-trim (match-string 1 s)))
+           ((string-match "\\``\\(\\(?:.\\|\n\\)*\\)`\\'" s)
+            (string-trim (match-string 1 s)))
+           (t
+            s))))))
 
-  (gatsby>defcommand gatsby>claude-cli-commit ()
+  (defun gatsby>>agent-shell-set-mode-id (mode-id &optional on-success)
+    "Set agent-shell session mode to MODE-ID without prompting.
+Must be called from within an agent-shell buffer."
+    (let ((state (agent-shell--state)))
+      (agent-shell--send-request
+       :state state
+       :client (map-elt state :client)
+       :request
+       (acp-make-session-set-mode-request
+        :session-id (map-nested-elt state '(:session :id))
+        :mode-id mode-id)
+       :buffer (current-buffer)
+       :on-success
+       (lambda (_)
+         (let ((session (map-elt (agent-shell--state) :session)))
+           (map-put! session :mode-id mode-id)
+           (map-put! (agent-shell--state) :session session))
+         (agent-shell--update-header-and-mode-line)
+         (when on-success
+           (funcall on-success)))
+       :on-failure (lambda (err _) (message "Failed to set mode to %s: %s" mode-id err)))))
+
+  (gatsby>defcommand gatsby>agent-shell-commit ()
     "Automatically generate commit message for currently staged files."
     (unless (magit-anything-staged-p)
       (user-error "Nothing staged - can't generate commit message"))
-    (message "generating commit message...")
-    (let ((magit-buf (magit-get-mode-buffer 'magit-status-mode)))
-      (gatsby>>claude-cli
-       "Analyze currently staged changes and generate a message draft following the **Conventional Commits** specification (`type(scope): description`). Output only the commit message and nothing else. Do NOT put the commit message in a code block"
-       :callback
-       (lambda (s)
-         (make-process
-          :name "commit-using-claude"
-          :command `("git" "commit" "-m" ,s "--edit")
-          :connection-type 'pty
-          :sentinel
-          (lambda (&rest _)
-            (when magit-buf
-              (with-current-buffer magit-buf
-                (magit-refresh))))))
-       :allowed-tools "Bash(git diff *)")))
+    (message "Generating commit message...")
+    (let*
+        ((agent-shell-buffer
+          (or (gatsby>>agent-shell-current-client)
+              (cl-letf (((symbol-function #'agent-shell--display-buffer) #'ignore))
+                (agent-shell--start
+                 :no-focus t
+                 :config gatsby>agent-shell-default-config
+                 :new-session t
+                 :session-strategy 'new))))
+         (original-mode-id
+          (with-current-buffer agent-shell-buffer
+            (map-nested-elt (agent-shell--state) '(:session :mode-id))))
+         (do-submit
+          (lambda ()
+            (with-current-buffer agent-shell-buffer
+              (let (subscription)
+                (setq subscription
+                      (agent-shell-subscribe-to
+                       :shell-buffer agent-shell-buffer
+                       :event 'turn-complete
+                       :on-event
+                       (lambda (_event)
+                         (agent-shell-unsubscribe :subscription subscription)
+                         (let ((output
+                                (with-current-buffer agent-shell-buffer
+                                  (gatsby>>agent-shell-last-text-output))))
+                           (with-current-buffer agent-shell-buffer
+                             (when (and original-mode-id
+                                        (not
+                                         (string=
+                                          original-mode-id "bypassPermissions")))
+                               (gatsby>>agent-shell-set-mode-id original-mode-id)))
+                           (let ((tmpfile (make-temp-file "commit-msg")))
+                             (with-temp-file tmpfile
+                               (insert output))
+                             (magit-run-git-with-editor
+                              "commit" "--edit" "-F" tmpfile))))))
+                (shell-maker-submit
+                 :input "generate a commit message for the currently staged changes"))))))
+      (with-current-buffer agent-shell-buffer
+        (if (string= original-mode-id "bypassPermissions")
+            (funcall do-submit)
+          (gatsby>>agent-shell-set-mode-id "bypassPermissions" do-submit)))))
 
   (with-eval-after-load 'magit
     (transient-append-suffix
      'magit-commit #'magit-commit-create
-     '("g" "Create commit with claude-generated message" gatsby>claude-cli-commit)))
+     '("g" "Create commit with claude-generated message" gatsby>agent-shell-commit)))
 
   :evil-bind
   ((:maps normal)
