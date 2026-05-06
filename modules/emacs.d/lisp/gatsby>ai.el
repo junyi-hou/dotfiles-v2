@@ -90,8 +90,8 @@
         cfg)))
 
   (defun gatsby>>agent-shell-current-client ()
-    "Return the buffer of the first found agent-shell client for the current project.
-Return `nil' if no client found."
+    "Return the buffer of the first nonbusy agent-shell client for the current project.
+Return `nil' if no available client found."
     (let* ((project-root (and (project-current) (project-root (project-current)))))
       (thread-last
        (buffer-list) (seq-filter #'buffer-live-p)
@@ -102,7 +102,8 @@ Return `nil' if no client found."
        (cl-find-if
         (lambda (b)
           (with-current-buffer b
-            (file-equal-p default-directory project-root)))))))
+            (and (file-equal-p default-directory project-root)
+                 (not (agent-shell--active-requests-p (agent-shell--state))))))))))
 
   (gatsby>defcommand gatsby>agent-shell-start-or-switch (config)
     "Switch to existing agent shell for current project, or start a new one.
