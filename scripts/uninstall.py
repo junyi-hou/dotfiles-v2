@@ -25,6 +25,10 @@ def uninstall(module: str | Path, *, dry_run: bool = True) -> None:
     if module.is_symlink():
         module = module.resolve()
 
+    if not module.exists():
+        logger.debug(f"{module} does not exist, skipping.")
+        return
+
     # catch unexpected
     if not (module.is_dir() or module.is_file()):
         raise ValueError(f"{module} is neither file nor directory.")
