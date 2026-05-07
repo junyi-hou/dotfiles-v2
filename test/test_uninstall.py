@@ -25,6 +25,21 @@ def test_uninstall_skips_when_install_path_missing():
                 uninstall(module_file, dry_run=False)
 
 
+def test_uninstall_skips_broken_symlink_in_module():
+    with tempfile.TemporaryDirectory() as tmp:
+        module_root = Path(tmp).resolve() / "modules" / "mymod"
+        module_root.mkdir(parents=True)
+        broken_link = module_root / "rc"
+        broken_link.symlink_to("/nonexistent/target")
+        install_root = Path(tmp).resolve() / "home"
+        install_root.mkdir()
+
+        with patch("scripts.uninstall.git_root", return_value=Path(tmp).resolve()):
+            with patch("scripts._lib.HOME", install_root):
+                # broken symlink in dotfiles dir — should not raise ValueError
+                uninstall(broken_link, dry_run=False)
+
+
 def test_uninstall_removes_symlink_when_installed():
     with tempfile.TemporaryDirectory() as tmp:
         module_root, module_file = _make_module_tree(tmp)
