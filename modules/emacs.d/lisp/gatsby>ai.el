@@ -20,6 +20,7 @@
    '(display-buffer-in-side-window (side . right) (window-width . 0.33) (slot . 0)))
   (agent-shell-file-completion-enabled t)
   (agent-shell-session-strategy 'new)
+  (agent-shell-preferred-agent-config 'claude-code)
   (agent-shell-anthropic-claude-acp-command
    '("run-with-env" "CONTEXT7_API_KEY" "--" "claude-agent-acp"))
   :config
@@ -30,38 +31,37 @@
       ;; Defer so evil's own mode hooks don't overwrite this state afterward.
       (run-with-idle-timer 0 nil #'evil-emacs-state)))
 
-  (defcustom gatsby>agent-shell-default-config
-    (agent-shell-anthropic-make-claude-code-config)
-    "The default config"
-    :type 'alist
-    :group 'gatsby)
-
   (defcustom gatsby>agent-shell-configs
-    `(("default" . ,gatsby>agent-shell-default-config)
-      ("local-agent" . gatsby>>agent-shell-self-host-config)
+    `(("default" . gatsby>>agent-shell-default-config)
+      ("self-host" . gatsby>>agent-shell-self-host-config)
       ("openrouter" . gatsby>>agent-shell-openrouter-config))
     "List of agent-shell configs available for profile selection."
-    :type 'alist
+    :type 'function
     :group 'gatsby)
 
   (cl-defun gatsby>>agent-shell-make-custom-config
-      (&rest args &key env-var &allow-other-keys)
-    (let ((config (copy-alist gatsby>agent-shell-default-config))
+      (config-name &rest args &key env-var &allow-other-keys)
+    (let ((config (copy-alist (agent-shell--resolve-preferred-config)))
           (rest-keys (map-delete args :env-var)))
+      (push (cons :config-name config-name) config)
       (map-put!
        config
        :client-maker
        (lambda (buffer)
+         ;; TODO: make `agent-shell-anthropic-claude-environment' and `agent-shell-anthropic-make-claude-client' protable across agents
          (let* ((agent-shell-anthropic-claude-environment
                  (apply #'agent-shell-make-environment-variables env-var)))
            (agent-shell-anthropic-make-claude-client :buffer buffer))))
-      (message "%s" rest-keys)
       (map-do (lambda (key value) (map-put! config key value)) rest-keys)
       config))
+
+  (defun gatsby>>agent-shell-default-config ()
+    (gatsby>>agent-shell-make-custom-config "default"))
 
   (defun gatsby>>agent-shell-self-host-config (&optional url)
     (let ((url (or url (completing-read "ANTHROPIC_BASE_URL= " nil))))
       (gatsby>>agent-shell-make-custom-config
+       "self-host"
        :env-var
        `("ANTHROPIC_BASE_URL"
          ,url
@@ -72,6 +72,7 @@
 
   (defun gatsby>>agent-shell-openrouter-config ()
     (gatsby>>agent-shell-make-custom-config
+     "openrouter"
      :env-var
      `("ANTHROPIC_BASE_URL" "https://openrouter.ai/api" "ANTHROPIC_AUTH_TOKEN"
        ,(or (sops-retrieve-secret "env/OPENROUTER_API_KEY")
@@ -85,25 +86,26 @@
             gatsby>agent-shell-configs
             (completing-read "Agent config: " (mapcar #'car gatsby>agent-shell-configs)
                              nil t))))
-      (if (functionp cfg)
-          (funcall cfg)
-        cfg)))
+      (funcall cfg)))
 
-  (defun gatsby>>agent-shell-current-client ()
+  (defun gatsby>>agent-shell-current-client (&optional config-name)
     "Return the buffer of the first nonbusy agent-shell client for the current project.
-Return `nil' if no available client found."
+If CONFIG-NAME is non-nil, only return a client with matching config name.
+Return nil if no available client found."
     (let* ((project-root (and (project-current) (project-root (project-current)))))
       (thread-last
        (buffer-list) (seq-filter #'buffer-live-p)
-       (seq-filter
-        (lambda (b)
-          (with-current-buffer b
-            (eq major-mode 'agent-shell-mode))))
        (cl-find-if
         (lambda (b)
           (with-current-buffer b
-            (and (file-equal-p default-directory project-root)
-                 (not (agent-shell--active-requests-p (agent-shell--state))))))))))
+            (and (buffer-live-p b)
+                 (file-equal-p project-root default-directory)
+                 (eq major-mode 'agent-shell-mode)
+                 (or (not config-name)
+                     (equal
+                      config-name
+                      (map-nested-elt
+                       (agent-shell--state) '(:agent-config :config-name)))))))))))
 
   (gatsby>defcommand gatsby>agent-shell-start-or-switch (config)
     "Switch to existing agent shell for current project, or start a new one.
@@ -111,8 +113,9 @@ With prefix argument CONFIG, select a config from `gatsby>agent-shell-configs'."
     (let* ((cfg
             (if config
                 (gatsby>>agent-shell-select-config)
-              gatsby>agent-shell-default-config))
-           (current-client (gatsby>>agent-shell-current-client)))
+              (gatsby>>agent-shell-default-config)))
+           (current-client
+            (gatsby>>agent-shell-current-client (map-elt cfg :config-name))))
       (if (not current-client)
           (agent-shell--start :no-focus nil :config cfg :new-session t)
         (display-buffer current-client agent-shell-display-action)
@@ -127,7 +130,7 @@ With prefix argument CONFIG, select a config from `gatsby>agent-shell-configs'."
      :config
      (if config
          (gatsby>>agent-shell-select-config)
-       gatsby>agent-shell-default-config)
+       (gatsby>agent-shell-default-config))
      :new-session t
      :session-strategy 'prompt))
 
