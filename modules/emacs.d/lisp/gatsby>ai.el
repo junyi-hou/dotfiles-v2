@@ -95,6 +95,8 @@ Return nil if no available client found."
     (let* ((project-root (and (project-current) (project-root (project-current)))))
       (thread-last
        (buffer-list) (seq-filter #'buffer-live-p)
+       ;; I might have more than one of those, but that's fine - I just need one
+       ;; of them
        (cl-find-if
         (lambda (b)
           (with-current-buffer b

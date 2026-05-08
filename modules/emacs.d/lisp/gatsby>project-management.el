@@ -184,7 +184,6 @@ interactively select a single test to run instead."
 ;; and https://github.com/jixiuf/vmacs/blob/master/config/emacs/lazy/lazy-version-control.el
 (use-package magit
   :ensure (:host github :repo "magit/magit")
-  :demand t
   :hook
   ((evil-mode
     .
