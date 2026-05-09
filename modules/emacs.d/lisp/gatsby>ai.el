@@ -278,54 +278,72 @@ Must be called from within an agent-shell buffer."
     (unless (magit-anything-staged-p)
       (user-error "Nothing staged - can't generate commit message"))
     (message "Generating commit message...")
-    (let*
-        ((agent-shell-buffer
-          (or (gatsby>>agent-shell-current-client)
-              (cl-letf (((symbol-function #'agent-shell--display-buffer) #'ignore))
-                (agent-shell--start
-                 :no-focus t
-                 :config (gatsby>>agent-shell-default-config)
-                 :new-session t
-                 :session-strategy 'new))))
-         (original-mode-id
-          (with-current-buffer agent-shell-buffer
-            (map-nested-elt (agent-shell--state) '(:session :mode-id))))
-         (do-submit
-          (lambda ()
-            (with-current-buffer agent-shell-buffer
-              (let (subscription)
-                (setq subscription
-                      (agent-shell-subscribe-to
-                       :shell-buffer agent-shell-buffer
-                       :event 'turn-complete
-                       :on-event
-                       (lambda (_event)
-                         (agent-shell-unsubscribe :subscription subscription)
-                         (let ((output
-                                (with-current-buffer agent-shell-buffer
-                                  (gatsby>>agent-shell-last-text-output))))
-                           (with-current-buffer agent-shell-buffer
-                             (when (and original-mode-id
-                                        (not
-                                         (string=
-                                          original-mode-id "bypassPermissions")))
-                               (gatsby>>agent-shell-set-mode-id original-mode-id)))
-                           (let ((tmpfile (make-temp-file "commit-msg")))
-                             (with-temp-file tmpfile
-                               (insert output))
-                             (magit-run-git-with-editor
-                              "commit" "--edit" "-F" tmpfile))))))
-                (shell-maker-submit
-                 :input "generate a commit message for the currently staged changes"))))))
-      (with-current-buffer agent-shell-buffer
-        (if (string= original-mode-id "bypassPermissions")
-            (funcall do-submit)
-          (gatsby>>agent-shell-set-mode-id "bypassPermissions" do-submit)))))
+    (let* ((existing-client (gatsby>>agent-shell-current-client))
+           (agent-shell-buffer
+            (or existing-client
+                (cl-letf (((symbol-function #'agent-shell--display-buffer) #'ignore))
+                  (agent-shell--start
+                   :no-focus t
+                   :config (gatsby>>agent-shell-default-config)
+                   :new-session t
+                   :session-strategy 'new))))
+           (proceed
+            (lambda ()
+              (with-current-buffer agent-shell-buffer
+                (let* ((original-mode-id
+                        (map-nested-elt (agent-shell--state) '(:session :mode-id)))
+                       (do-submit
+                        (lambda ()
+                          (with-current-buffer agent-shell-buffer
+                            (let (subscription)
+                              (setq subscription
+                                    (agent-shell-subscribe-to
+                                     :shell-buffer agent-shell-buffer
+                                     :event 'turn-complete
+                                     :on-event
+                                     (lambda (_event)
+                                       (agent-shell-unsubscribe :subscription subscription)
+                                       (let ((output
+                                              (with-current-buffer agent-shell-buffer
+                                                (gatsby>>agent-shell-last-text-output))))
+                                         (with-current-buffer agent-shell-buffer
+                                           (when (and original-mode-id
+                                                      (not
+                                                       (string=
+                                                        original-mode-id "bypassPermissions")))
+                                             (gatsby>>agent-shell-set-mode-id original-mode-id)))
+                                         (let ((tmpfile (make-temp-file "commit-msg")))
+                                           (with-temp-file tmpfile
+                                             (insert output))
+                                           (magit-run-git-with-editor
+                                            "commit" "--edit" "-F" tmpfile))))))
+                              (shell-maker-submit
+                               :input "generate a commit message for the currently staged changes"))))))
+                  (if (string= original-mode-id "bypassPermissions")
+                      (funcall do-submit)
+                    (gatsby>>agent-shell-set-mode-id "bypassPermissions" do-submit)))))))
+      (if existing-client
+          (funcall proceed)
+        (let (subscription)
+          (setq subscription
+                (agent-shell-subscribe-to
+                 :shell-buffer agent-shell-buffer
+                 :event 'prompt-ready
+                 :on-event
+                 (lambda (_event)
+                   (agent-shell-unsubscribe :subscription subscription)
+                   (funcall proceed))))))))
 
   (with-eval-after-load 'magit
     (transient-append-suffix
      'magit-commit #'magit-commit-create
      '("g" "Create commit with claude-generated message" gatsby>agent-shell-commit)))
+
+  (gatsby>defcommand gatsby>agent-shell-send-or-queue-prompt ()
+    "Send the current prompt if the shell is available. Otherwise put it in the request queue."
+    (if (agent-shell--active-requests-p (agent-shell--state))
+        (call-interactively #'agent-shell-queue-request)
+      (call-interactively #'shell-maker-submit)))
 
   :evil-bind
   ((:maps normal)
@@ -339,7 +357,7 @@ Must be called from within an agent-shell buffer."
    (:maps agent-shell-mode-map :states (normal visual insert))
    ("C-c C-l" . #'comint-clear-buffer)
    ("C-c C-c" . #'agent-shell-interrupt)
-   ("M-RET" . #'agent-shell-queue-request)
+   ("M-RET" . #'gatsby>agent-shell-send-or-queue-prompt)
    (:maps agent-shell-mode-map :states normal)
    ("y" . #'gatsby>agent-shell-permission-allow-once)
    ("!" . #'gatsby>agent-shell-permission-allow-always)
