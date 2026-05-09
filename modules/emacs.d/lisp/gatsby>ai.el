@@ -140,7 +140,9 @@ With prefix argument CONFIG, select a config from `gatsby>agent-shell-configs'."
                 (gatsby>>agent-shell-select-config)
               (gatsby>>agent-shell-default-config)))
            (current-client
-            (gatsby>>agent-shell-current-client (map-elt cfg :config-name))))
+            (gatsby>>agent-shell-current-client
+             (when config
+               (map-elt cfg :config-name)))))
       (if (not current-client)
           (agent-shell--start :no-focus nil :config cfg :new-session t)
         (display-buffer current-client agent-shell-display-action)
