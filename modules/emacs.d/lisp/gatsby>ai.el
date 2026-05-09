@@ -114,7 +114,9 @@
     "Return the buffer of the first nonbusy agent-shell client for the current project.
 If CONFIG-NAME is non-nil, only return a client with matching config name.
 Return nil if no available client found."
-    (let* ((project-root (and (project-current) (project-root (project-current)))))
+    (let* ((project-root
+            (or (and (project-current) (project-root (project-current)))
+                default-directory)))
       (thread-last
        (buffer-list) (seq-filter #'buffer-live-p)
        ;; I might have more than one of those, but that's fine - I just need one
