@@ -339,7 +339,7 @@ Must be called from within an agent-shell buffer."
    (:maps agent-shell-mode-map :states (normal visual insert))
    ("C-c C-l" . #'comint-clear-buffer)
    ("C-c C-c" . #'agent-shell-interrupt)
-   ("M-RET" . #'comint-send-input)
+   ("M-RET" . #'agent-shell-queue-request)
    (:maps agent-shell-mode-map :states normal)
    ("y" . #'gatsby>agent-shell-permission-allow-once)
    ("!" . #'gatsby>agent-shell-permission-allow-always)
