@@ -154,7 +154,7 @@ With prefix argument CONFIG, select a config from `gatsby>agent-shell-configs'."
      :config
      (if config
          (gatsby>>agent-shell-select-config)
-       (gatsby>agent-shell-default-config))
+       (gatsby>>agent-shell-default-config))
      :new-session t
      :session-strategy 'prompt))
 
@@ -279,7 +279,7 @@ Must be called from within an agent-shell buffer."
               (cl-letf (((symbol-function #'agent-shell--display-buffer) #'ignore))
                 (agent-shell--start
                  :no-focus t
-                 :config gatsby>agent-shell-default-config
+                 :config (gatsby>>agent-shell-default-config)
                  :new-session t
                  :session-strategy 'new))))
          (original-mode-id
