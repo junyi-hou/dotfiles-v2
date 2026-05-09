@@ -125,6 +125,7 @@ Return nil if no available client found."
             (and (buffer-live-p b)
                  (file-equal-p project-root default-directory)
                  (eq major-mode 'agent-shell-mode)
+                 (not (agent-shell--active-requests-p (agent-shell--state)))
                  (or (not config-name)
                      (equal
                       config-name
