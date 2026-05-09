@@ -34,7 +34,8 @@
   (defcustom gatsby>agent-shell-configs
     `(("default" . gatsby>>agent-shell-default-config)
       ("self-host" . gatsby>>agent-shell-self-host-config)
-      ("openrouter" . gatsby>>agent-shell-openrouter-config))
+      ("openrouter" . gatsby>>agent-shell-openrouter-config)
+      ("deepseek" . gatsby>>agent-shell-deepseek-config))
     "List of agent-shell configs available for profile selection."
     :type 'function
     :group 'gatsby)
@@ -57,6 +58,27 @@
 
   (defun gatsby>>agent-shell-default-config ()
     (gatsby>>agent-shell-make-custom-config "default"))
+
+  (defun gatsby>>agent-shell-deepseek-config ()
+    (gatsby>>agent-shell-make-custom-config
+     "deepseek"
+     :env-var
+     `("ANTHROPIC_BASE_URL"
+       "https://api.deepseek.com/anthropic"
+       "ANTHROPIC_AUTH_TOKEN"
+       ,(sops-retrieve-secret "env/DEEPSEEK_API_KEY")
+       "ANTHROPIC_MODEL"
+       "deepseek-v4-pro[1m]"
+       "ANTHROPIC_DEFAULT_OPUS_MODEL"
+       "deepseek-v4-pro[1m]"
+       "ANTHROPIC_DEFAULT_SONNET_MODEL"
+       "deepseek-v4-pro[1m]"
+       "ANTHROPIC_DEFAULT_HAIKU_MODEL"
+       "deepseek-v4-flash[1m]"
+       "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"
+       "1"
+       "CLAUDE_CODE_EFFORT_LEVEL"
+       "max")))
 
   (defun gatsby>>agent-shell-self-host-config (&optional url)
     (let ((url (or url (completing-read "ANTHROPIC_BASE_URL= " nil))))
