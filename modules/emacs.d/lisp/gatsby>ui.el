@@ -16,8 +16,8 @@
   :config
   ;; default UI
   (load-theme 'doom-material-dark t)
-  (set-face-attribute 'nobreak-space :foreground
-                      'unspecified
+  (set-face-attribute 'nobreak-space nil
+                      :foreground 'unspecified
                       :background 'unspecified
                       :underline nil)
   (set-face-attribute 'header-line nil :inherit 'default)
