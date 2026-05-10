@@ -14,14 +14,19 @@
   (doom-themes-enable-italic t)
   (doom-themes-enable-bold t)
 
-  :custom-face
-  (nobreak-space ((t :foreground unspecified :background unspecified :underline nil)))
-  (mode-line-inactive ((t :background ,(doom-color 'bg-alt))))
+  :custom-face (nobreak-space ((t :foreground unspecified :background unspecified :underline nil)))
 
   :config
   ;; default UI
   (load-theme 'doom-material-dark t)
   (set-face-attribute 'header-line nil :inherit 'default)
+  (let ((fg-color (face-attribute 'mode-line-inactive :foreground)))
+    (set-face-attribute 'mode-line-inactive nil
+                        :background (doom-color 'bg-alt)
+                        :box `(:color ,fg-color))
+    (set-face-attribute 'mode-line nil
+                        :background (doom-color 'bg-alt)
+                        :box `(:color ,fg-color)))
   (line-number-mode -1)
   (column-number-mode -1)
   (tool-bar-mode -1)
