@@ -10,6 +10,24 @@
   :ensure (:host github :repo "junyi-hou/agent-shell-tramp")
   :config (agent-shell-tramp-mode 1))
 
+;; managing agents
+(use-package agent-shell-manager
+  :ensure (:host github :repo "jethrokuan/agent-shell-manager")
+  :evil-bind
+  ((:maps normal)
+   ("SPC a p" . #'agent-shell-manager-toggle)
+   (:maps agent-shell-manager-mode-map :states motion)
+   ("RET" . #'agent-shell-manager-goto)
+   ("C-c C-c" . #'agent-shell-interrupt)
+   ("m" . #'agent-shell-manager-set-mode)
+   ("M" . #'agent-shell-manager-set-model)
+   ("q" . #'quit-window)
+   ("c" . #'agent-shell-manager-new)
+   ("g" . #'agent-shell-manager-refresh)
+   ("r" . #'agent-shell-manager-restart)
+   ("x" . #'agent-shell-manager-kill)
+   ("d" . #'agent-shell-manager-delete-killed)))
+
 (use-package agent-shell
   :ensure (:host github :repo "xenodium/agent-shell")
   :hook

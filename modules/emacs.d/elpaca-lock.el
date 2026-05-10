@@ -547,4 +547,10 @@
       (:package "zmq" :fetcher github :repo "nnicandro/emacs-zmq" :files
                 (:defaults "Makefile" "src") :source "elpaca-menu-lock-file" :protocol
                 https :inherit t :depth treeless :ref
-                "fe856c43286674aa6770d95a81d915363f5df399" :id zmq :type git)))
+                "fe856c43286674aa6770d95a81d915363f5df399" :id zmq :type git))
+ (agent-shell-manager :source "elpaca-menu-lock-file" :recipe
+                      (:source nil :package "agent-shell-manager" :id
+                               agent-shell-manager :host github :repo
+                               "jethrokuan/agent-shell-manager" :type git :protocol
+                               https :inherit t :depth treeless :ref
+                               "53b73f13ed1ac9d2de128465a8504a7265490ea7")))
