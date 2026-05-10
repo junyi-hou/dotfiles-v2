@@ -13,12 +13,13 @@
   :custom
   (doom-themes-enable-italic t)
   (doom-themes-enable-bold t)
-
-  :custom-face (nobreak-space ((t :foreground unspecified :background unspecified :underline nil)))
-
   :config
   ;; default UI
   (load-theme 'doom-material-dark t)
+  (set-face-attribute 'nobreak-space :foreground
+                      'unspecified
+                      :background 'unspecified
+                      :underline nil)
   (set-face-attribute 'header-line nil :inherit 'default)
   (let ((fg-color (face-attribute 'mode-line-inactive :foreground)))
     (set-face-attribute 'mode-line-inactive nil
