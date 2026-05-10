@@ -278,61 +278,104 @@ Must be called from within an agent-shell buffer."
     (unless (magit-anything-staged-p)
       (user-error "Nothing staged - can't generate commit message"))
     (message "Generating commit message...")
-    (let* ((existing-client (gatsby>>agent-shell-current-client))
-           (agent-shell-buffer
-            (or existing-client
-                (cl-letf (((symbol-function #'agent-shell--display-buffer) #'ignore))
-                  (agent-shell--start
-                   :no-focus t
-                   :config (gatsby>>agent-shell-default-config)
-                   :new-session t
-                   :session-strategy 'new))))
-           (proceed
-            (lambda ()
-              (with-current-buffer agent-shell-buffer
-                (let* ((original-mode-id
-                        (map-nested-elt (agent-shell--state) '(:session :mode-id)))
-                       (do-submit
-                        (lambda ()
-                          (with-current-buffer agent-shell-buffer
-                            (let (subscription)
-                              (setq subscription
-                                    (agent-shell-subscribe-to
-                                     :shell-buffer agent-shell-buffer
-                                     :event 'turn-complete
-                                     :on-event
-                                     (lambda (_event)
-                                       (agent-shell-unsubscribe :subscription subscription)
-                                       (let ((output
-                                              (with-current-buffer agent-shell-buffer
-                                                (gatsby>>agent-shell-last-text-output))))
-                                         (with-current-buffer agent-shell-buffer
-                                           (when (and original-mode-id
-                                                      (not
-                                                       (string=
-                                                        original-mode-id "bypassPermissions")))
-                                             (gatsby>>agent-shell-set-mode-id original-mode-id)))
-                                         (let ((tmpfile (make-temp-file "commit-msg")))
-                                           (with-temp-file tmpfile
-                                             (insert output))
-                                           (magit-run-git-with-editor
-                                            "commit" "--edit" "-F" tmpfile))))))
-                              (shell-maker-submit
-                               :input "generate a commit message for the currently staged changes"))))))
-                  (if (string= original-mode-id "bypassPermissions")
-                      (funcall do-submit)
-                    (gatsby>>agent-shell-set-mode-id "bypassPermissions" do-submit)))))))
+    (let*
+        ((existing-client (gatsby>>agent-shell-current-client))
+         (agent-shell-buffer
+          (or existing-client
+              (cl-letf (((symbol-function #'agent-shell--display-buffer) #'ignore))
+                (agent-shell--start
+                 :no-focus t
+                 :config (gatsby>>agent-shell-default-config)
+                 :new-session t
+                 :session-strategy 'new))))
+         (proceed
+          (lambda ()
+            (with-current-buffer agent-shell-buffer
+              (let*
+                  ((original-mode-id
+                    (map-nested-elt (agent-shell--state) '(:session :mode-id)))
+                   (do-submit
+                    (lambda ()
+                      (with-current-buffer agent-shell-buffer
+                        (let ((turn-sub)
+                              (error-sub))
+                          (setq turn-sub
+                                (agent-shell-subscribe-to
+                                 :shell-buffer agent-shell-buffer
+                                 :event 'turn-complete
+                                 :on-event
+                                 (lambda (_event)
+                                   (agent-shell-unsubscribe :subscription turn-sub)
+                                   (agent-shell-unsubscribe :subscription error-sub)
+                                   (let ((output
+                                          (with-current-buffer agent-shell-buffer
+                                            (gatsby>>agent-shell-last-text-output))))
+                                     (with-current-buffer agent-shell-buffer
+                                       (when (and original-mode-id
+                                                  (not
+                                                   (string=
+                                                    original-mode-id
+                                                    "bypassPermissions")))
+                                         (gatsby>>agent-shell-set-mode-id
+                                          original-mode-id)))
+                                     (let ((tmpfile (make-temp-file "commit-msg")))
+                                       (with-temp-file tmpfile
+                                         (insert output))
+                                       (magit-run-git-with-editor
+                                        "commit" "--edit" "-F" tmpfile))))))
+                          (setq error-sub
+                                (agent-shell-subscribe-to
+                                 :shell-buffer agent-shell-buffer
+                                 :event 'error
+                                 :on-event
+                                 (lambda (event)
+                                   (agent-shell-unsubscribe :subscription turn-sub)
+                                   (agent-shell-unsubscribe :subscription error-sub)
+                                   (if (not existing-client)
+                                       (kill-buffer agent-shell-buffer)
+                                     (with-current-buffer agent-shell-buffer
+                                       (when (and original-mode-id
+                                                  (not
+                                                   (string=
+                                                    original-mode-id
+                                                    "bypassPermissions")))
+                                         (gatsby>>agent-shell-set-mode-id
+                                          original-mode-id))))
+                                   (let ((data (map-elt event :data)))
+                                     (user-error "Agent shell error: %s (code: %s)"
+                                                 (map-elt data :message)
+                                                 (map-elt data :code))))))
+                          (shell-maker-submit
+                           :input "generate a commit message for the currently staged changes"))))))
+                (if (string= original-mode-id "bypassPermissions")
+                    (funcall do-submit)
+                  (gatsby>>agent-shell-set-mode-id "bypassPermissions" do-submit)))))))
       (if existing-client
           (funcall proceed)
-        (let (subscription)
-          (setq subscription
+        (let ((prompt-sub)
+              (error-sub))
+          (setq prompt-sub
                 (agent-shell-subscribe-to
                  :shell-buffer agent-shell-buffer
                  :event 'prompt-ready
                  :on-event
                  (lambda (_event)
-                   (agent-shell-unsubscribe :subscription subscription)
-                   (funcall proceed))))))))
+                   (agent-shell-unsubscribe :subscription prompt-sub)
+                   (agent-shell-unsubscribe :subscription error-sub)
+                   (funcall proceed))))
+          (setq error-sub
+                (agent-shell-subscribe-to
+                 :shell-buffer agent-shell-buffer
+                 :event 'error
+                 :on-event
+                 (lambda (event)
+                   (agent-shell-unsubscribe :subscription prompt-sub)
+                   (agent-shell-unsubscribe :subscription error-sub)
+                   (kill-buffer agent-shell-buffer)
+                   (let ((data (map-elt event :data)))
+                     (user-error "Agent shell error: %s (code: %s)"
+                                 (map-elt data :message)
+                                 (map-elt data :code))))))))))
 
   (with-eval-after-load 'magit
     (transient-append-suffix
