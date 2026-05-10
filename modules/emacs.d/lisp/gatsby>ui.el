@@ -21,13 +21,12 @@
                       :background 'unspecified
                       :underline nil)
   (set-face-attribute 'header-line nil :inherit 'default)
-  (let ((fg-color (face-attribute 'mode-line-inactive :foreground)))
-    (set-face-attribute 'mode-line-inactive nil
-                        :background (doom-color 'bg-alt)
-                        :box `(:color ,fg-color))
-    (set-face-attribute 'mode-line nil
-                        :background (doom-color 'bg-alt)
-                        :box `(:color ,fg-color)))
+  (set-face-attribute 'mode-line-inactive nil
+                      :background (doom-color 'bg-alt)
+                      :box `(:color ,(doom-color 'fg-alt)))
+  (set-face-attribute 'mode-line nil
+                      :background (doom-color 'bg-alt)
+                      :box `(:color ,(doom-color 'fg-alt)))
   (line-number-mode -1)
   (column-number-mode -1)
   (tool-bar-mode -1)
