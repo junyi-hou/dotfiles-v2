@@ -47,7 +47,7 @@
   ;; font
   (set-face-attribute 'default nil
                       :family "PragmataPro Liga"
-                      :height 130
+                      :height 120
                       :width 'normal
                       :weight 'Regular)
 
