@@ -72,3 +72,9 @@ deploy --secret-only user@host
 ```
 
 To rotate after a key compromise: change the actual secret values via `sops-edit-secret`, then re-run `deploy --secret-only` for each affected machine.
+
+## Planned Features
+
+[ ] devcontainer for agents
+[ ] agent-shell-to-go for remote agent interactions
+[ ] self-managed plugins (via git submodules) - available if [this issue](https://github.com/anthropics/claude-agent-sdk-typescript/issues/141) and [this PR](https://github.com/anthropics/claude-agent-sdk-python/pull/803) lands.
