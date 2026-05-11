@@ -27,8 +27,10 @@ Generate a commit message from currently staged changes. Do NOT run `git commit`
 - Subject line ≤ 72 characters, imperative mood ("add" not "added")
 - Scope = the module, package, or subsystem (e.g. `emacs`, `zsh`, `ai`)
 - Omit body unless the motivation needs explaining
-- If multiple unrelated things are staged, note that and suggest splitting
+- Only consider staged changes (`--cached`). Ignore unstaged hunks and untracked files entirely — do not mention them.
+- If multiple unrelated things are staged, pick the best single-subject summary covering all of them.
+- NEVER commit the change yourself.
 
 ## Output
 
-Return only the commit message and nothing else with no quote. Do NOT run `git commit`.
+Output the raw commit message text and absolutely nothing else — no explanation, no preamble, no quotes, no notes about unstaged files, no suggestions. The first character of your response must be the first character of the commit message.
