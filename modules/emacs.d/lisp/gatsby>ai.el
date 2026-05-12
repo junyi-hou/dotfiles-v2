@@ -39,10 +39,16 @@
   (agent-shell-file-completion-enabled t)
   (agent-shell-session-strategy 'new)
   (agent-shell-preferred-agent-config 'claude-code)
-  (agent-shell-anthropic-claude-acp-command
-   '("run-with-env" "CONTEXT7_API_KEY" "--" "claude-agent-acp"))
-  :config
+  (agent-shell-anthropic-claude-acp-command '("claude-agent-acp"))
+  (agent-shell-mcp-servers
+   `(((name . "context7")
+      (type . "http") (url . "https://mcp.context7.com/mcp")
+      (headers
+       .
+       (((name . "CONTEXT7_API_KEY")
+         (value . ,(sops-retrieve-secret "env/CONTEXT7_API_KEY"))))))))
 
+  :config
   ;; diff-mode integration
   (defun gatsby>>agent-shell-enable-permission-in-diff ()
     (when (string-match-p "\\*agent-shell-diff\\*" (buffer-name))
