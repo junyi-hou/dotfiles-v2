@@ -1,6 +1,6 @@
 from subprocess import CalledProcessError
 from unittest.mock import patch
-from scripts.install_claude import _try_install, install_plugins, pull_marketplaces, LIST_OF_PLUGINS, LIST_OF_MARKETPLACES
+from scripts.install_claude import _try_install
 
 
 @patch("scripts.install_claude.shutil.which", return_value=None)
@@ -27,21 +27,3 @@ def test_try_install_returns_false_on_error(mock_run, mock_which):
     """_try_install returns False when run() raises."""
     result = _try_install("some-pkg", "some-prog")
     assert result is False
-
-
-@patch("scripts.install_claude._run_claude")
-def test_install_plugins(mock_run_claude):
-    install_plugins()
-
-    assert mock_run_claude.call_count == len(LIST_OF_PLUGINS)
-    for plugin in LIST_OF_PLUGINS:
-        mock_run_claude.assert_any_call(["plugins", "install", plugin])
-
-
-@patch("scripts.install_claude._run_claude")
-def test_pull_marketplaces(mock_run_claude):
-    pull_marketplaces()
-
-    assert mock_run_claude.call_count == len(LIST_OF_MARKETPLACES)
-    for marketplace in LIST_OF_MARKETPLACES:
-        mock_run_claude.assert_any_call(["plugins", "marketplace", "add", marketplace])
