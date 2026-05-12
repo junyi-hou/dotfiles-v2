@@ -97,6 +97,14 @@ Binds `fixture-template-dir' (the selected template) and `fixture-dest-dir'."
       (gatsby>envrc-init-from-template nil))
     (should (file-exists-p (file-name-concat fixture-dest-dir "subdir/config.toml")))))
 
+(ert-deftest gatsby>envrc-init-from-template--copies-tools-as-dot-tools ()
+  "Test that 'tools/' directory is copied as '.tools/'."
+  (gatsby>>with-envrc-fixture ("tools/subdir/config.sh")
+    (let ((default-directory fixture-dest-dir))
+      (gatsby>envrc-init-from-template nil))
+    (should (file-exists-p (file-name-concat fixture-dest-dir ".tools/subdir/config.sh")))
+    (should-not (file-exists-p (file-name-concat fixture-dest-dir "tools/")))))
+
 (ert-deftest gatsby>envrc-init-from-template--creates-missing-destination ()
   "Test that destination directory is created if it does not exist."
   (gatsby>>with-envrc-fixture ("envrc")
