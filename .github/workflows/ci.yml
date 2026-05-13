@@ -2,7 +2,7 @@ name: Emacs Tests
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   pull_request:
 
 jobs:
@@ -57,7 +57,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
       - name: Install dependencies
         run: pip install pytest
@@ -79,7 +79,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
       - name: Run dotfiles install script
         run: python -m scripts.install
@@ -145,8 +145,7 @@ jobs:
           # .envrc only activates 'dev'; also add 'all' for Node.js
           echo "$PWD/.pixi/envs/all/bin" >> "$GITHUB_PATH"
 
-      - name: Run Claude install script
-        run: make claude
-
       - name: Verify Claude installation
-        run: claude --version
+        run: |
+          claude --version
+          claude-agent-acp --version
