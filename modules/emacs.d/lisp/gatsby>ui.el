@@ -21,12 +21,8 @@
                       :background 'unspecified
                       :underline nil)
   (set-face-attribute 'header-line nil :inherit 'default)
-  (set-face-attribute 'mode-line-inactive nil
-                      :background (doom-color 'bg-alt)
-                      :box `(:color ,(doom-color 'fg-alt)))
-  (set-face-attribute 'mode-line nil
-                      :background (doom-color 'bg-alt)
-                      :box `(:color ,(doom-color 'fg-alt)))
+  (set-face-attribute 'mode-line-inactive nil :background (doom-color 'bg-alt))
+  (set-face-attribute 'mode-line nil :background (doom-color 'bg-alt))
   (line-number-mode -1)
   (column-number-mode -1)
   (tool-bar-mode -1)
