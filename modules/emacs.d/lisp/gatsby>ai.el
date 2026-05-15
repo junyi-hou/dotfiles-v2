@@ -28,6 +28,17 @@
    ("x" . #'agent-shell-manager-kill)
    ("d" . #'agent-shell-manager-delete-killed)))
 
+(use-package agent-shell-to-go
+  :ensure (:host github :repo "junyi-hou/agent-shell-to-go")
+  :custom
+  (agent-shell-to-go-discord-guild-id (sops-retrieve-secret "env/DISCORD_GUILD_ID"))
+  (agent-shell-to-go-discord-bot-token (sops-retrieve-secret "env/DISCORD_BOT_TOKEN"))
+  (agent-shell-to-go-discord-authorized-users
+   (list (sops-retrieve-secret "env/DISCORD_USER_ID")))
+  (agent-shell-to-go-debug t)
+  (agent-shell-to-go-projects-directory "~/Projects/")
+  (agent-shell-to-go-default-transport 'discord))
+
 (use-package agent-shell
   :ensure (:host github :repo "xenodium/agent-shell")
   :hook
