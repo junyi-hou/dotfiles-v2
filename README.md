@@ -21,7 +21,7 @@ brew install direnv
 
 ### Linux
 
-Support for linux is pending. But development on a remote linux box is supported (see [this section](#remote-development))
+Linux is supported via a headless Emacs AppImage. Run `make build` to install.
 
 ## Install Configuration
 
@@ -45,6 +45,24 @@ deploy user@host [-p port]
 ```
 
 After setup, connect via TRAMP in Emacs (`C-x C-f /ssh:user@host:/path`). The remote environment will have the full dotfiles configuration including secrets available via `passage` and `run-with-env`.
+
+### Remote Agent
+
+Start a headless agent on a remote machine from your laptop using [agent-shell-to-go](https://github.com/junyi-hou/agent-shell-to-go), which allows you to keep interacting with a code agent from discord/slack on your phone.
+
+To start a remote agent, run
+```sh
+run-agent /path/to/project user@host
+```
+
+This SSHes into `user@host` and launches a headless Emacs session that communicates via Slack or Discord. Configure credentials in `~/dotfiles-v2/modules/claude/config.el` on the remote before running.
+
+Prerequisites on the remote:
+- Dotfiles deployed (see [Remote Development](#remote-development))
+- Dotfiles fully installed (`direnv allow` + `make install` + `make build`)
+
+The agent runs in the background via `nohup` and persists after the SSH connection closes.
+
 
 ## Secrets
 
@@ -76,5 +94,4 @@ To rotate after a key compromise: change the actual secret values via `sops-edit
 ## Planned Features
 
 [ ] devcontainer for agents
-[ ] agent-shell-to-go for remote agent interactions
 [ ] self-managed plugins (via git submodules) - available if [this issue](https://github.com/anthropics/claude-agent-sdk-typescript/issues/141) and [this PR](https://github.com/anthropics/claude-agent-sdk-python/pull/803) lands.

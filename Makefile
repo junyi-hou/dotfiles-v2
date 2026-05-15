@@ -14,7 +14,11 @@ test-emacs:
 	@bash ./modules/emacs.d/run-tests.sh
 
 build:
-	@bash ./scripts/install-emacs-macos.sh
+	@case "$$(uname -s)" in \
+		Darwin) bash ./scripts/install-emacs-macos.sh ;; \
+		Linux)  bash ./scripts/install-emacs-linux.sh ;; \
+		*) echo "Unsupported OS: $$(uname -s)"; exit 1 ;; \
+	esac
 
 java:
 	@python -m scripts.install_java
