@@ -35,7 +35,7 @@
   (agent-shell-to-go-discord-bot-token (sops-retrieve-secret "env/DISCORD_BOT_TOKEN"))
   (agent-shell-to-go-discord-authorized-users
    (list (sops-retrieve-secret "env/DISCORD_USER_ID")))
-  (agent-shell-to-go-debug t)
+  (agent-shell-to-go-show-tool-output nil)
   (agent-shell-to-go-projects-directory "~/Projects/")
   (agent-shell-to-go-default-transport 'discord))
 

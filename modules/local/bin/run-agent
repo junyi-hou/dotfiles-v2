@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+PROJ_PATH="$1"
+SSH_HOST="${2:-}"
+
+if [[ -n $SSH_HOST ]]; then
+    exec ssh "$SSH_HOST" "nohup bash -lc 'run-agent \"$PROJ_PATH\"' > /dev/null 2>&1 &"
+fi
+
+## use hard-coded path since the emacs installation should be consistent
+SCRIPT="$HOME/.emacs.d/elpaca/sources/agent-shell-to-go/scripts/run-agent"
+if [[ ! -f $SCRIPT ]]; then
+    mkdir -p "$HOME/.emacs.d/elpaca/sources"
+    git clone https://github.com/junyi-hou/agent-shell-to-go \
+        "$HOME/.emacs.d/elpaca/sources/agent-shell-to-go"
+fi
+
+# just run it
+"$SCRIPT" "$PROJ_PATH" "$HOME/dotfiles-v2/modules/claude/config.el"
+
+
+# Local Variables:
+# mode: bash-ts
+# End:
