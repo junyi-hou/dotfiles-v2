@@ -245,6 +245,28 @@ current candidate"
   :ensure (marginalia :host github :repo "minad/marginalia")
   :hook (elpaca-after-init . marginalia-mode))
 
+(use-package mini-frame
+  :ensure (:host github :repo "muffinmad/emacs-mini-frame")
+  :init
+  (defun gatsby>>minibuffer-childframe-position ()
+    (let* ((pos (window-absolute-pixel-position))
+           (frame-pos (frame-position))
+           (child-w (round (* 0.8 (frame-pixel-width))))
+           (cursor-left (- (car pos) (car frame-pos)))
+           (max-left (- (frame-pixel-width) child-w)))
+      `((top . ,(- (cdr pos) (cdr frame-pos)))
+        (left . ,(min cursor-left max-left))
+        (width . 0.8)
+        (background-color . ,(doom-color 'bg))
+        (child-frame-border-width . 1))))
+
+  :hook (elpaca-after-init . mini-frame-mode)
+  :custom
+  (mini-frame-create-lazy nil)
+  (mini-frame-show-parameters #'gatsby>>minibuffer-childframe-position)
+  :config (set-face-background 'child-frame-border (doom-color 'fg)))
+
+;; cursor
 (defun gatsby>>make-lolipop (e)
   "Custom build step for Lolipop (E)."
   (elpaca--signal e "Building" 'building)
