@@ -554,17 +554,6 @@
                                "jethrokuan/agent-shell-manager" :type git :protocol
                                https :inherit t :depth treeless :ref
                                "53b73f13ed1ac9d2de128465a8504a7265490ea7"))
- (mini-frame :source "elpaca-menu-lock-file" :recipe
-             (:package "mini-frame" :fetcher github :repo "muffinmad/emacs-mini-frame"
-                       :files
-                       ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"
-                        "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el" "docs/dir"
-                        "docs/*.info" "docs/*.texi" "docs/*.texinfo"
-                        (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
-                                  "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
-                       :source "MELPA" :id mini-frame :host github :type git :protocol
-                       https :inherit t :depth treeless :ref
-                       "f420020aa33a1b00407000addd995170a36e026e"))
  (agent-shell-to-go :source "elpaca-menu-lock-file" :recipe
                     (:source "elpaca-menu-lock-file" :package "agent-shell-to-go" :id
                              agent-shell-to-go :host github :repo
