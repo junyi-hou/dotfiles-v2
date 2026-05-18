@@ -268,5 +268,14 @@ current candidate"
   :ensure (:host github :repo "purcell/page-break-lines")
   :hook (prog-mode . page-break-lines-mode))
 
+;; multiframe support
+(gatsby>use-internal-package multiframe-movement
+  :evil-bind
+  ((:maps (visual emacs insert motion normal))
+   ([remap windmove-right] . #'multiframe-movement-right)
+   ([remap windmove-left] . #'multiframe-movement-left)
+   ([remap windmove-down] . #'multiframe-movement-down)
+   ([remap windmove-up] . #'multiframe-movement-up)))
+
 (provide 'gatsby>ui)
 ;;; gatsby>ui.el ends here
