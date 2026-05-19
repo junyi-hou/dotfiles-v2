@@ -4,7 +4,20 @@ PROJ_PATH="$1"
 SSH_HOST="${2:-}"
 
 if [[ -n $SSH_HOST ]]; then
-    exec ssh "$SSH_HOST" "nohup bash -lc 'run-agent \"$PROJ_PATH\"' > /dev/null 2>&1 &"
+    ssh "$SSH_HOST" "mkdir -p ~/Projects"
+    if [[ "$PROJ_PATH" == "$HOME/"* ]]; then
+        REMOTE_PROJ_PATH="\$HOME/${PROJ_PATH#$HOME/}"
+    else
+        REMOTE_PROJ_PATH="$PROJ_PATH"
+    fi
+    exec ssh "$SSH_HOST" "bash -lc '
+        SCRIPT=\"\$HOME/.emacs.d/elpaca/sources/agent-shell-to-go/scripts/run-agent\"
+        if [[ ! -f \"\$SCRIPT\" ]]; then
+            mkdir -p \"\$HOME/.emacs.d/elpaca/sources\"
+            git clone https://github.com/junyi-hou/agent-shell-to-go \"\$HOME/.emacs.d/elpaca/sources/agent-shell-to-go\"
+        fi
+        \"\$SCRIPT\" \"$REMOTE_PROJ_PATH\" \"\$HOME/dotfiles-v2/modules/claude/config.el\"
+    '"
 fi
 
 ## use hard-coded path since the emacs installation should be consistent

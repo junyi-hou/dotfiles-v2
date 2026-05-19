@@ -9,7 +9,7 @@ ENC_FILE = DOTFILES_DIR / "env.json.enc"
 LOCAL_KEY_PATH = Path.home() / ".config" / "age" / "key"
 REMOTE_DOTFILES = "~/dotfiles-v2"
 REMOTE_REPO = "https://github.com/junyi-hou/dotfiles-v2"
-REMOTE_KEY_PATH = f"{REMOTE_DOTFILES}/keys/age"
+REMOTE_KEY_PATH = "~/.config/age/key"
 REMOTE_ENC_PATH = f"{REMOTE_DOTFILES}/env.json.enc"
 
 
@@ -17,6 +17,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Deploy dotfiles to a remote host")
     parser.add_argument("target", help="user@host")
     parser.add_argument("-p", "--port", type=int, default=22)
+    parser.add_argument("-b", "--build", action="store_true")
     parser.add_argument("--secret-only", action="store_true")
     return parser.parse_args()
 
@@ -44,20 +45,68 @@ def generate_age_key() -> tuple[str, str]:
 
 def reencrypt_for(public_key: str) -> bytes:
     if not ENC_FILE.exists():
-        raise RuntimeError(f"Encrypted secrets not found: {ENC_FILE}\nRun sops-edit-secret in Emacs to create it.")
+        raise RuntimeError(
+            f"Encrypted secrets not found: {ENC_FILE}\nRun sops-edit-secret in Emacs to create it."
+        )
     decrypted = subprocess.run(
-        ["sops", "--decrypt", "--input-type", "json", "--output-type", "json", str(ENC_FILE)],
-        capture_output=True, check=True,
+        [
+            "sops",
+            "--decrypt",
+            "--input-type",
+            "json",
+            "--output-type",
+            "json",
+            str(ENC_FILE),
+        ],
+        capture_output=True,
+        check=True,
     ).stdout
     return subprocess.run(
-        ["sops", "--encrypt", "--age", public_key,
-         "--input-type", "json", "--output-type", "json", "/dev/stdin"],
-        input=decrypted, capture_output=True, check=True,
+        [
+            "sops",
+            "--encrypt",
+            "--age",
+            public_key,
+            "--input-type",
+            "json",
+            "--output-type",
+            "json",
+            "/dev/stdin",
+        ],
+        input=decrypted,
+        capture_output=True,
+        check=True,
     ).stdout
+
+
+def check_remote_deps(target: str, port: int):
+    run(
+        [
+            "ssh",
+            "-p",
+            str(port),
+            target,
+            "command -v git || { echo 'git not found'; exit 1; }; "
+            "command -v direnv || { echo 'direnv not found'; exit 1; }; "
+            "ldconfig -p 2>/dev/null | grep -q libfuse || { echo 'libfuse not found'; exit 1; }",
+        ]
+    )
 
 
 def remote_clone(target: str, port: int):
     run(["ssh", "-p", str(port), target, f"git clone {REMOTE_REPO} {REMOTE_DOTFILES}"])
+
+
+def remote_build(target: str, port: int):
+    run(
+        [
+            "ssh",
+            "-p",
+            str(port),
+            target,
+            f"direnv allow {REMOTE_DOTFILES} && direnv exec {REMOTE_DOTFILES} make install && direnv exec {REMOTE_DOTFILES} make build",
+        ]
+    )
 
 
 def deploy_secret(target: str, port: int):
@@ -70,8 +119,13 @@ def deploy_secret(target: str, port: int):
 
     print("Copying age key to remote...")
     run(
-        ["ssh", "-p", str(port), target,
-         f"mkdir -p $(dirname {REMOTE_KEY_PATH}) && cat > {REMOTE_KEY_PATH} && chmod 600 {REMOTE_KEY_PATH}"],
+        [
+            "ssh",
+            "-p",
+            str(port),
+            target,
+            f"mkdir -p $(dirname {REMOTE_KEY_PATH}) && cat > {REMOTE_KEY_PATH} && chmod 600 {REMOTE_KEY_PATH}",
+        ],
         input=(private_key + "\n").encode(),
     )
 
@@ -86,8 +140,14 @@ def main():
     args = parse_args()
 
     if not args.secret_only:
+        print(f"Checking remote dependencies on {args.target}...")
+        check_remote_deps(args.target, args.port)
         print(f"Cloning dotfiles on {args.target}...")
         remote_clone(args.target, args.port)
+
+        if args.build:
+            print(f"Building dotfiles on {args.target}...")
+            remote_build(args.target, args.port)
 
     deploy_secret(args.target, args.port)
 

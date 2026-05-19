@@ -46,6 +46,11 @@ deploy user@host [-p port]
 
 After setup, connect via TRAMP in Emacs (`C-x C-f /ssh:user@host:/path`). The remote environment will have the full dotfiles configuration including secrets available via `passage` and `run-with-env`.
 
+With additional `-b` flag, we will do `make build` + `make install` in the remote server as well:
+```sh
+deploy -b user@host [-p port]
+```
+
 ### Remote Agent
 
 Start a headless agent on a remote machine from your laptop using [agent-shell-to-go](https://github.com/junyi-hou/agent-shell-to-go), which allows you to keep interacting with a code agent from discord/slack on your phone.
@@ -59,7 +64,7 @@ This SSHes into `user@host` and launches a headless Emacs session that communica
 
 Prerequisites on the remote:
 - Dotfiles deployed (see [Remote Development](#remote-development))
-- Dotfiles fully installed (`direnv allow` + `make install` + `make build`)
+- Dotfiles fully installed (`make build` + `make install`, now can be automated with adding `-b` flag to the `deploy` script)
 
 The agent runs in the background via `nohup` and persists after the SSH connection closes.
 
