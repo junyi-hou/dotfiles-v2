@@ -12,18 +12,11 @@ TAG="$(curl -fsSL "https://api.github.com/repos/blahgeek/emacs-appimage/releases
 APPIMAGE="Emacs-master-nox-${ARCH}.AppImage"
 URL="https://github.com/blahgeek/emacs-appimage/releases/download/${TAG}/${APPIMAGE}"
 
-TMPDIR="$(mktemp -d)"
-trap 'rm -rf "$TMPDIR"' EXIT
+mkdir -p "$HOME/.local/emacs"
+curl -fsSL -o "$HOME/.local/emacs/emacs.AppImage" "$URL"
+chmod +x "$HOME/.local/emacs/emacs.AppImage"
 
-curl -fsSL -o "$TMPDIR/$APPIMAGE" "$URL"
-chmod +x "$TMPDIR/$APPIMAGE"
-
-# --appimage-extract writes squashfs-root into $PWD
-(cd "$TMPDIR" && "./$APPIMAGE" --appimage-extract)
-
-rm -rf "$HOME/.local/emacs"
-mv "$TMPDIR/squashfs-root" "$HOME/.local/emacs"
-
+# symlink to emacsclient uses argv[0] trick: AppRun runs the binary matching basename $0
 mkdir -p "$HOME/.local/bin"
-ln -sf "$HOME/.local/emacs/usr/bin/emacs" "$HOME/.local/bin/emacs"
-ln -sf "$HOME/.local/emacs/usr/bin/emacsclient" "$HOME/.local/bin/emacsclient"
+ln -sf "$HOME/.local/emacs/emacs.AppImage" "$HOME/.local/bin/emacs"
+ln -sf "$HOME/.local/emacs/emacs.AppImage" "$HOME/.local/bin/emacsclient"
