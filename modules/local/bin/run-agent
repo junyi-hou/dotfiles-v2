@@ -5,10 +5,13 @@ SSH_HOST="${2:-}"
 
 if [[ -n $SSH_HOST ]]; then
     ssh "$SSH_HOST" "mkdir -p ~/Projects"
-    if [[ "$PROJ_PATH" == "$HOME/"* ]]; then
-        REMOTE_PROJ_PATH="\$HOME/${PROJ_PATH#$HOME/}"
+    EXPANDED_PROJ_PATH="${PROJ_PATH/#\~/$HOME}"
+    if [[ "$EXPANDED_PROJ_PATH" == "$HOME" ]]; then
+        REMOTE_PROJ_PATH="\$HOME"
+    elif [[ "$EXPANDED_PROJ_PATH" == "$HOME/"* ]]; then
+        REMOTE_PROJ_PATH="\$HOME/${EXPANDED_PROJ_PATH#$HOME/}"
     else
-        REMOTE_PROJ_PATH="$PROJ_PATH"
+        REMOTE_PROJ_PATH="$EXPANDED_PROJ_PATH"
     fi
     exec ssh "$SSH_HOST" "bash -lc '
         SCRIPT=\"\$HOME/.emacs.d/elpaca/sources/agent-shell-to-go/scripts/run-agent\"
