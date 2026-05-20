@@ -7,16 +7,25 @@ case "$ARCH" in
 esac
 
 # TODO: this repo has been archived and unmaintained. But this should be fine now
-TAG="$(curl -fsSL "https://api.github.com/repos/blahgeek/emacs-appimage/releases" \
-    | python3 -c "import json,sys; releases=json.load(sys.stdin); print(next(r['tag_name'] for r in releases if r['prerelease']))")"
-APPIMAGE="Emacs-master-nox-${ARCH}.AppImage"
-URL="https://github.com/blahgeek/emacs-appimage/releases/download/${TAG}/${APPIMAGE}"
+APPIMAGE="Emacs-30.2-nox-${ARCH}.AppImage"
+URL="https://github.com/blahgeek/emacs-appimage/releases/download/github-action-build-17008212441/${APPIMAGE}"
 
 mkdir -p "$HOME/.local/emacs"
 curl -fsSL -o "$HOME/.local/emacs/emacs.AppImage" "$URL"
 chmod +x "$HOME/.local/emacs/emacs.AppImage"
 
-# symlink to emacsclient uses argv[0] trick: AppRun runs the binary matching basename $0
+# Extract for emacsclient: AppRun sets up LD_LIBRARY_PATH from the extracted tree
+TMPDIR="$(mktemp -d)"
+trap 'rm -rf "$TMPDIR"' EXIT
+(cd "$TMPDIR" && "$HOME/.local/emacs/emacs.AppImage" --appimage-extract)
+rm -rf "$HOME/.local/emacs/squashfs-root"
+mv "$TMPDIR/squashfs-root" "$HOME/.local/emacs/squashfs-root"
+
 mkdir -p "$HOME/.local/bin"
 ln -sf "$HOME/.local/emacs/emacs.AppImage" "$HOME/.local/bin/emacs"
-ln -sf "$HOME/.local/emacs/emacs.AppImage" "$HOME/.local/bin/emacsclient"
+# Use extracted AppRun for emacsclient so it gets the right LD_LIBRARY_PATH
+cat > "$HOME/.local/bin/emacsclient" << 'EOF'
+#!/bin/sh
+$HOME/.local/emacs/squashfs-root/bin/emacsclient "$@"
+EOF
+chmod +x "$HOME/.local/bin/emacsclient"

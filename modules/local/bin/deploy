@@ -104,7 +104,7 @@ def remote_build(target: str, port: int):
             "-p",
             str(port),
             target,
-            f"direnv allow {REMOTE_DOTFILES} && direnv exec {REMOTE_DOTFILES} make install && direnv exec {REMOTE_DOTFILES} make build",
+            f"cd {REMOTE_DOTFILES} && direnv allow && direnv exec {REMOTE_DOTFILES} make install && direnv exec {REMOTE_DOTFILES} make build",
         ]
     )
 
