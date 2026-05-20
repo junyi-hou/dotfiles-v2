@@ -23,6 +23,7 @@
   (envrc-remote t)
   :config
 
+  ;; FIXME: tramp seems have issue in recognizing remote path again...
   (add-to-list 'tramp-remote-path 'tramp-own-remote-path)
 
   (with-eval-after-load 'compile
@@ -33,10 +34,10 @@
 (use-package msgpack
   :ensure (:host github :repo "xuchunyang/msgpack.el"))
 
-;; FIXME: HEAD has recursive require, use 7d96f4c
 (use-package tramp-rpc
   :ensure (:host github :repo "ArthurHeymans/emacs-tramp-rpc")
   :after tramp
+  :custom (tramp-rpc-deploy-git-build-policy 'release)
   :config
   (defun eshell/rpc (&rest args)
     "Connect to a remote host via tramp-rpc in eshell."
