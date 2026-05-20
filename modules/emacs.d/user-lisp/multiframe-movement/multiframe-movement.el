@@ -90,5 +90,24 @@
   (interactive)
   (multiframe-movement--move 'down))
 
+(defun multiframe-movement-open-frame-on-empty-monitor ()
+  "Open a maximized frame on a monitor that has no Emacs frame.
+Does nothing if there is only one monitor or all monitors have frames."
+  (interactive)
+  (let* ((monitors (display-monitor-attributes-list))
+         (empty (and (> (length monitors) 1)
+                     (seq-find (lambda (m)
+                                 (not (seq-some #'frame-visible-p (alist-get 'frames m))))
+                               monitors))))
+    (if empty
+        (let* ((wa (alist-get 'workarea empty))
+               (x (nth 0 wa))
+               (y (nth 1 wa))
+               (frame (make-frame `((left . (+ ,x)) (top . (+ ,y)) (visibility . nil)))))
+          (make-frame-visible frame)
+          (set-frame-parameter frame 'fullscreen 'maximized)
+          (select-frame-set-input-focus frame))
+      (message "multiframe-movement: no empty monitor found"))))
+
 (provide 'multiframe-movement)
 ;;; multiframe-movement.el ends here
