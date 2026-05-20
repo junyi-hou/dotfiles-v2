@@ -472,11 +472,11 @@
         (:package "tramp" :repo "https://git.savannah.gnu.org/git/tramp.git" :branch
                   "externals/tramp" :files ("*" (:exclude ".git")) :source
                   "elpaca-menu-lock-file" :protocol https :inherit t :depth treeless
-                  :type git :ref "fe4488160a4c40c0540b31997b95764571a9202f" :id tramp))
+                  :type git :ref "16c625636811ab7b78ea238d063f0c7940196ddd" :id tramp))
  (tramp-rpc :source "elpaca-menu-lock-file" :recipe
             (:source "elpaca-menu-lock-file" :protocol https :inherit t :depth treeless
                      :host github :repo "ArthurHeymans/emacs-tramp-rpc" :package
-                     "tramp-rpc" :ref "7d96f4c2c39bef0211e318ac763f7a5817532a0d" :id
+                     "tramp-rpc" :ref "d74e4c2e1f5e79aa4a4c2c1d80280c614dea7f5a" :id
                      tramp-rpc :type git))
  (transient :source "elpaca-menu-lock-file" :recipe
             (:package "transient" :fetcher github :repo "magit/transient" :files
