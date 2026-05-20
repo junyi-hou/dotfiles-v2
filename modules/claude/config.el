@@ -23,7 +23,7 @@
 ;; OPENAI_API_KEY.  Export them in your shell profile, pass them via
 ;; agent-shell-command-prefix ("env" "KEY=val" ...), or load them from your secrets
 ;; manager before this config is evaluated.
-
+(setq agent-shell-to-go-show-tool-output nil)
 ;; Which agent to use — skips the selection prompt on startup.
 ;; Common values: claude-code, gemini-cli, goose, opencode, codex
 (setq agent-shell-preferred-agent-config 'claude-code)
