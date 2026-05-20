@@ -271,7 +271,9 @@ current candidate"
 ;; multiframe support
 (gatsby>use-internal-package multiframe-movement
   :evil-bind
-  ((:maps (visual emacs insert motion normal))
+  ((:maps normal)
+   ("SPC o c" . #'multiframe-movement-open-frame-on-empty-monitor)
+   (:maps (visual emacs insert motion normal))
    ([remap windmove-right] . #'multiframe-movement-right)
    ([remap windmove-left] . #'multiframe-movement-left)
    ([remap windmove-down] . #'multiframe-movement-down)
