@@ -508,7 +508,7 @@
                        (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
                                  "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
                       :source "elpaca-menu-lock-file" :protocol https :inherit t :depth
-                      treeless :ref "40c208eaab99999d7c1e4bea883648da24c03be3" :id
+                      treeless :ref "2195e1247ecb04c30321702aa5f5618a51c329c5" :id
                       websocket :type git))
  (with-editor :source "elpaca-menu-lock-file"
    :recipe
@@ -559,4 +559,5 @@
                              agent-shell-to-go :host github :repo
                              "junyi-hou/agent-shell-to-go" :type git :protocol https
                              :inherit t :depth treeless :ref
-                             "708b00c1841ce42e27d31c79f41f18d6be109e09")))
+                             "3fbffe7b9cd7ca5be734ef0fa1225c479e298831"))
+ (agent-shell-tramp-rpc :source "elpaca-menu-lock-file" :recipe
