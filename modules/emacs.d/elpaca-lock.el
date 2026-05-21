@@ -559,5 +559,4 @@
                              agent-shell-to-go :host github :repo
                              "junyi-hou/agent-shell-to-go" :type git :protocol https
                              :inherit t :depth treeless :ref
-                             "3fbffe7b9cd7ca5be734ef0fa1225c479e298831"))
- (agent-shell-tramp-rpc :source "elpaca-menu-lock-file" :recipe
+                             "3fbffe7b9cd7ca5be734ef0fa1225c479e298831")))
