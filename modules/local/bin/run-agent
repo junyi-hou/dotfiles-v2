@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 
 PROJ_PATH="$1"
-SSH_HOST="${2:-}"
+SSH_HOST="$2"
+
+if [[ -z $SSH_HOST ]]; then
+    echo "usage: run-agent <proj-path> <ssh-host>" >&2
+    exit 1
+fi
 
 ## extract the pinned ref for agent-shell-to-go from the elpaca lock file
 LOCK_FILE="$HOME/dotfiles-v2/modules/emacs.d/elpaca-lock.el"
@@ -9,55 +14,37 @@ if [[ ! -f $LOCK_FILE ]]; then
     echo "error: lock file not found: $LOCK_FILE" >&2
     exit 1
 fi
-get_agent_shell_to_go_ref() {
-    emacs -Q --batch --eval "(with-temp-buffer
-      (insert-file-contents \"$LOCK_FILE\")
-      (goto-char (point-min))
-      (princ (plist-get (plist-get (cdr (assq (intern \"agent-shell-to-go\") (read (current-buffer)))) :recipe) :ref)))" 2>/dev/null
-}
-AGENT_SHELL_TO_GO_REF=$(get_agent_shell_to_go_ref)
+
+AGENT_SHELL_TO_GO_REF=$(emacs -Q --batch --eval "(with-temp-buffer
+  (insert-file-contents \"$LOCK_FILE\")
+  (goto-char (point-min))
+  (princ (plist-get (plist-get (cdr (assq (intern \"agent-shell-to-go\") (read (current-buffer)))) :recipe) :ref)))" 2>/dev/null)
+
 if [[ -z $AGENT_SHELL_TO_GO_REF ]]; then
     echo "error: could not extract agent-shell-to-go ref from $LOCK_FILE" >&2
     exit 1
 fi
 
-clone_agent_shell_to_go() {
-    local dest="$1"
-    mkdir -p "$(dirname "$dest")"
-    git clone https://github.com/junyi-hou/agent-shell-to-go "$dest"
-    git -C "$dest" checkout "$AGENT_SHELL_TO_GO_REF"
-}
-
-if [[ -n $SSH_HOST ]]; then
-    ssh "$SSH_HOST" "mkdir -p ~/Projects"
-    EXPANDED_PROJ_PATH="${PROJ_PATH/#\~/$HOME}"
-    if [[ "$EXPANDED_PROJ_PATH" == "$HOME" ]]; then
-        REMOTE_PROJ_PATH="\$HOME"
-    elif [[ "$EXPANDED_PROJ_PATH" == "$HOME/"* ]]; then
-        REMOTE_PROJ_PATH="\$HOME/${EXPANDED_PROJ_PATH#$HOME/}"
-    else
-        REMOTE_PROJ_PATH="$EXPANDED_PROJ_PATH"
+ssh "$SSH_HOST" "mkdir -p ~/Projects"
+EXPANDED_PROJ_PATH="${PROJ_PATH/#\~/$HOME}"
+if [[ "$EXPANDED_PROJ_PATH" == "$HOME" ]]; then
+    REMOTE_PROJ_PATH="\$HOME"
+elif [[ "$EXPANDED_PROJ_PATH" == "$HOME/"* ]]; then
+    REMOTE_PROJ_PATH="\$HOME/${EXPANDED_PROJ_PATH#$HOME/}"
+else
+    REMOTE_PROJ_PATH="$EXPANDED_PROJ_PATH"
+fi
+exec ssh "$SSH_HOST" "bash -lc '
+    SCRIPT=\"\$HOME/.emacs.d/elpaca/sources/agent-shell-to-go/scripts/run-agent\"
+    if [[ ! -f \"\$SCRIPT\" ]]; then
+        mkdir -p \"\$HOME/.emacs.d/elpaca/sources\"
+        git clone https://github.com/junyi-hou/agent-shell-to-go \"\$HOME/.emacs.d/elpaca/sources/agent-shell-to-go\"
     fi
-    exec ssh "$SSH_HOST" "bash -lc '
-        SCRIPT=\"\$HOME/.emacs.d/elpaca/sources/agent-shell-to-go/scripts/run-agent\"
-        if [[ ! -f \"\$SCRIPT\" ]]; then
-            mkdir -p \"\$HOME/.emacs.d/elpaca/sources\"
-            git clone https://github.com/junyi-hou/agent-shell-to-go \"\$HOME/.emacs.d/elpaca/sources/agent-shell-to-go\"
-        fi
 
-        git -C \"\$HOME/.emacs.d/elpaca/sources/agent-shell-to-go\" checkout \"$AGENT_SHELL_TO_GO_REF\"
-        \"\$SCRIPT\" \"$REMOTE_PROJ_PATH\" \"\$HOME/dotfiles-v2/modules/claude/config.el\"
-    '"
-fi
-
-## use hard-coded path since the emacs installation should be consistent
-SCRIPT="$HOME/.emacs.d/elpaca/sources/agent-shell-to-go/scripts/run-agent"
-if [[ ! -f $SCRIPT ]]; then
-    clone_agent_shell_to_go "$HOME/.emacs.d/elpaca/sources/agent-shell-to-go"
-fi
-
-# just run it
-"$SCRIPT" "$PROJ_PATH" "$HOME/dotfiles-v2/modules/claude/config.el"
+    git -C \"\$HOME/.emacs.d/elpaca/sources/agent-shell-to-go\" checkout \"$AGENT_SHELL_TO_GO_REF\"
+    git -C \"\$HOME/.emacs.d/elpaca/sources/agent-shell-to-go\" submodule update --init --recursive
+    \"\$SCRIPT\" \"$REMOTE_PROJ_PATH\" \"\$HOME/dotfiles-v2/modules/claude/config.el\"
+'"
 
 
 # Local Variables:
