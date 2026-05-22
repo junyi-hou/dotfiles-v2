@@ -198,6 +198,42 @@ With prefix argument CONFIG, select a config from `gatsby>agent-shell-configs'."
      :new-session t
      :session-strategy 'prompt))
 
+  (defconst gatsby>run-agent-remote-hosts-cache-file
+    (no-littering-expand-var-file-name "run-agent-remote-hosts.el")
+    "Cache file for run-agent remote SSH hosts.")
+
+  (gatsby>defcommand gatsby>run-agent-on-remote (config)
+    "Run agent on a remote server via the run-agent script.
+With prefix argument CONFIG, select a config from `gatsby>agent-shell-configs'."
+    (let* ((cfg
+            (if config
+                (gatsby>>agent-shell-select-config)
+              (gatsby>>agent-shell-default-config)))
+           (env-var (map-elt cfg :env-var))
+           (ssh-host
+            (completing-read
+             "SSH host: "
+             (gatsby>retrieve-or-save-item gatsby>run-agent-remote-hosts-cache-file)))
+           (_
+            (gatsby>retrieve-or-save-item gatsby>run-agent-remote-hosts-cache-file
+                                          ssh-host))
+           (remote-dir
+            (read-directory-name "Remote directory: "
+                                 (format "/rpc:%s:~/Projects/" ssh-host)))
+           (localname (tramp-file-name-localname (tramp-dissect-file-name remote-dir)))
+           (env-args
+            (let ((args nil)
+                  (rest env-var))
+              (while rest
+                (push (format "%s=%s" (pop rest) (pop rest)) args))
+              (nreverse args))))
+      (compile
+       (format "%s %s %s %s"
+               (shell-quote-argument "run-agent")
+               (shell-quote-argument localname)
+               (shell-quote-argument ssh-host)
+               (mapconcat #'shell-quote-argument env-args " ")))))
+
   (defun gatsby>>agent-shell-pending-permission-p ()
     (map-some
      (lambda (_id data) (map-elt data :permission-request-id))
@@ -427,6 +463,7 @@ Must be called from within an agent-shell buffer."
   ((:maps normal)
    ("SPC a a" . #'gatsby>agent-shell-start-or-switch)
    ("SPC a r" . #'gatsby>agent-shell-resume)
+   ("SPC a R" . #'gatsby>run-agent-on-remote)
    (:maps (visual normal))
    ("SPC a s" . #'agent-shell-send-file)
    (:maps agent-shell-mode-map :states insert)
