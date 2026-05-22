@@ -21,6 +21,7 @@
   (tramp-verbose 2)
   ;; enable envrc in tramp
   (envrc-remote t)
+  (enable-remote-dir-locals t)
   :config
 
   ;; FIXME: tramp seems have issue in recognizing remote path again...
