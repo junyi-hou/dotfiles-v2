@@ -558,4 +558,4 @@
                     (:source nil :package "agent-shell-to-go" :id agent-shell-to-go
                              :host github :repo "junyi-hou/agent-shell-to-go" :type git
                              :protocol https :inherit t :depth treeless :ref
-                             "fed9919f62b1064a3ff3eb29992eacdebb821bb1")))
+                             "73e70b396e418dd3c30c6b18ffb4a3fc5b4d9030")))
