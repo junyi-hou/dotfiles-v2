@@ -555,8 +555,7 @@
                                https :inherit t :depth treeless :ref
                                "53b73f13ed1ac9d2de128465a8504a7265490ea7"))
  (agent-shell-to-go :source "elpaca-menu-lock-file" :recipe
-                    (:source "elpaca-menu-lock-file" :package "agent-shell-to-go" :id
-                             agent-shell-to-go :host github :repo
-                             "junyi-hou/agent-shell-to-go" :type git :protocol https
-                             :inherit t :depth treeless :ref
-                             "3fbffe7b9cd7ca5be734ef0fa1225c479e298831")))
+                    (:source nil :package "agent-shell-to-go" :id agent-shell-to-go
+                             :host github :repo "junyi-hou/agent-shell-to-go" :type git
+                             :protocol https :inherit t :depth treeless :ref
+                             "fed9919f62b1064a3ff3eb29992eacdebb821bb1")))
