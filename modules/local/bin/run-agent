@@ -4,9 +4,14 @@ PROJ_PATH="$1"
 SSH_HOST="$2"
 
 if [[ -z $SSH_HOST ]]; then
-    echo "usage: run-agent <proj-path> <ssh-host>" >&2
+    echo "usage: run-agent <proj-path> <ssh-host> [KEY=VALUE ...]" >&2
     exit 1
 fi
+
+ENV_VARS=""
+for arg in "${@:3}"; do
+    ENV_VARS="$ENV_VARS $(printf '%q' "$arg")"
+done
 
 ## extract the pinned ref for agent-shell-to-go from the elpaca lock file
 LOCK_FILE="$HOME/dotfiles-v2/modules/emacs.d/elpaca-lock.el"
@@ -34,7 +39,7 @@ elif [[ "$EXPANDED_PROJ_PATH" == "$HOME/"* ]]; then
 else
     REMOTE_PROJ_PATH="$EXPANDED_PROJ_PATH"
 fi
-exec ssh "$SSH_HOST" "bash -lc '
+exec ssh "$SSH_HOST" "$ENV_VARS bash -lc '
     SCRIPT=\"\$HOME/.emacs.d/elpaca/sources/agent-shell-to-go/scripts/run-agent\"
     if [[ ! -f \"\$SCRIPT\" ]]; then
         mkdir -p \"\$HOME/.emacs.d/elpaca/sources\"
