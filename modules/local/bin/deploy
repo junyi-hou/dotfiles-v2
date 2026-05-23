@@ -126,7 +126,7 @@ def deploy_secret(target: str, port: int):
             target,
             f"mkdir -p $(dirname {REMOTE_KEY_PATH}) && cat > {REMOTE_KEY_PATH} && chmod 600 {REMOTE_KEY_PATH}",
         ],
-        input=(private_key + "\n").encode(),
+        input=("# public key: " + public_key + "\n" + private_key + "\n").encode(),
     )
 
     print("Copying encrypted secrets to remote...")
