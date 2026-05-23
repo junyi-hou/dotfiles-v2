@@ -80,6 +80,7 @@
     (let ((config (copy-alist (agent-shell--resolve-preferred-config)))
           (rest-keys (map-delete args :env-var)))
       (push (cons :config-name config-name) config)
+      (push (cons :env-var env-var) config)
       (map-put!
        config
        :client-maker
@@ -227,12 +228,27 @@ With prefix argument CONFIG, select a config from `gatsby>agent-shell-configs'."
               (while rest
                 (push (format "%s=%s" (pop rest) (pop rest)) args))
               (nreverse args))))
-      (compile
-       (format "%s %s %s %s"
-               (shell-quote-argument "run-agent")
-               (shell-quote-argument localname)
-               (shell-quote-argument ssh-host)
-               (mapconcat #'shell-quote-argument env-args " ")))))
+      (let ((buf
+             (compile
+              (format "%s %s %s %s"
+                      "run-agent"
+                      localname
+                      ssh-host
+                      (mapconcat #'shell-quote-argument env-args " "))))
+            (config-name (map-elt cfg :config-name)))
+        (with-current-buffer buf
+          (add-hook 'compilation-finish-functions
+                    (lambda (_buf msg)
+                      (if (string-match-p "finished" msg)
+                          (message "Ran %s config on %s for %s"
+                                   config-name
+                                   ssh-host
+                                   localname)
+                        (message "Failed: %s config on %s for %s"
+                                 config-name
+                                 ssh-host
+                                 localname)))
+                    nil t)))))
 
   (defun gatsby>>agent-shell-pending-permission-p ()
     (map-some
