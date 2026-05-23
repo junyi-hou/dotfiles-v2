@@ -24,7 +24,6 @@
   (enable-remote-dir-locals t)
   :config
 
-  ;; FIXME: tramp seems have issue in recognizing remote path again...
   (add-to-list 'tramp-remote-path 'tramp-own-remote-path)
 
   (with-eval-after-load 'compile
