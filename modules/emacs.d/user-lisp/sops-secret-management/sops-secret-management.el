@@ -57,8 +57,9 @@ The clipboard is cleared after 30 seconds."
      (let* ((data (json-read-file enc-file))
             (paths (sops--passage-paths data)))
        (list (completing-read "Getting secret: " paths)))))
-  (let ((secret (string-trim (shell-command-to-string
-                              (format "passage %s" (shell-quote-argument secret-path))))))
+  (let* ((default-directory "~/")
+         (secret (string-trim (shell-command-to-string
+                               (format "passage %s" (shell-quote-argument secret-path))))))
     (if (called-interactively-p 'interactive)
         (progn
           (kill-new secret)
@@ -150,7 +151,8 @@ Press C-c C-c to re-encrypt and save.  Normal file saves are disabled."
   (interactive)
   (unless (treesit-ready-p 'json t)
     (user-error "Tree-sitter JSON grammar unavailable (requires Emacs 29+ with grammar installed)"))
-  (let* ((enc-file (expand-file-name sops-enc-file gatsby>dotfiles-repo-location))
+  (let* ((default-directory "~/")
+         (enc-file (expand-file-name sops-enc-file gatsby>dotfiles-repo-location))
          (_ (unless (file-exists-p enc-file)
               (user-error "Encrypted secrets not found: %s" enc-file)))
          (decrypted (shell-command-to-string
