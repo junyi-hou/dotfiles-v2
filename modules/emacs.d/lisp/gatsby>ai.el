@@ -70,9 +70,7 @@ Shows running agents for the project; selecting one focuses it, selecting \"new\
 
 (use-package agent-shell
   :ensure (:host github :repo "xenodium/agent-shell")
-  :hook
-  ((agent-shell-mode . corfu-mode)
-   (diff-mode . gatsby>>agent-shell-enable-permission-in-diff))
+  :hook ((agent-shell-mode . corfu-mode))
   :custom
   (agent-shell-display-action
    '(display-buffer-in-side-window (side . right) (window-width . 0.33) (slot . 0)))
