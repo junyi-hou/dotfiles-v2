@@ -185,7 +185,8 @@ Falls through to run BODY directly when worktree isolation is not needed."
                (user-error "Failed to create worktree: %s" output))
              (let ((default-directory worktree-path))
                (when (featurep 'envrc)
-                 (envrc-allow))
+                 (ignore-errors
+                   (envrc-allow)))
                (let ((shell
                       (progn
                         ,@body)))
