@@ -167,9 +167,11 @@ Returns the matching cons cell (NAME . PLIST)."
     "Execute BODY inside a fresh git worktree of if it has uncommitted changes.
 Falls through to run BODY directly when worktree isolation is not needed."
     `(if (and (agent-shell-worktree--git-repo-root)
+              (gatsby>>agent-shell-current-client)
               (not
                (string-empty-p
-                (string-trim (shell-command-to-string "git status --porcelain")))))
+                (string-trim
+                 (shell-command-to-string "git status --porcelain | grep -v '^??'")))))
          (let* ((worktrees-dir (agent-shell--dot-subdir "worktrees"))
                 (worktree-path
                  (expand-file-name (agent-shell-worktree--generate-name) worktrees-dir))
