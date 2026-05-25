@@ -10,5 +10,5 @@ emacs-mac/
 env.json.enc
 
 .aider*
-.agent-shell/*
+/.agent-shell/
 *.elc
