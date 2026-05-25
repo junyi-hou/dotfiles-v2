@@ -1,24 +1,64 @@
 set -euo pipefail
 
+_git_main_path() {
+    # Ensure a relative path argument was provided
+    if [ $# -eq 0 ]; then
+        echo "Usage: git_main_path <relative-path-to-target>" >&2
+        return 1
+    fi
+
+    local relative_target="$1"
+
+    # 1. Fallback if not inside a git repository
+    if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        echo "$(pwd)/$relative_target"
+        return 0
+    fi
+
+    # 2. Find the top-level directory of the current worktree
+    local current_git_root
+    current_git_root=$(git rev-parse --show-toplevel)
+
+    # 3. Determine the base root directory
+    local base_root
+    if [ -f "$current_git_root/.git" ]; then
+        # We are in a secondary worktree; bounce back to the main worktree root
+        local main_git_root
+        main_git_root=$(git rev-parse --path-format=absolute --git-common-dir)/..
+        base_root=$(cd "$main_git_root" && pwd)
+    else
+        # We are already in the main worktree
+        base_root="$current_git_root"
+    fi
+
+    # 4. Output the final path
+    echo "$base_root/$relative_target"
+}
+
+
+_TOOLS=$(_git_main_path ".tools")
+
 export UV_NO_MODIFY_PATH=1
-export UV_INSTALL_DIR="$(pwd)/.tools/bin"
+export UV_INSTALL_DIR="${_TOOLS}/bin"
 export UV_NO_PROGRESS=1
 
-if [ ! -f .tools/bin/uv ]; then
+if [ ! -f "${_TOOLS}/bin/uv" ]; then
     echo "uv not found locally, installing..."
-    mkdir -p .tools
+    mkdir -p "${_TOOLS}"
     curl -LsSf https://astral.sh/uv/install.sh | sh -s -- 
 fi
 
 # Ensure local uv is in PATH
-export PATH="$(pwd)/.tools/bin:$PATH"
+export PATH="${_TOOLS}/bin:$PATH"
 
-if [ ! -d .venv ]; then
-    uv venv .venv --python "==3.12"
+_VENV=$(_git_main_path ".venv")
+
+if [ ! -d "$_VENV" ]; then
+    uv venv "$_VENV" --python "==3.12"
 fi
 
 # Activate the virtual environment
-source .venv/bin/activate
+source "${_VENV}/bin/activate"
 
 uv sync --all-groups --no-install-project
 
