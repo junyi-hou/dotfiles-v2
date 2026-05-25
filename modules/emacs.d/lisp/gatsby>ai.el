@@ -29,7 +29,7 @@
    ("d" . #'agent-shell-manager-delete-killed)))
 
 (use-package agent-shell-to-go
-  :ensure (:host github :repo "junyi-hou/agent-shell-to-go")
+  :ensure (:host github :repo "junyi-hou/agent-shell-to-go" :branch "stable")
   :custom
   (agent-shell-to-go-discord-guild-id (sops-retrieve-secret "env/DISCORD_GUILD_ID"))
   (agent-shell-to-go-discord-bot-token (sops-retrieve-secret "env/DISCORD_BOT_TOKEN"))
