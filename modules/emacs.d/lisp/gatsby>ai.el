@@ -13,8 +13,37 @@
 ;; managing agents
 (use-package agent-shell-manager
   :ensure (:host github :repo "jethrokuan/agent-shell-manager")
+  :after agent-shell
+  :config
+  (gatsby>defcommand gatsby>>agent-shell-manager-launch (arg)
+    "Switch to an existing agent shell for the current project, or launch a new one.
+Shows running agents for the project; selecting one focuses it, selecting \"new\" calls
+`gatsby>agent-shell-launch' with ARG."
+    (if-let* ((collections (gatsby>>agent-shell-current-client)))
+      (let* ((collections
+              (mapcar
+               (lambda (b)
+                 (cons
+                  (format "%s (%s) [%s]"
+                          (buffer-name b)
+                          (agent-shell-manager--get-model-id b)
+                          (agent-shell-manager--get-combined-status b))
+                  b))
+               (gatsby>>agent-shell-current-client)))
+             (picked
+              (completing-read
+               "Current Agents: " `("new" ,@ (mapcar #'car collections)))))
+        (if (equal picked "new")
+            (gatsby>agent-shell-launch arg)
+          (let ((shell (map-elt collections picked)))
+            (display-buffer shell agent-shell-display-action)
+            (switch-to-buffer-other-window shell)
+            (evil-insert-state))))
+      (gatsby>agent-shell-launch arg)))
+
   :evil-bind
   ((:maps normal)
+   ("SPC a a" . #'gatsby>>agent-shell-manager-launch)
    ("SPC a p" . #'agent-shell-manager-toggle)
    (:maps agent-shell-manager-mode-map :states motion)
    ("RET" . #'agent-shell-manager-goto)
@@ -22,7 +51,7 @@
    ("m" . #'agent-shell-manager-set-mode)
    ("M" . #'agent-shell-manager-set-model)
    ("q" . #'quit-window)
-   ("c" . #'agent-shell-manager-new)
+   ("c" . #'gatsby>agent-shell-launch)
    ("g" . #'agent-shell-manager-refresh)
    ("r" . #'agent-shell-manager-restart)
    ("x" . #'agent-shell-manager-kill)
@@ -61,150 +90,180 @@
 
   :config
   (defcustom gatsby>agent-shell-configs
-    `(("default" . gatsby>>agent-shell-default-config)
-      ("self-host" . gatsby>>agent-shell-self-host-config)
-      ("openrouter" . gatsby>>agent-shell-openrouter-config)
-      ("deepseek" . gatsby>>agent-shell-deepseek-config))
-    "List of agent-shell configs available for profile selection."
-    :type 'function
+    `(("claude" . (:base gatsby>>agent-shell-claude-config))
+      ("deepseek" .
+       (:base
+        gatsby>>agent-shell-claude-config
+        :env
+        ("ANTHROPIC_BASE_URL"
+         "https://api.deepseek.com/anthropic"
+         "ANTHROPIC_AUTH_TOKEN"
+         ,(sops-retrieve-secret "env/DEEPSEEK_API_KEY")
+         "ANTHROPIC_MODEL"
+         "deepseek-v4-pro[1m]"
+         "ANTHROPIC_DEFAULT_OPUS_MODEL"
+         "deepseek-v4-pro[1m]"
+         "ANTHROPIC_DEFAULT_SONNET_MODEL"
+         "deepseek-v4-pro[1m]"
+         "ANTHROPIC_DEFAULT_HAIKU_MODEL"
+         "deepseek-v4-flash[1m]"
+         "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"
+         "1"
+         "CLAUDE_CODE_EFFORT_LEVEL"
+         "max")))
+      ("openrouter" .
+       (:base
+        gatsby>>agent-shell-claude-config
+        :env
+        ("ANTHROPIC_BASE_URL"
+         "https://openrouter.ai/api"
+         "ANTHROPIC_AUTH_TOKEN"
+         ,(sops-retrieve-secret "env/OPENROUTER_API_KEY")
+         "ANTHROPIC_API_KEY"
+         "")
+        :default-model-id "google/gemini-3.5-flash")))
+    "Alist of named agent-shell configuration profiles.
+Each entry is (NAME . PLIST) where NAME is a string identifier and PLIST
+must contain :base (a config-builder function symbol accepting keyword args).
+Optional plist keys: :env — a flat list of (VAR VALUE ...) pairs injected as
+environment variables."
+    :type '(alist :key-type string :value-type sexp)
     :group 'gatsby)
 
-  (cl-defun gatsby>>agent-shell-make-custom-config
-      (config-name &rest args &key env-var &allow-other-keys)
-    (let ((config (copy-alist (agent-shell--resolve-preferred-config)))
-          (rest-keys (map-delete args :env-var)))
-      (push (cons :config-name config-name) config)
-      (push (cons :env-var env-var) config)
+  (defun gatsby>>agent-shell-claude-config (&rest args)
+    "Build an Anthropic/Claude agent-shell config alist applying ENV."
+    (let ((config (agent-shell-anthropic-make-claude-code-config))
+          (env (plist-get args :env)))
+      ;; handle env
       (map-put!
        config
        :client-maker
        (lambda (buffer)
-         ;; TODO: make `agent-shell-anthropic-claude-environment' and `agent-shell-anthropic-make-claude-client' protable across agents
-         (let* ((agent-shell-anthropic-claude-environment
-                 (apply #'agent-shell-make-environment-variables env-var)))
+         (let ((agent-shell-anthropic-claude-environment
+                (apply #'agent-shell-make-environment-variables env)))
            (agent-shell-anthropic-make-claude-client :buffer buffer))))
-      (map-do (lambda (key value) (map-put! config key value)) rest-keys)
+      ;; handle rest of the config keys
+      (thread-last
+       args
+       (map-filter (lambda (key _) (not (eq key :env))))
+       (map-do (lambda (key value) (map-put! config key value))))
       config))
 
-  (defun gatsby>>agent-shell-default-config ()
-    (gatsby>>agent-shell-make-custom-config "default"))
-
-  (defun gatsby>>agent-shell-deepseek-config ()
-    (gatsby>>agent-shell-make-custom-config
-     "deepseek"
-     :env-var
-     `("ANTHROPIC_BASE_URL"
-       "https://api.deepseek.com/anthropic"
-       "ANTHROPIC_AUTH_TOKEN"
-       ,(sops-retrieve-secret "env/DEEPSEEK_API_KEY")
-       "ANTHROPIC_MODEL"
-       "deepseek-v4-pro[1m]"
-       "ANTHROPIC_DEFAULT_OPUS_MODEL"
-       "deepseek-v4-pro[1m]"
-       "ANTHROPIC_DEFAULT_SONNET_MODEL"
-       "deepseek-v4-pro[1m]"
-       "ANTHROPIC_DEFAULT_HAIKU_MODEL"
-       "deepseek-v4-flash[1m]"
-       "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"
-       "1"
-       "CLAUDE_CODE_EFFORT_LEVEL"
-       "max")))
-
-  (defun gatsby>>agent-shell-self-host-config (&optional url)
-    (let ((url (or url (completing-read "ANTHROPIC_BASE_URL= " nil))))
-      (gatsby>>agent-shell-make-custom-config
-       "self-host"
-       :env-var
-       `("ANTHROPIC_BASE_URL"
-         ,url
-         "ANTHROPIC_API_KEY"
-         ""
-         "ANTHROPIC_OAUTH_TOKEN"
-         "ollama"))))
-
-  (defun gatsby>>agent-shell-openrouter-config ()
-    (gatsby>>agent-shell-make-custom-config
-     "openrouter"
-     :env-var
-     `("ANTHROPIC_BASE_URL" "https://openrouter.ai/api" "ANTHROPIC_AUTH_TOKEN"
-       ,(or (sops-retrieve-secret "env/OPENROUTER_API_KEY")
-            (user-error "No OPENROUTER_API_KEY set"))
-       "ANTHROPIC_API_KEY" "")
-     :default-model-id (lambda (&rest _) "deepseek/deepseek-v4-pro")))
+  (defun gatsby>>agent-shell-build-config (cfg)
+    "Build a runnable agent-shell config alist from profile plist CFG."
+    (let* ((cfg (cdr cfg))
+           (config-fn (plist-get cfg :base))
+           (args (map-delete cfg :base)))
+      (apply config-fn args)))
 
   (defun gatsby>>agent-shell-select-config ()
-    (let ((cfg
-           (map-elt
-            gatsby>agent-shell-configs
-            (completing-read "Agent config: " (mapcar #'car gatsby>agent-shell-configs)
-                             nil t))))
-      (funcall cfg)))
+    "Prompt user to select a profile from `gatsby>agent-shell-configs'.
+Returns the matching cons cell (NAME . PLIST)."
+    (let* ((names (mapcar #'car gatsby>agent-shell-configs))
+           (name (completing-read "Agent config: " names nil t)))
+      (cl-find name gatsby>agent-shell-configs :test #'equal :key #'car)))
 
-  (defun gatsby>>agent-shell-current-client (&optional config-name)
-    "Return the buffer of the first nonbusy agent-shell client for the current project.
-If CONFIG-NAME is non-nil, only return a client with matching config name.
-Return nil if no available client found."
+  (defmacro gatsby>>agent-shell-maybe-worktree (&rest body)
+    "Execute BODY inside a fresh git worktree of if it has uncommitted changes.
+Falls through to run BODY directly when worktree isolation is not needed."
+    `(if (and (agent-shell-worktree--git-repo-root)
+              (not
+               (string-empty-p
+                (string-trim (shell-command-to-string "git status --porcelain")))))
+         (let* ((worktrees-dir (agent-shell--dot-subdir "worktrees"))
+                (worktree-path
+                 (expand-file-name (agent-shell-worktree--generate-name) worktrees-dir))
+                (base-sha (string-trim (shell-command-to-string "git rev-parse HEAD"))))
+           (when (file-exists-p worktree-path)
+             (user-error "Directory already exists: %s" worktree-path))
+           (make-directory (file-name-directory worktree-path) t)
+           (let ((output
+                  (shell-command-to-string
+                   (format "git worktree add %s 2>&1"
+                           (shell-quote-argument worktree-path)))))
+             (unless (file-exists-p worktree-path)
+               (user-error "Failed to create worktree: %s" output))
+             (let ((default-directory worktree-path))
+               (when (featurep 'envrc)
+                 (envrc-allow))
+               (let ((shell
+                      (progn
+                        ,@body)))
+                 (with-current-buffer shell
+                   (add-hook
+                    'kill-buffer-hook
+                    (lambda ()
+                      (let* ((default-directory worktree-path)
+                             (uncommitted
+                              (not
+                               (string-empty-p
+                                (string-trim
+                                 (shell-command-to-string "git status --porcelain")))))
+                             (unmerged
+                              (not
+                               (string-empty-p
+                                (string-trim
+                                 (shell-command-to-string
+                                  (format "git log %s..HEAD --oneline"
+                                          (shell-quote-argument base-sha))))))))
+                        (if (or (not (or uncommitted unmerged))
+                                (yes-or-no-p
+                                 (format "Worktree %s has %s. Remove anyway? "
+                                         worktree-path
+                                         (cond
+                                          ((and uncommitted unmerged)
+                                           "uncommitted and unmerged changes")
+                                          (unmerged
+                                           "unmerged commits")
+                                          (t
+                                           "uncommitted changes")))))
+                            (shell-command
+                             (format "git worktree remove --force %s"
+                                     (shell-quote-argument worktree-path)))
+                          (magit-status))))))))))
+       ,@body))
+
+  (defun gatsby>>agent-shell-current-client (&optional available)
+    "Return a list of agent-shell buffers belonging to the current project.
+If AVAILABLE is non-nil, exclude buffers that have active requests in flight."
     (let* ((project-root
             (or (and (project-current) (project-root (project-current)))
                 default-directory)))
-      (thread-last
-       (buffer-list) (seq-filter #'buffer-live-p)
-       ;; I might have more than one of those, but that's fine - I just need one
-       ;; of them
-       (cl-find-if
-        (lambda (b)
-          (with-current-buffer b
-            (and (buffer-live-p b)
-                 (file-equal-p project-root default-directory)
-                 (eq major-mode 'agent-shell-mode)
-                 (not (agent-shell--active-requests-p (agent-shell--state)))
-                 (or (not config-name)
-                     (equal
-                      config-name
-                      (map-nested-elt
-                       (agent-shell--state) '(:agent-config :config-name)))))))))))
+      (seq-filter
+       (lambda (b)
+         (with-current-buffer b
+           (and (buffer-live-p b)
+                (file-equal-p project-root default-directory)
+                (or (not available)
+                    (and available
+                         (not
+                          (agent-shell--active-requests-p (agent-shell--state))))))))
+       (agent-shell-buffers))))
 
-  (gatsby>defcommand gatsby>agent-shell-start-or-switch (config)
-    "Switch to existing agent shell for current project, or start a new one.
-With prefix argument CONFIG, select a config from `gatsby>agent-shell-configs'."
-    (let* ((cfg
-            (if config
-                (gatsby>>agent-shell-select-config)
-              (gatsby>>agent-shell-default-config)))
-           (current-client
-            (gatsby>>agent-shell-current-client
-             (when config
-               (map-elt cfg :config-name)))))
-      (if (not current-client)
-          (agent-shell--start :no-focus nil :config cfg :new-session t)
-        (display-buffer current-client agent-shell-display-action)
-        (switch-to-buffer-other-window current-client)
-        (evil-insert-state))))
-
-  (gatsby>defcommand gatsby>agent-shell-resume (config)
-    "Start a new agent shell session using prompt strategy.
-With prefix argument CONFIG, select a config from `gatsby>agent-shell-configs'."
-    (agent-shell--start
-     :no-focus nil
-     :config
-     (if config
-         (gatsby>>agent-shell-select-config)
-       (gatsby>>agent-shell-default-config))
-     :new-session t
-     :session-strategy 'prompt))
+  (gatsby>defcommand gatsby>agent-shell-launch (resume)
+    "Launch a new agent-shell session using the selected config profile.
+With prefix argument RESUME, use the prompt session strategy to continue a previous session."
+    (let* ((cfg (gatsby>>agent-shell-select-config))
+           (config (gatsby>>agent-shell-build-config cfg))
+           (strategy
+            (if resume
+                'prompt
+              'new)))
+      (gatsby>>agent-shell-maybe-worktree
+       (agent-shell--start
+        :no-focus nil
+        :config config
+        :new-session t
+        :session-strategy strategy))))
 
   (defconst gatsby>run-agent-remote-hosts-cache-file
     (no-littering-expand-var-file-name "run-agent-remote-hosts.el")
     "Cache file for run-agent remote SSH hosts.")
 
-  (gatsby>defcommand gatsby>run-agent-on-remote (config)
-    "Run agent on a remote server via the run-agent script.
-With prefix argument CONFIG, select a config from `gatsby>agent-shell-configs'."
-    (let* ((cfg
-            (if config
-                (gatsby>>agent-shell-select-config)
-              (gatsby>>agent-shell-default-config)))
-           (env-var (map-elt cfg :env-var))
+  (gatsby>defcommand gatsby>run-agent-on-remote ()
+    "Run agent on a remote server via the run-agent script."
+    (let* ((cfg (gatsby>>agent-shell-select-config))
+           (env-var (map-elt cfg :env))
            (ssh-host
             (completing-read
              "SSH host: "
@@ -360,13 +419,14 @@ Must be called from within an agent-shell buffer."
       (user-error "Nothing staged - can't generate commit message"))
     (message "Generating commit message...")
     (let*
-        ((existing-client (gatsby>>agent-shell-current-client))
+        ((existing-client (car (gatsby>>agent-shell-current-client 'available)))
          (agent-shell-buffer
           (or existing-client
               (cl-letf (((symbol-function #'agent-shell--display-buffer) #'ignore))
                 (agent-shell--start
                  :no-focus t
-                 :config (gatsby>>agent-shell-default-config)
+                 :config
+                 (gatsby>>agent-shell-build-config (cdar gatsby>agent-shell-configs))
                  :new-session t
                  :session-strategy 'new))))
          (proceed
@@ -471,9 +531,7 @@ Must be called from within an agent-shell buffer."
 
   :evil-bind
   ((:maps normal)
-   ("SPC a a" . #'gatsby>agent-shell-start-or-switch)
-   ("SPC a r" . #'gatsby>agent-shell-resume)
-   ("SPC a R" . #'gatsby>run-agent-on-remote)
+   ("SPC a r" . #'gatsby>run-agent-on-remote)
    (:maps (visual normal))
    ("SPC a s" . #'agent-shell-send-file)
    (:maps agent-shell-mode-map :states insert)
