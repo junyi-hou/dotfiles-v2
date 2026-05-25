@@ -60,12 +60,6 @@
          (value . ,(sops-retrieve-secret "env/CONTEXT7_API_KEY"))))))))
 
   :config
-  ;; diff-mode integration
-  (defun gatsby>>agent-shell-enable-permission-in-diff ()
-    (when (string-match-p "\\*agent-shell-diff\\*" (buffer-name))
-      ;; Defer so evil's own mode hooks don't overwrite this state afterward.
-      (run-with-idle-timer 0 nil #'evil-emacs-state)))
-
   (defcustom gatsby>agent-shell-configs
     `(("default" . gatsby>>agent-shell-default-config)
       ("self-host" . gatsby>>agent-shell-self-host-config)
@@ -501,7 +495,16 @@ Must be called from within an agent-shell buffer."
    ("M" . #'agent-shell-set-session-model)
    ("q" . #'delete-window)
    ("M-v" . #'agent-shell-yank-dwim)
-   ([remap kill-buffer-and-window] . #'delete-window)))
+   ([remap kill-buffer-and-window] . #'delete-window)
+   (:maps agent-shell-diff-mode-map)
+   (">" . #'diff-hunk-next)
+   ("<" . #'diff-hunk-prev)
+   ("a" . #'diff-apply-hunk)
+   ("s" . #'diff-split-hunk)
+   ("A" . #'diff-apply-buffer)
+   ("q" . #'kill-buffer-and-window)
+   ("y" . #'agent-shell-diff-accept-all)
+   ("C-c C-c" . #'agent-shell-diff-reject-all)))
 
 (provide 'gatsby>ai)
 ;;; gatsby>ai.el ends here
