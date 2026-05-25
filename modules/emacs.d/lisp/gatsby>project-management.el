@@ -138,9 +138,9 @@ interactively select a single test to run instead."
               (copy-file file gitignore))))
          ((string-match-p "\\(\\`\\|/\\)tools/" (file-relative-name file template))
           (let* ((template-file (file-relative-name file template))
-                 (dest-file (replace-regexp-in-string
-                             "\\(\\`\\|/\\)tools/" "\\1.tools/"
-                             template-file)))
+                 (dest-file
+                  (replace-regexp-in-string
+                   "\\(\\`\\|/\\)tools/" "\\1.tools/" template-file)))
             (when-let* ((dir (file-name-directory dest-file)))
               (make-directory (file-name-concat destination dir) t))
             (copy-file file (file-name-concat destination dest-file) 1)))
@@ -329,7 +329,9 @@ interactively select a single test to run instead."
    ("a" . #'diff-apply-hunk)
    ("s" . #'diff-split-hunk)
    ("A" . #'diff-apply-buffer)
-   ("q" . #'kill-buffer-and-window)))
+   ("q" . #'kill-buffer-and-window)
+   ("y" . #'agent-shell-diff-accept-all)
+   ("C-c C-c" . #'agent-shell-diff-reject-all)))
 
 (gatsby>use-internal-package sops-secret-management
   :custom (sops-enc-file (expand-file-name "env.json.enc" gatsby>dotfiles-repo-location))
