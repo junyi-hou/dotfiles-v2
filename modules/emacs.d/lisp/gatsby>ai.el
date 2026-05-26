@@ -57,17 +57,6 @@ Shows running agents for the project; selecting one focuses it, selecting \"new\
    ("x" . #'agent-shell-manager-kill)
    ("d" . #'agent-shell-manager-delete-killed)))
 
-(use-package agent-shell-to-go
-  :ensure (:host github :repo "junyi-hou/agent-shell-to-go" :branch "stable")
-  :custom
-  (agent-shell-to-go-discord-guild-id (sops-retrieve-secret "env/DISCORD_GUILD_ID"))
-  (agent-shell-to-go-discord-bot-token (sops-retrieve-secret "env/DISCORD_BOT_TOKEN"))
-  (agent-shell-to-go-discord-authorized-users
-   (list (sops-retrieve-secret "env/DISCORD_USER_ID")))
-  (agent-shell-to-go-show-tool-output nil)
-  (agent-shell-to-go-projects-directory "~/Projects/")
-  (agent-shell-to-go-default-transport 'discord))
-
 (use-package agent-shell
   :ensure (:host github :repo "xenodium/agent-shell")
   :hook ((agent-shell-mode . corfu-mode))
@@ -78,48 +67,10 @@ Shows running agents for the project; selecting one focuses it, selecting \"new\
   (agent-shell-session-strategy 'new)
   (agent-shell-preferred-agent-config 'claude-code)
   (agent-shell-anthropic-claude-acp-command '("claude-agent-acp"))
-  (agent-shell-mcp-servers
-   `(((name . "context7")
-      (type . "http") (url . "https://mcp.context7.com/mcp")
-      (headers
-       .
-       (((name . "CONTEXT7_API_KEY")
-         (value . ,(sops-retrieve-secret "env/CONTEXT7_API_KEY"))))))))
 
   :config
   (defcustom gatsby>agent-shell-configs
-    `(("claude" . (:base gatsby>>agent-shell-claude-config))
-      ("deepseek" .
-       (:base
-        gatsby>>agent-shell-claude-config
-        :env
-        ("ANTHROPIC_BASE_URL"
-         "https://api.deepseek.com/anthropic"
-         "ANTHROPIC_AUTH_TOKEN"
-         ,(sops-retrieve-secret "env/DEEPSEEK_API_KEY")
-         "ANTHROPIC_MODEL"
-         "deepseek-v4-pro[1m]"
-         "ANTHROPIC_DEFAULT_OPUS_MODEL"
-         "deepseek-v4-pro[1m]"
-         "ANTHROPIC_DEFAULT_SONNET_MODEL"
-         "deepseek-v4-pro[1m]"
-         "ANTHROPIC_DEFAULT_HAIKU_MODEL"
-         "deepseek-v4-flash[1m]"
-         "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"
-         "1"
-         "CLAUDE_CODE_EFFORT_LEVEL"
-         "max")))
-      ("openrouter" .
-       (:base
-        gatsby>>agent-shell-claude-config
-        :env
-        ("ANTHROPIC_BASE_URL"
-         "https://openrouter.ai/api"
-         "ANTHROPIC_AUTH_TOKEN"
-         ,(sops-retrieve-secret "env/OPENROUTER_API_KEY")
-         "ANTHROPIC_API_KEY"
-         "")
-        :default-model-id "google/gemini-3.5-flash")))
+    `(("claude" . (:base gatsby>>agent-shell-claude-config)))
     "Alist of named agent-shell configuration profiles.
 Each entry is (NAME . PLIST) where NAME is a string identifier and PLIST
 must contain :base (a config-builder function symbol accepting keyword args).
