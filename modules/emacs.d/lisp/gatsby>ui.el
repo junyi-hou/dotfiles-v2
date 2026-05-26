@@ -248,10 +248,10 @@ current candidate"
 ;; cursor
 (defun gatsby>>make-lolipop (e)
   "Custom build step for Lolipop (E)."
-  (elpaca-note e "Building")
+  (elpaca--signal e "Building" 'building)
   (let* ((default-directory (elpaca<-source-dir e)))
     (call-process "make")
-    (elpaca-continue e)))
+    (elpaca--continue-build e)))
 
 (use-package lolipop
   :if (and (eq system-type 'darwin) (functionp #'window-cursor-info))
