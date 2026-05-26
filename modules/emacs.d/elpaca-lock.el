@@ -139,7 +139,7 @@
    "elpaca-menu-lock-file" :recipe
    (:source nil :package "elpaca" :id elpaca :repo
             "https://github.com/progfolio/elpaca.git" :ref
-            "abda553407b8769006c241a8b2f0381fe66ad613" :depth 1 :inherit ignore :files
+            "27c2889f66368bde12b4e243582e343ed9cb75e3" :depth 1 :inherit ignore :files
             (:defaults "elpaca-test.el" (:exclude "extensions")) :build
             (:not elpaca-activate) :type git :protocol https))
  (elpaca-use-package :source "elpaca-menu-lock-file" :recipe
