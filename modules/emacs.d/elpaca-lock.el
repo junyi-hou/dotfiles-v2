@@ -559,4 +559,4 @@
                              agent-shell-to-go :host github :repo
                              "junyi-hou/agent-shell-to-go" :type git :protocol https
                              :inherit t :depth treeless :ref
-                             "d6cd499c4b502ca9231624f607d104995429ba3f" :branch "stable")))
+                             "a677f4dc03aaff415e43bb0d657caf39e0ff5bd1" :branch "stable")))
