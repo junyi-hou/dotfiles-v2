@@ -91,3 +91,5 @@ Decrypts into a scratch buffer. `C-c C-c` re-encrypts and saves; `C-c C-k` cance
 
 [ ] devcontainer for agents
 [ ] self-managed plugins (via git submodules) - available if [this issue](https://github.com/anthropics/claude-agent-sdk-typescript/issues/141) and [this PR](https://github.com/anthropics/claude-agent-sdk-python/pull/803) lands.
+[ ] simple side-by-side diff review (ediff is too heavy, and I just want something simpler)
+[ ] remote `run-agent` rebuild
