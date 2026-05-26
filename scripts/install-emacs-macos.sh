@@ -5,7 +5,7 @@ command -v brew > /dev/null || {
     exit 1
 }
 
-brew install gcc pkgconf texinfo autoconf libgccjit librsvg
+brew install gcc pkgconf texinfo autoconf libgccjit librsvg gnutls
 
 ## until emacs adopts tree-sitter ABI 26
 brew install tree-sitter@0.25
