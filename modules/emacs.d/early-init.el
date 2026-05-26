@@ -25,8 +25,7 @@
 (defvar elpaca-order
   '(elpaca
     :repo "https://github.com/progfolio/elpaca.git"
-    :ref nil
-    :depth 1
+    :ref "abda553407b8769006c241a8b2f0381fe66ad613"
     :inherit ignore
     :files (:defaults "elpaca-test.el" (:exclude "extensions"))
     :build (:not elpaca-activate)))
@@ -90,6 +89,7 @@
 (add-hook 'after-init-hook #'elpaca-process-queues)
 
 (elpaca `(,@elpaca-order))
+(elpaca-wait)
 
 ;; Lock files
 (setq elpaca-lock-file (expand-file-name "elpaca-lock.el" user-emacs-directory))
