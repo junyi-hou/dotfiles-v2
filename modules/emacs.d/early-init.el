@@ -107,7 +107,7 @@
       (append lock-contents (list entry)))))
 
 (defun gatsby>>elpaca-update-lock-file (e)
-  (elpaca--signal e "Updating lockfile" 'update-lockfile)
+  (elpaca-note e "Updating lockfile")
   (let* ((repo (elpaca-source-dir e))
          (ref (when (file-directory-p repo)
                 (let ((default-directory repo))
@@ -125,7 +125,7 @@
            lock-contents (elpaca<-id e) recipe)))
     (with-temp-file elpaca-lock-file
       (pp updated (current-buffer))))
-  (elpaca--continue-build e))
+  (elpaca-continue e))
 
 (add-to-list 'elpaca-default-build-steps #'gatsby>>elpaca-update-lock-file t)
 
