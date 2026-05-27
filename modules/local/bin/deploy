@@ -2,10 +2,12 @@
 
 import argparse
 import subprocess
+from pathlib import Path
 
 
 REMOTE_DOTFILES = "~/dotfiles-v2"
 REMOTE_REPO = "https://github.com/junyi-hou/dotfiles-v2"
+LOCAL_DOTFILES = Path(__file__).resolve().parents[3]
 
 
 def parse_args():
@@ -13,6 +15,7 @@ def parse_args():
     parser.add_argument("target", help="user@host")
     parser.add_argument("-p", "--port", type=int, default=22)
     parser.add_argument("-b", "--build", action="store_true")
+    parser.add_argument("--use-local-copy", action="store_true")
     return parser.parse_args()
 
 
@@ -34,8 +37,28 @@ def check_remote_deps(target: str, port: int):
     )
 
 
-def remote_clone(target: str, port: int):
-    run(["ssh", "-p", str(port), target, f"git clone {REMOTE_REPO} {REMOTE_DOTFILES}"])
+def remote_clone(target: str, port: int, use_local_copy: bool):
+    if use_local_copy:
+        run(
+            [
+                "rsync",
+                "-a",
+                "--delete",
+                "-e", f"ssh -p {port}",
+                f"{LOCAL_DOTFILES}/",
+                f"{target}:{REMOTE_DOTFILES}",
+            ]
+        )
+    else:
+        run(
+            [
+                "ssh",
+                "-p",
+                str(port),
+                target,
+                f"git clone {REMOTE_REPO} {REMOTE_DOTFILES}",
+            ]
+        )
 
 
 def remote_build(target: str, port: int):
@@ -56,7 +79,7 @@ def main():
     print(f"Checking remote dependencies on {args.target}...")
     check_remote_deps(args.target, args.port)
     print(f"Cloning dotfiles on {args.target}...")
-    remote_clone(args.target, args.port)
+    remote_clone(args.target, args.port, args.use_local_copy)
 
     if args.build:
         print(f"Building dotfiles on {args.target}...")

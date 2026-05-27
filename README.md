@@ -51,6 +51,11 @@ With additional `-b` flag, we will do `make build` + `make install` in the remot
 deploy -b user@host [-p port]
 ```
 
+With `--use-local-copy`, the local dotfiles directory is copied to the remote via `rsync` instead of cloning from GitHub:
+```sh
+deploy --use-local-copy user@host [-p port]
+```
+
 ### Remote Agent
 
 Start a headless agent on a remote machine from your laptop using [agent-shell-to-go](https://github.com/junyi-hou/agent-shell-to-go), which allows you to keep interacting with a code agent from discord/slack on your phone.
