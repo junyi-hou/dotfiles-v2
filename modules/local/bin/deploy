@@ -44,7 +44,9 @@ def remote_clone(target: str, port: int, use_local_copy: bool):
                 "rsync",
                 "-a",
                 "--delete",
-                "-e", f"ssh -p {port}",
+                "--filter=:- .gitignore",
+                "-e",
+                f"ssh -p {port}",
                 f"{LOCAL_DOTFILES}/",
                 f"{target}:{REMOTE_DOTFILES}",
             ]
