@@ -7,7 +7,9 @@
 (require 'gatsby>>utility)
 
 (gatsby>use-internal-package project
-  :custom (vc-follow-symlinks t)
+  :custom
+  (vc-follow-symlinks t)
+  (project-vc-extra-root-markers '(".envrc" ".dir-locals.el"))
   :config
 
   ;; Create a new project type whose roots are defined in `gatsby>project-list'.
