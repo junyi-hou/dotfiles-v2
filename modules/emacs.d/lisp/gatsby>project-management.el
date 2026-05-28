@@ -335,6 +335,18 @@ interactively select a single test to run instead."
    ("y" . #'agent-shell-diff-accept-all)
    ("C-c C-c" . #'agent-shell-diff-reject-all)))
 
+(gatsby>use-internal-package side-by-side-diff
+  :evil-bind
+  ((:maps ssdf-mode-map :states motion)
+   (">" . #'ssdf-next-hunk)
+   ("<" . #'ssdf-prev-hunk)
+   ("n" . #'ssdf-next-file)
+   ("p" . #'ssdf-prev-file)
+   (:maps diff-mode-map)
+   ("RET" . #'ssdf-from-diff-buffer)
+   (:maps (magit-status-mode-map magit-diff-mode-map magit-revision-mode-map) :states motion)
+   ("M-RET" . #'ssdf-from-magit)))
+
 (gatsby>use-internal-package sops-secret-management
   :custom (sops-enc-file (expand-file-name "env.json.enc" gatsby>dotfiles-repo-location))
   :evil-bind

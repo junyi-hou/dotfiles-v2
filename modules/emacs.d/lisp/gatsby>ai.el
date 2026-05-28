@@ -341,11 +341,69 @@ Returns non-nil if a button was found and activated."
     (when (gatsby>>agent-shell-pending-permission-p)
       (gatsby>>agent-shell-activate-permission-button "!")))
 
+  (defvar-local gatsby>>agent-shell-diff-file nil
+    "Original file name for the current agent-shell diff buffer.")
+
+  (defun gatsby>>agent-shell-diff-store-file (_old _new file buf)
+    (when (featurep 'side-by-side-diff)
+      (with-current-buffer buf
+        (setq-local gatsby>>agent-shell-diff-file file))))
+
+  (advice-add
+   'agent-shell-diff--insert-diff
+   :after #'gatsby>>agent-shell-diff-store-file)
+
+  (defun gatsby>>ssdf-agent-shell-do (action)
+    "Run ACTION on the background agent-shell diff buffer, then quit ssdf."
+    (when-let* ((buf
+                 (seq-find
+                  (lambda (b)
+                    (with-current-buffer b
+                      (derived-mode-p 'agent-shell-diff-mode)))
+                  (buffer-list))))
+      (with-current-buffer buf
+        (funcall action)))
+    (ssdf-quit))
+
+  (gatsby>defcommand gatsby>>ssdf-agent-shell-accept ()
+    "Accept the pending agent-shell diff and quit ssdf."
+    (gatsby>>ssdf-agent-shell-do #'agent-shell-diff-accept-all))
+
+  (gatsby>defcommand gatsby>>ssdf-agent-shell-reject ()
+    "Reject the pending agent-shell diff and quit ssdf."
+    (gatsby>>ssdf-agent-shell-do #'agent-shell-diff-reject-all))
+
   (gatsby>defcommand gatsby>agent-shell-permission-view-diff ()
     "View diff (v) if pending permission with diff, else enter visual mode."
-    (unless (and (gatsby>>agent-shell-pending-permission-p)
-                 (gatsby>>agent-shell-activate-permission-button "v"))
-      (call-interactively #'evil-visual-char)))
+    (if (and (gatsby>>agent-shell-pending-permission-p)
+             (gatsby>>agent-shell-activate-permission-button "v"))
+        (when (featurep 'side-by-side-diff)
+          (let ((pre-config (current-window-configuration)))
+            (when-let* ((buf
+                         (seq-find
+                          (lambda (b)
+                            (with-current-buffer b
+                              (derived-mode-p 'agent-shell-diff-mode)))
+                          (buffer-list))))
+              (let* ((file
+                      (or (buffer-local-value 'gatsby>>agent-shell-diff-file buf)
+                          "file"))
+                     (diff-text
+                      (with-current-buffer buf
+                        (buffer-substring-no-properties (point-min) (point-max)))))
+                (set-window-configuration pre-config)
+                (ssdf-display-diff
+                 (concat "diff --git a/" file " b/" file "\n" diff-text))
+                (dolist (ssdf-buf
+                         (list
+                          (get-buffer ssdf--left-name) (get-buffer ssdf--right-name)))
+                  (when ssdf-buf
+                    (with-current-buffer ssdf-buf
+                      (evil-local-set-key
+                       'motion (kbd "y") #'gatsby>>ssdf-agent-shell-accept)
+                      (evil-local-set-key
+                       'motion (kbd "C-c C-c") #'gatsby>>ssdf-agent-shell-reject)))))))
+          (call-interactively #'evil-visual-char))))
 
   (gatsby>defcommand gatsby>agent-shell-next-prompt-or-permission ()
     "Jump to the next permission button if there's a pending permission ask.
