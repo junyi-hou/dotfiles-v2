@@ -157,9 +157,11 @@ environment variables."
   (defun gatsby>>agent-shell-select-config ()
     "Prompt user to select a profile from `gatsby>agent-shell-configs'.
 Returns the matching cons cell (NAME . PLIST)."
-    (let* ((names (mapcar #'car gatsby>agent-shell-configs))
-           (name (completing-read "Agent config: " names nil t)))
-      (cl-find name gatsby>agent-shell-configs :test #'equal :key #'car)))
+    (let* ((names (mapcar #'car gatsby>agent-shell-configs)))
+      (if (cdr names)
+          (let ((name (completing-read "Agent config: " names nil t)))
+            (cl-find name gatsby>agent-shell-configs :test #'equal :key #'car))
+        (car names))))
 
   (defmacro gatsby>>agent-shell-maybe-worktree (&rest body)
     "Execute BODY inside a fresh git worktree of if it has uncommitted changes.
