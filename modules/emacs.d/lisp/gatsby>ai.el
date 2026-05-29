@@ -402,8 +402,8 @@ Returns non-nil if a button was found and activated."
                       (evil-local-set-key
                        'motion (kbd "y") #'gatsby>>ssdf-agent-shell-accept)
                       (evil-local-set-key
-                       'motion (kbd "C-c C-c") #'gatsby>>ssdf-agent-shell-reject)))))))
-          (call-interactively #'evil-visual-char))))
+                       'motion (kbd "C-c C-c") #'gatsby>>ssdf-agent-shell-reject))))))))
+      (call-interactively #'evil-visual-char)))
 
   (gatsby>defcommand gatsby>agent-shell-next-prompt-or-permission ()
     "Jump to the next permission button if there's a pending permission ask.
