@@ -1,4 +1,4 @@
-;;; gatsby>project-management.el --- version control settings -*- lexical-binding: t; -*-
+;;; gatsby-project-management.el --- version control settings -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 
@@ -356,4 +356,4 @@ interactively select a single test to run instead."
 
 
 (provide 'gatsby-project-management)
-;;; gatsby>project-management.el ends here
+;;; gatsby-project-management.el ends here

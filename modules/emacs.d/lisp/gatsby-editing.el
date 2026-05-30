@@ -1,4 +1,4 @@
-;;; gatsby>editing.el --- evil+ -*- lexical-binding: t; -*-
+;;; gatsby-editing.el --- evil+ -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 
@@ -233,4 +233,4 @@
    ("#" . #'gatsby>consult-search-visual-outline)))
 
 (provide 'gatsby-editing)
-;;; gatsby>editing.el ends here
+;;; gatsby-editing.el ends here

@@ -1,4 +1,4 @@
-;;; gatsby>repl.el --- REPL via jupyter and comint -*- lexical-binding: t; -*-
+;;; gatsby-repl.el --- REPL via jupyter and comint -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 
@@ -278,4 +278,4 @@ Forwards the server port over SSH and connects a REPL to CODE-BUFFER."
    ("M-RET" . #'gatsby>jupyter-insert-cell-separator)))
 
 (provide 'gatsby-repl)
-;;; gatsby>repl.el ends here
+;;; gatsby-repl.el ends here

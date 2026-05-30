@@ -1,4 +1,4 @@
-;;; gatsby>python.el --- python specific config -*- lexical-binding: t; -*-
+;;; gatsby-python.el --- python specific config -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 
@@ -34,4 +34,4 @@
    (">" . #'python-indent-shift-right)))
 
 (provide 'gatsby-python)
-;;; gatsby>python.el ends here
+;;; gatsby-python.el ends here

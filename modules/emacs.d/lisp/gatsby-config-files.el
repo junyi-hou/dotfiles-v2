@@ -1,4 +1,4 @@
-;;; gatsby>config-files.el --- major modes for config files like yaml/toml/json -*- lexical-binding: t; -*-
+;;; gatsby-config-files.el --- major modes for config files like yaml/toml/json -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 
@@ -67,4 +67,4 @@
   (toml-ts-mode . display-line-numbers-mode))
 
 (provide 'gatsby-config-files)
-;;; gatsby>config-files.el ends here
+;;; gatsby-config-files.el ends here

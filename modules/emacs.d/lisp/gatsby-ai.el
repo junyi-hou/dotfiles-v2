@@ -1,4 +1,4 @@
-;;; gatsby>ai.el --- ai code helper -*- lexical-binding: t; -*-
+;;; gatsby-ai.el --- ai code helper -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 
@@ -654,4 +654,4 @@ Must be called from within an agent-shell buffer."
    ("C-c C-c" . #'agent-shell-diff-reject-all)))
 
 (provide 'gatsby-ai)
-;;; gatsby>ai.el ends here
+;;; gatsby-ai.el ends here

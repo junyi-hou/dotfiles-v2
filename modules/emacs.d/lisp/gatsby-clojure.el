@@ -1,4 +1,4 @@
-;;; gatsby>clojure.el --- clojure specific config -*- lexical-binding: t; -*-
+;;; gatsby-clojure.el --- clojure specific config -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 
@@ -66,4 +66,4 @@
   :hook (elpaca-after-init . jarchive-mode))
 
 (provide 'gatsby-clojure)
-;;; gatsby>clojure.el ends here
+;;; gatsby-clojure.el ends here
