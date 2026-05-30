@@ -203,6 +203,7 @@ interactively select a single test to run instead."
          magit-revision-mode
          magit-revision-mode
          magit-process-mode
+         magit-stash-mode
          git-rebase-mode)
        'motion)))
    (evil-mode . (lambda () (gatsby>>put-mode-to-evil-state 'git-commit-mode 'insert))))
@@ -263,9 +264,8 @@ interactively select a single test to run instead."
       (call-interactively #'magit-show-commit))
      ((magit-section-match [* error])
       (call-interactively #'magit-process-buffer))
-     ;; TODO: use smerge instead of ediff
-     ;; ((magit-section-match [stash])
-     ;;  (call-interactively #'magit-ediff-show-stash))
+     ((magit-section-match [stash])
+      (call-interactively #'magit-stash-show))
      ;; ((and (magit-section-match '(issue pullreq))
      ;;       (featurep 'forge))
      ;;  ;; for `forge-issue' and `forge-pullreq' block, visit corresponding issue
@@ -289,7 +289,9 @@ interactively select a single test to run instead."
    ("C-j" . #'windmove-down)
    (:maps magit-status-mode-map :states visual)
    ("u" . #'magit-unstage)
-   (:maps (magit-status-mode-map magit-diff-mode-map magit-log-mode-map) :states motion)
+   (:maps
+    (magit-status-mode-map magit-diff-mode-map magit-log-mode-map magit-stash-mode-map)
+    :states motion)
    (">" . #'magit-section-forward-sibling)
    ("<" . #'magit-section-backward-sibling)
    ("`" . #'magit-dispatch)
@@ -344,7 +346,9 @@ interactively select a single test to run instead."
    ("p" . #'ssdf-prev-file)
    (:maps diff-mode-map)
    ("RET" . #'ssdf-from-diff-buffer)
-   (:maps (magit-status-mode-map magit-diff-mode-map magit-revision-mode-map) :states motion)
+   (:maps
+    (magit-status-mode-map magit-diff-mode-map magit-revision-mode-map)
+    :states motion)
    ("M-RET" . #'ssdf-from-magit)))
 
 (gatsby>use-internal-package sops-secret-management

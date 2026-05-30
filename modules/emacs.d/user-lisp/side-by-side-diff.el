@@ -639,6 +639,18 @@ it checks `magit-buffer-typearg' and `magit-buffer-diff-args'."
         :source-fn (lambda (ctx)
                      (ssdf--git "show" (format "-U%d" ctx) "--word-diff=plain" "--format=" rev)))))
 
+    ('magit-stash-mode
+     (let ((rev (bound-and-true-p magit-buffer-revision)))
+       (unless rev (user-error "Cannot determine revision"))
+       (ssdf-display-diff
+        (ssdf--git "diff" (format "-U%d" ssdf-default-context) "--word-diff=plain"
+                   (concat rev "^1") rev)
+        :context ssdf-default-context
+        :parser #'ssdf--parse-word-diff
+        :source-fn (lambda (ctx)
+                     (ssdf--git "diff" (format "-U%d" ctx) "--word-diff=plain"
+                                (concat rev "^1") rev)))))
+
     ((or 'magit-status-mode 'magit-diff-mode)
      (let* ((staged (ssdf--magit-staged-p))
             (extra  (if staged '("--staged") nil))
