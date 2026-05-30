@@ -60,13 +60,17 @@ Shows running agents for the project; selecting one focuses it, selecting \"new\
 (use-package agent-shell-to-go
   :ensure (:host github :repo "junyi-hou/agent-shell-to-go" :branch "stable")
   :custom
-  (agent-shell-to-go-discord-guild-id (sops-retrieve-secret "env/DISCORD_GUILD_ID"))
-  (agent-shell-to-go-discord-bot-token (sops-retrieve-secret "env/DISCORD_BOT_TOKEN"))
+  (agent-shell-to-go-discord-guild-id
+   (sops-get-secret-try-env-variable "env/DISCORD_GUILD_ID"))
+  (agent-shell-to-go-discord-bot-token
+   (sops-get-secret-try-env-variable "env/DISCORD_BOT_TOKEN"))
   (agent-shell-to-go-discord-authorized-users
-   (list (sops-retrieve-secret "env/DISCORD_USER_ID")))
+   (list (sops-get-secret-try-env-variable "env/DISCORD_USER_ID")))
   (agent-shell-to-go-show-tool-output nil)
   (agent-shell-to-go-projects-directory "~/Projects/")
-  (agent-shell-to-go-default-transport 'discord))
+  (agent-shell-to-go-default-transport 'discord)
+  (agent-shell-to-go-start-agent-function
+   (lambda () (gatsby>agent-shell-launch nil t))))
 
 (use-package agent-shell
   :ensure (:host github :repo "xenodium/agent-shell")
@@ -76,15 +80,13 @@ Shows running agents for the project; selecting one focuses it, selecting \"new\
    '(display-buffer-in-side-window (side . right) (window-width . 0.33) (slot . 0)))
   (agent-shell-file-completion-enabled t)
   (agent-shell-session-strategy 'new)
-  (agent-shell-preferred-agent-config 'claude-code)
-  (agent-shell-anthropic-claude-acp-command '("claude-agent-acp"))
   (agent-shell-mcp-servers
    `(((name . "context7")
       (type . "http") (url . "https://mcp.context7.com/mcp")
       (headers
        .
        (((name . "CONTEXT7_API_KEY")
-         (value . ,(sops-retrieve-secret "env/CONTEXT7_API_KEY"))))))))
+         (value . ,(sops-get-secret-try-env-variable "env/CONTEXT7_API_KEY"))))))))
 
   :config
   (defcustom gatsby>agent-shell-configs
@@ -96,7 +98,7 @@ Shows running agents for the project; selecting one focuses it, selecting \"new\
         ("ANTHROPIC_BASE_URL"
          "https://api.deepseek.com/anthropic"
          "ANTHROPIC_AUTH_TOKEN"
-         ,(sops-retrieve-secret "env/DEEPSEEK_API_KEY")
+         ,(sops-get-secret-try-env-variable "env/DEEPSEEK_API_KEY")
          "ANTHROPIC_MODEL"
          "deepseek-v4-pro[1m]"
          "ANTHROPIC_DEFAULT_OPUS_MODEL"
@@ -116,7 +118,7 @@ Shows running agents for the project; selecting one focuses it, selecting \"new\
         ("ANTHROPIC_BASE_URL"
          "https://openrouter.ai/api"
          "ANTHROPIC_AUTH_TOKEN"
-         ,(sops-retrieve-secret "env/OPENROUTER_API_KEY")
+         ,(sops-get-secret-try-env-variable "env/OPENROUTER_API_KEY")
          "ANTHROPIC_API_KEY"
          "")
         :default-model-id "google/gemini-3.5-flash")))
@@ -246,10 +248,16 @@ If AVAILABLE is non-nil, exclude buffers that have active requests in flight."
                           (agent-shell--active-requests-p (agent-shell--state))))))))
        (agent-shell-buffers))))
 
-  (gatsby>defcommand gatsby>agent-shell-launch (resume)
+  (defun gatsby>agent-shell-launch (resume &optional use-default-config)
     "Launch a new agent-shell session using the selected config profile.
-With prefix argument RESUME, use the prompt session strategy to continue a previous session."
-    (let* ((cfg (gatsby>>agent-shell-select-config))
+With prefix argument RESUME, use the prompt session strategy to continue a previous session.
+If USE-DEFAULT-CONFIG is non-nil, use the first entry of `gatsby>agent-shell-configs'
+without prompting."
+    (interactive "P")
+    (let* ((cfg
+            (if use-default-config
+                (car gatsby>agent-shell-configs)
+              (gatsby>>agent-shell-select-config)))
            (config (gatsby>>agent-shell-build-config cfg))
            (strategy
             (if resume
