@@ -353,6 +353,7 @@ interactively select a single test to run instead."
 
 (gatsby>use-internal-package sops-secret-management
   :custom (sops-enc-file (expand-file-name "env.json.enc" gatsby>dotfiles-repo-location))
+  :commands (sops-get-secret-try-env-variable)
   :evil-bind
   ((:maps normal)
    ("SPC p e" . #'sops-edit-secret)
