@@ -453,6 +453,7 @@ Runs of removed/added are padded so both sides have equal line counts."
               buffer-read-only t
               outline-regexp "^=== "
               outline-level (lambda () 1))
+  (visual-line-mode -1)
   (outline-minor-mode 1)
   (add-hook 'post-command-hook        #'ssdf--sync           nil t)
   (add-hook 'post-command-hook        #'ssdf--update-dimming t   t)
