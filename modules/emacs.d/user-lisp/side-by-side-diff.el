@@ -19,6 +19,11 @@
   :type 'natnum
   :group 'side-by-side-diff)
 
+(defcustom ssdf-syntax-highlight t
+  "When non-nil, apply syntax highlighting to diff content lines."
+  :type 'boolean
+  :group 'side-by-side-diff)
+
 
 ;;;; Faces
 
@@ -338,6 +343,82 @@ Runs of removed/added are padded so both sides have equal line counts."
                        (insert s)))))))))
 
 
+;;;; Syntax highlighting
+
+(defun ssdf--mode-for-file (filename)
+  "Return the major mode to use for syntax-highlighting FILENAME."
+  (or (assoc-default filename auto-mode-alist #'string-match-p)
+      'fundamental-mode))
+
+(defun ssdf--fontify-lines (buf positions mode)
+  "Syntax-highlight lines at POSITIONS in BUF using MODE.
+POSITIONS is a list of (start . end) cons cells of content in BUF.
+Syntax faces are prepended so foreground colours show through diff backgrounds."
+  (when (and positions (not (eq mode 'fundamental-mode)))
+    (let* ((texts (with-current-buffer buf
+                    (mapcar (lambda (p)
+                              (buffer-substring-no-properties (car p) (cdr p)))
+                            positions)))
+           (combined (string-join texts "\n")))
+      (condition-case nil
+          (with-temp-buffer
+            (insert combined)
+            (let ((inhibit-message t)
+                  (delay-mode-hooks t))
+              (funcall mode))
+            (font-lock-ensure)
+            (let ((base 0))
+              (cl-loop
+               for (bstart . bend) in positions
+               for len    = (- bend bstart)
+               for tstart = (1+ base)
+               for tend   = (+ tstart len)
+               do (let ((pos tstart))
+                    (while (< pos tend)
+                      (let* ((face (or (get-text-property pos 'font-lock-face)
+                                       (get-text-property pos 'face)))
+                             (next (min tend
+                                        (or (next-single-property-change
+                                             pos 'font-lock-face nil tend)
+                                            tend)
+                                        (or (next-single-property-change
+                                             pos 'face nil tend)
+                                            tend))))
+                        (when face
+                          (with-current-buffer buf
+                            (let ((inhibit-read-only t))
+                              (add-face-text-property
+                               (+ bstart (- pos tstart))
+                               (+ bstart (- next tstart))
+                               face nil))))
+                        (setq pos (max (1+ pos) next)))))
+                  (setq base (+ base len 1)))))
+        (error nil)))))
+
+(defun ssdf--apply-syntax-highlighting (buf)
+  "Walk BUF and syntax-highlight each file section's content lines."
+  (with-current-buffer buf
+    (save-excursion
+      (goto-char (point-min))
+      (let (cur-file section-start)
+        (cl-flet ((process (end)
+                    (when cur-file
+                      (let ((mode (ssdf--mode-for-file cur-file))
+                            positions)
+                        (save-excursion
+                          (goto-char section-start)
+                          (while (< (point) end)
+                            (unless (looking-at "^\\(@@ \\|=== \\|$\\)")
+                              (push (cons (point) (line-end-position)) positions))
+                            (forward-line 1)))
+                        (ssdf--fontify-lines buf (nreverse positions) mode)))))
+          (while (re-search-forward "^=== \\(.*\\) ===$" nil t)
+            (process (line-beginning-position))
+            (setq cur-file    (match-string-no-properties 1)
+                  section-start (line-beginning-position 2)))
+          (process (point-max)))))))
+
+
 ;;;; Dimming
 
 (defun ssdf--hunk-bounds ()
@@ -565,6 +646,9 @@ Pass `ssdf--parse-word-diff' when DIFF-TEXT was produced with --word-diff=plain.
           (let ((inhibit-read-only t)) (erase-buffer))
           (ssdf-mode)))
       (ssdf--render hunks left-buf right-buf)
+      (when ssdf-syntax-highlight
+        (ssdf--apply-syntax-highlighting left-buf)
+        (ssdf--apply-syntax-highlighting right-buf))
       (with-current-buffer left-buf
         (setq ssdf--peer right-buf
               ssdf--context ctx
@@ -652,16 +736,27 @@ it checks `magit-buffer-typearg' and `magit-buffer-diff-args'."
                                 (concat rev "^1") rev)))))
 
     ((or 'magit-status-mode 'magit-diff-mode)
-     (let* ((staged (ssdf--magit-staged-p))
-            (extra  (if staged '("--staged") nil))
-            (source-fn (lambda (ctx)
-                         (apply #'ssdf--git "diff"
-                                (format "-U%d" ctx) "--word-diff=plain" extra))))
-       (ssdf-display-diff
-        (funcall source-fn ssdf-default-context)
-        :context ssdf-default-context
-        :parser #'ssdf--parse-word-diff
-        :source-fn source-fn)))
+     (if (and (derived-mode-p 'magit-status-mode)
+              (magit-section-match 'stash))
+         (let ((rev (oref (magit-current-section) value)))
+           (ssdf-display-diff
+            (ssdf--git "diff" (format "-U%d" ssdf-default-context) "--word-diff=plain"
+                       (concat rev "^1") rev)
+            :context ssdf-default-context
+            :parser #'ssdf--parse-word-diff
+            :source-fn (lambda (ctx)
+                         (ssdf--git "diff" (format "-U%d" ctx) "--word-diff=plain"
+                                    (concat rev "^1") rev))))
+       (let* ((staged (ssdf--magit-staged-p))
+              (extra  (if staged '("--staged") nil))
+              (source-fn (lambda (ctx)
+                           (apply #'ssdf--git "diff"
+                                  (format "-U%d" ctx) "--word-diff=plain" extra))))
+         (ssdf-display-diff
+          (funcall source-fn ssdf-default-context)
+          :context ssdf-default-context
+          :parser #'ssdf--parse-word-diff
+          :source-fn source-fn))))
 
     (_ (user-error "Not in a magit diff buffer (got %s)" major-mode))))
 
