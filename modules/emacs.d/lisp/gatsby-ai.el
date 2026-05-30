@@ -163,7 +163,7 @@ Returns the matching cons cell (NAME . PLIST)."
       (if (cdr names)
           (let ((name (completing-read "Agent config: " names nil t)))
             (cl-find name gatsby>agent-shell-configs :test #'equal :key #'car))
-        (car names))))
+        (cl-find (car names) gatsby>agent-shell-configs :test #'equal :key #'car))))
 
   (defmacro gatsby>>agent-shell-maybe-worktree (&rest body)
     "Execute BODY inside a fresh git worktree of if it has uncommitted changes.
