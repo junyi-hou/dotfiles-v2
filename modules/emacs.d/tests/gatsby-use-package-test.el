@@ -1,7 +1,7 @@
 ;;; gatsby-use-package-test.el --- tests for gatsby>use-package.el  -*- lexical-binding: t; -*-
 
 (require 'ert)
-(require 'gatsby>use-package)
+(require 'gatsby-use-package)
 
 ;; Pure function tests
 

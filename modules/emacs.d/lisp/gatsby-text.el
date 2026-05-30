@@ -3,7 +3,7 @@
 ;;; Commentary:
 
 ;;; Code:
-(require 'gatsby>>utility)
+(require 'gatsby--utility)
 
 (use-package markdown-mode
   :ensure (:host github :repo "jrblevin/markdown-mode")
@@ -145,5 +145,5 @@
   :ensure (:type git :repo "https://github.com/emacsmirror/csv-mode.git" :branch "master")
   :hook (csv-mode . csv-align-mode))
 
-(provide 'gatsby>text)
+(provide 'gatsby-text)
 ;;; gatsby>text.el ends here

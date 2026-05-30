@@ -158,5 +158,5 @@ Extract all command symbols from ARGS and generate autoload declarations."
        ;; don't add duplicates
        unless (eq item :evil-bind) collect item))
 
-(provide 'gatsby>use-package)
+(provide 'gatsby-use-package)
 ;;; gatsby>use-package.el ends here

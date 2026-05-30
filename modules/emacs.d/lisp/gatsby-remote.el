@@ -55,5 +55,5 @@
         (apply #'eshell/cd `(,host))))))
 
 
-(provide 'gatsby>remote)
+(provide 'gatsby-remote)
 ;;; gatsby>remote.el ends here

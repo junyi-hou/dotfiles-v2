@@ -1,7 +1,7 @@
 ;;; gatsby-terminal-test.el --- tests for gatsby>terminal.el  -*- lexical-binding: t; -*-
 
 (require 'ert)
-(require 'gatsby>terminal)
+(require 'gatsby-terminal)
 
 (ert-deftest eshell/ssh--single-arg ()
   "Test ssh with single host."

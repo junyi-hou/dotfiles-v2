@@ -1,7 +1,7 @@
 ;;; gatsby-utility-test.el --- tests for gatsby>>utility.el  -*- lexical-binding: t; -*-
 
 (require 'ert)
-(require 'gatsby>>utility)
+(require 'gatsby--utility)
 
 ;; Macro expansion tests
 

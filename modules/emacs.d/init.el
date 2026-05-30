@@ -21,26 +21,26 @@
      "Unable to find dotfiles repo location. Did you install the configuration using `make install'?")))
 
 
-(require 'gatsby>use-package)
-(require 'gatsby>default)
-(require 'gatsby>editing)
-(require 'gatsby>terminal)
-(require 'gatsby>project-management)
+(require 'gatsby-use-package)
+(require 'gatsby-default)
+(require 'gatsby-editing)
+(require 'gatsby-terminal)
+(require 'gatsby-project-management)
 
-(require 'gatsby>lsp)
-(require 'gatsby>repl)
+(require 'gatsby-lsp)
+(require 'gatsby-repl)
 
-(require 'gatsby>python)
-(require 'gatsby>clojure)
-(require 'gatsby>scala)
-(require 'gatsby>elisp)
-(require 'gatsby>sh-scripts)
-(require 'gatsby>config-files)
-(require 'gatsby>text)
+(require 'gatsby-python)
+(require 'gatsby-clojure)
+(require 'gatsby-scala)
+(require 'gatsby-elisp)
+(require 'gatsby-sh-scripts)
+(require 'gatsby-config-files)
+(require 'gatsby-text)
 
-(require 'gatsby>ai)
+(require 'gatsby-ai)
 
-(require 'gatsby>ui)
-(require 'gatsby>remote)
+(require 'gatsby-ui)
+(require 'gatsby-remote)
 
 ;;; init.el ends here

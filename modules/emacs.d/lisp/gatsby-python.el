@@ -4,7 +4,7 @@
 
 ;;; Code:
 
-(require 'gatsby>>utility)
+(require 'gatsby--utility)
 
 (gatsby>use-internal-package python
   :mode ("\\.py\\'" . python-ts-mode)
@@ -33,5 +33,5 @@
    ("<" . #'python-indent-shift-left)
    (">" . #'python-indent-shift-right)))
 
-(provide 'gatsby>python)
+(provide 'gatsby-python)
 ;;; gatsby>python.el ends here

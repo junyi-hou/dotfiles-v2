@@ -4,7 +4,7 @@
 
 ;;; Code:
 
-(require 'gatsby>>utility)
+(require 'gatsby--utility)
 
 (setq gc-cons-threshold most-positive-fixnum)
 
@@ -277,5 +277,5 @@ Side windows are temporarily deleted and then restored after balancing."
   (advice-add #'balance-windows :around #'gatsby>>balance-windows-ignore-side))
 
 
-(provide 'gatsby>default)
+(provide 'gatsby-default)
 ;;; gatsby>default.el ends here

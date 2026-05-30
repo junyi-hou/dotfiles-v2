@@ -3,7 +3,7 @@
 ;;; Commentary:
 
 ;;; Code:
-(require 'gatsby>>utility)
+(require 'gatsby--utility)
 
 (gatsby>use-internal-package yaml-ts-mode
   :mode ("\\.ya?ml\\'" . yaml-ts-mode)
@@ -66,5 +66,5 @@
   (toml-ts-mode . eglot-ensure)
   (toml-ts-mode . display-line-numbers-mode))
 
-(provide 'gatsby>config-files)
+(provide 'gatsby-config-files)
 ;;; gatsby>config-files.el ends here

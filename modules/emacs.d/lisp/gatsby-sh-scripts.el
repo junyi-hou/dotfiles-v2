@@ -3,7 +3,7 @@
 ;;; Commentary:
 
 ;;; Code:
-(require 'gatsby>>utility)
+(require 'gatsby--utility)
 
 (gatsby>use-internal-package sh-script
   :mode ("\\.[z]sh" . bash-ts-mode)
@@ -19,5 +19,5 @@
     (add-to-list
      'eglot-server-programs '(bash-ts-mode "bash-language-server" "start"))))
 
-(provide 'gatsby>sh-scripts)
+(provide 'gatsby-sh-scripts)
 ;;; gatsby>sh-scripts.el ends here
