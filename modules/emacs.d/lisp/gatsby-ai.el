@@ -515,7 +515,7 @@ Must be called from within an agent-shell buffer."
                 (agent-shell--start
                  :no-focus t
                  :config
-                 (gatsby>>agent-shell-build-config (cdar gatsby>agent-shell-configs))
+                 (gatsby>>agent-shell-build-config (car gatsby>agent-shell-configs))
                  :new-session t
                  :session-strategy 'new))))
          (proceed
