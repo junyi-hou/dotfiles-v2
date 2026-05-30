@@ -152,6 +152,13 @@ Forwards the server port over SSH and connects a REPL to CODE-BUFFER."
              (format
               "cd %s && direnv exec . jupyter server --no-browser --port %d --IdentityProvider.token=''"
               (shell-quote-argument remote-dir) remote-port))))
+        (set-process-sentinel
+         proc
+         (lambda (_proc event)
+           (unless (or connected (string= event "finished\n"))
+             (user-error "SSH/Jupyter failed: %s\nSee buffer %s for details"
+                         (string-trim event)
+                         (buffer-name log-buf)))))
         (set-process-filter
          proc
          (lambda (_proc output)
@@ -178,7 +185,7 @@ Forwards the server port over SSH and connects a REPL to CODE-BUFFER."
                             gatsby>>jupyter-sessions)
                       (jupyter-repl-pop-to-buffer))
                   (error
-                   (message "Failed to connect to remote Jupyter: %s" err)
+                   (user-error "Failed to connect to remote Jupyter: %s" err)
                    (kill-process proc)))))))))))
 
   (gatsby>defcommand gatsby>jupyter-start-or-switch-to-repl (connect)
