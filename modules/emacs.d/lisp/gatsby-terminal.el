@@ -280,59 +280,5 @@ If there is an idle eshell in the same PWD, switch to that window."
 
   :evil-bind ((:maps normal) ("SPC o s" . #'gatsby>eshell-open-or-switch)))
 
-
-;; TODO
-;; 1/ scrolling/ghostel-copy-mode
-(use-package ghostel
-  :ensure (:host github :repo "dakra/ghostel" :files (:defaults ("etc/*" "etc/*")))
-  :custom
-  (ghostel-module-auto-install 'download)
-  (ghostel-shell-integration nil)
-  (ghostel-tramp-shell-integration '(bash zsh))
-
-  :config
-  (add-to-list
-   'display-buffer-alist
-   '("^\\*ghostel\\*"
-     .
-     (display-buffer-in-side-window (side . bottom) (window-height . 0.3) (slot . 0))))
-
-  (gatsby>defcommand gatsby>ghostel-open-or-switch (home)
-    ;; TODO: figure out a way for ghostel to switch to reuse idle terminal just like eshell
-    (let* ((default-directory
-            (if home
-                (expand-file-name "~/")
-              default-directory)))
-      (call-interactively #'ghostel)))
-
-  ;; (defun gatsby>>ghostel-exit-copy-mode-after-move (&rest _)
-  ;;   (ghostel-copy-mode-exit))
-
-  ;; (advice-add
-  ;;  #'ghostel-previous-prompt
-  ;;  :after #'gatsby>>ghostel-exit-copy-mode-after-move)
-  ;; (advice-add #'ghostel-next-prompt :after #'gatsby>>ghostel-exit-copy-mode-after-move)
-
-  (gatsby>defcommand gatsby>ghostel-send-tab ()
-    (ghostel--send-key "\t"))
-
-  :evil-bind
-  ((:maps normal)
-   ("SPC o S" . #'gatsby>ghostel-open-or-switch)
-   (:maps ghostel-mode-map :states insert)
-   ([remap gatsby>indent-or-complete] . #'gatsby>ghostel-send-tab)
-
-   ;; TODO: figure out how to integrate with the copy mode
-   ;; (:maps ghostel-mode-map :states (normal visual))
-   ;; ("<" . #'ghostel-previous-prompt)
-   ;; (">" . #'ghostel-next-prompt)
-   ;; ("C-d" . #'ghostel--scroll-down)
-   ;; ("C-u" . #'ghostel--scroll-up)
-   ))
-
-(use-package ghostel-evil
-  :after (ghostel evil)
-  :hook (ghostel-mode . ghostel-evil-mode))
-
 (provide 'gatsby-terminal)
 ;;; gatsby-terminal.el ends here
