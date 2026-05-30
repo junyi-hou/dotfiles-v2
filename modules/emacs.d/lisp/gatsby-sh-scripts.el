@@ -1,4 +1,4 @@
-;;; gatsby>sh-scripts.el --- major mode for editing shell scripts -*- lexical-binding: t; -*-
+;;; gatsby-sh-scripts.el --- major mode for editing shell scripts -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 
@@ -20,4 +20,4 @@
      'eglot-server-programs '(bash-ts-mode "bash-language-server" "start"))))
 
 (provide 'gatsby-sh-scripts)
-;;; gatsby>sh-scripts.el ends here
+;;; gatsby-sh-scripts.el ends here

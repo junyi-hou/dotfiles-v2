@@ -1,4 +1,4 @@
-;;; gatsby>ui.el --- configuration for UI -*- lexical-binding: t; -*-
+;;; gatsby-ui.el --- configuration for UI -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 
@@ -280,4 +280,4 @@ current candidate"
    ([remap windmove-up] . #'multiframe-movement-up)))
 
 (provide 'gatsby-ui)
-;;; gatsby>ui.el ends here
+;;; gatsby-ui.el ends here

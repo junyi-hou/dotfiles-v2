@@ -1,4 +1,4 @@
-;;; gatsby>scala.el --- configuration for scala -*- lexical-binding: t -*-
+;;; gatsby-scala.el --- configuration for scala -*- lexical-binding: t -*-
 
 ;;; Commentary:
 
@@ -12,4 +12,4 @@
    "v0.25.0"))
 
 (provide 'gatsby-scala)
-;;; gatsby>scala.el ends here
+;;; gatsby-scala.el ends here

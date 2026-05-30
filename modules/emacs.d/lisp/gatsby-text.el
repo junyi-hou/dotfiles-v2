@@ -1,4 +1,4 @@
-;;; gatsby>text.el --- specific config for editing text files -*- lexical-binding: t; -*-
+;;; gatsby-text.el --- specific config for editing text files -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 
@@ -146,4 +146,4 @@
   :hook (csv-mode . csv-align-mode))
 
 (provide 'gatsby-text)
-;;; gatsby>text.el ends here
+;;; gatsby-text.el ends here

@@ -1,4 +1,4 @@
-;;; gatsby>terminal.el --- terminal emulator -*- lexical-binding: t; -*-
+;;; gatsby-terminal.el --- terminal emulator -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 
@@ -335,4 +335,4 @@ If there is an idle eshell in the same PWD, switch to that window."
   :hook (ghostel-mode . ghostel-evil-mode))
 
 (provide 'gatsby-terminal)
-;;; gatsby>terminal.el ends here
+;;; gatsby-terminal.el ends here

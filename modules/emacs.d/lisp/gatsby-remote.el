@@ -1,4 +1,4 @@
-;;; gatsby>remote.el --- config for remote development via tramp -*- lexical-binding: t; -*-
+;;; gatsby-remote.el --- config for remote development via tramp -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 
@@ -56,4 +56,4 @@
 
 
 (provide 'gatsby-remote)
-;;; gatsby>remote.el ends here
+;;; gatsby-remote.el ends here

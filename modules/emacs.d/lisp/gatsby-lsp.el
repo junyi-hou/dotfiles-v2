@@ -1,4 +1,4 @@
-;;; gatsby>lsp.el --- everything related to lsp -*- lexical-binding: t; -*-
+;;; gatsby-lsp.el --- everything related to lsp -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 
@@ -224,4 +224,4 @@
   :evil-bind ((:maps (normal visual motion)) ("SPC r h" . #'gatsby>eldoc-pop)))
 
 (provide 'gatsby-lsp)
-;;; gatsby>lsp.el ends here
+;;; gatsby-lsp.el ends here

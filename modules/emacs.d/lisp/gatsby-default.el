@@ -1,4 +1,4 @@
-;;; gatsby>default.el --- sane emacs default -*- lexical-binding: t; -*-
+;;; gatsby-default.el --- sane emacs default -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 
@@ -278,4 +278,4 @@ Side windows are temporarily deleted and then restored after balancing."
 
 
 (provide 'gatsby-default)
-;;; gatsby>default.el ends here
+;;; gatsby-default.el ends here

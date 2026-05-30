@@ -1,4 +1,4 @@
-;;; gatsby>>utility.el --- macro & utility functions used throughout the configuration -*- lexical-binding: t; -*-
+;;; gatsby--utility.el --- macro & utility functions used throughout the configuration -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 
@@ -268,4 +268,4 @@ If the prefix arg ALL is not given, query the user for a package to update."
                                                           event)))))))))
 
 (provide 'gatsby--utility)
-;;; gatsby>>utility.el ends here
+;;; gatsby--utility.el ends here

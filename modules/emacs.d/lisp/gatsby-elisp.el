@@ -1,4 +1,4 @@
-;;; gatsby>elisp.el --- elisp setting -*- lexical-binding: t; -*-
+;;; gatsby-elisp.el --- elisp setting -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 
@@ -52,4 +52,4 @@
    (format "%s.pixi/envs/dev/bin/python" gatsby>dotfiles-repo-location)))
 
 (provide 'gatsby-elisp)
-;;; gatsby>elisp.el ends here
+;;; gatsby-elisp.el ends here

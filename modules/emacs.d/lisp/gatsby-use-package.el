@@ -1,4 +1,4 @@
-;;; gatsby>use-package.el --- use-package extension -*- lexical-binding: t; -*-
+;;; gatsby-use-package.el --- use-package extension -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 ;; Create a new use-package keywords: evil-bind. Example useage:
@@ -159,4 +159,4 @@ Extract all command symbols from ARGS and generate autoload declarations."
        unless (eq item :evil-bind) collect item))
 
 (provide 'gatsby-use-package)
-;;; gatsby>use-package.el ends here
+;;; gatsby-use-package.el ends here
