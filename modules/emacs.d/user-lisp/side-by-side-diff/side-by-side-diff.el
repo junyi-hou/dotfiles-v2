@@ -526,6 +526,9 @@ Runs of removed/added are padded so both sides have equal line counts."
 (defun ssdf-quit ()
   "Close the side-by-side diff and restore the previous window layout."
   (interactive)
+  (dolist (w (seq-filter (lambda (w) (window-parameter w 'window-side))
+                         (window-list nil 'no-minibuf)))
+    (condition-case nil (delete-window w) (error nil)))
   (when ssdf--window-config
     (set-window-configuration ssdf--window-config)
     (setq ssdf--window-config nil))
@@ -573,10 +576,19 @@ Pass `ssdf--parse-word-diff' when DIFF-TEXT was produced with --word-diff=plain.
               ssdf--source-fn source-fn
               ssdf--parser parser)
         (goto-char (point-min)))
-      ;; Lay out windows: [left | right]
-      (delete-other-windows)
-      (switch-to-buffer left-buf)
-      (set-window-buffer (split-window-right) right-buf))))
+      ;; Lay out windows: collapse non-side windows to one, split [left | right]
+      (let* ((non-side (seq-filter
+                        (lambda (w) (not (window-parameter w 'window-side)))
+                        (window-list nil 'no-minibuf)))
+             (keep (or (and (not (window-parameter (selected-window) 'window-side))
+                            (selected-window))
+                       (car non-side))))
+        (dolist (w non-side)
+          (unless (eq w keep)
+            (condition-case nil (delete-window w) (error nil))))
+        (when keep (select-window keep))
+        (switch-to-buffer left-buf)
+        (set-window-buffer (split-window-right) right-buf)))))
 
 ;;;; Source-specific entry points
 
