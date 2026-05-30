@@ -643,13 +643,13 @@ it checks `magit-buffer-typearg' and `magit-buffer-diff-args'."
 ;;;; Evil integration
 
 (declare-function evil-set-initial-state  "evil-core"    (mode state))
-(declare-function evil-define-key         "evil-core"    (state keymap &rest bindings))
+(declare-function evil-define-key*        "evil-core"    (state keymap &rest bindings))
 (declare-function magit-current-section   "magit-section" ())
 (declare-function magit-section-match     "magit-section" (condition &optional section))
 
 (with-eval-after-load 'evil
   (evil-set-initial-state 'ssdf-mode 'motion)
-  (evil-define-key 'motion ssdf-mode-map
+  (evil-define-key* 'motion ssdf-mode-map
     "n"         #'ssdf-next-hunk
     "p"         #'ssdf-prev-hunk
     "N"         #'ssdf-next-file
