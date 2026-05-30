@@ -4,7 +4,7 @@
 
 ;;; Code:
 
-(require 'gatsby>>utility)
+(require 'gatsby--utility)
 
 (gatsby>use-internal-package elisp-mode
   :init
@@ -51,5 +51,5 @@
   (elisp-autofmt-python-bin
    (format "%s.pixi/envs/dev/bin/python" gatsby>dotfiles-repo-location)))
 
-(provide 'gatsby>elisp)
+(provide 'gatsby-elisp)
 ;;; gatsby>elisp.el ends here

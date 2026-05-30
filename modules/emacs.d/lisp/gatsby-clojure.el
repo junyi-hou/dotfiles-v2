@@ -4,7 +4,7 @@
 
 ;;; Code:
 
-(require 'gatsby>>utility)
+(require 'gatsby--utility)
 
 (use-package clojure-ts-mode
   :ensure (:host github :repo "clojure-emacs/clojure-ts-mode")
@@ -65,5 +65,5 @@
   :ensure (:type git :repo "https://git.sr.ht/~dannyfreeman/jarchive")
   :hook (elpaca-after-init . jarchive-mode))
 
-(provide 'gatsby>clojure)
+(provide 'gatsby-clojure)
 ;;; gatsby>clojure.el ends here

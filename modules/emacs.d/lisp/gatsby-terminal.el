@@ -4,7 +4,7 @@
 
 ;;; Code:
 
-(require 'gatsby>>utility)
+(require 'gatsby--utility)
 
 (eval-when-compile
   (require 'cl-lib)
@@ -334,5 +334,5 @@ If there is an idle eshell in the same PWD, switch to that window."
   :after (ghostel evil)
   :hook (ghostel-mode . ghostel-evil-mode))
 
-(provide 'gatsby>terminal)
+(provide 'gatsby-terminal)
 ;;; gatsby>terminal.el ends here

@@ -3,7 +3,7 @@
 ;;; Commentary:
 
 ;;; Code:
-(require 'gatsby>>utility)
+(require 'gatsby--utility)
 (require 'elpaca)
 
 ;; theme
@@ -279,5 +279,5 @@ current candidate"
    ([remap windmove-down] . #'multiframe-movement-down)
    ([remap windmove-up] . #'multiframe-movement-up)))
 
-(provide 'gatsby>ui)
+(provide 'gatsby-ui)
 ;;; gatsby>ui.el ends here

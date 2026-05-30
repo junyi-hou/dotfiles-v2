@@ -2,7 +2,7 @@
 
 (require 'ert)
 
-(require 'gatsby>project-management)
+(require 'gatsby-project-management)
 
 (ert-deftest gatsby>project-try--returns-project-for-subdir ()
   "Test that project struct is returned for subdirectories."

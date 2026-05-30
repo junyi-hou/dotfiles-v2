@@ -4,7 +4,7 @@
 
 ;;; Code:
 
-(require 'gatsby>>utility)
+(require 'gatsby--utility)
 
 (use-package agent-shell-tramp
   :ensure (:host github :repo "junyi-hou/agent-shell-tramp")
@@ -355,14 +355,16 @@ Returns non-nil if a button was found and activated."
    'agent-shell-diff--insert-diff
    :after #'gatsby>>agent-shell-diff-store-file)
 
+  (defun gatsby>>agent-shell-diff-buf-p (buf)
+    "Return non-nil if BUF is an agent-shell-generated diff buffer."
+    (with-current-buffer buf
+      (and (derived-mode-p 'diff-mode)
+           (not (string-prefix-p "*ssdf-" (buffer-name buf)))
+           (not (derived-mode-p 'magit-diff-mode)))))
+
   (defun gatsby>>ssdf-agent-shell-do (action)
     "Run ACTION on the background agent-shell diff buffer, then quit ssdf."
-    (when-let* ((buf
-                 (seq-find
-                  (lambda (b)
-                    (with-current-buffer b
-                      (derived-mode-p 'agent-shell-diff-mode)))
-                  (buffer-list))))
+    (when-let* ((buf (seq-find #'gatsby>>agent-shell-diff-buf-p (buffer-list))))
       (with-current-buffer buf
         (funcall action)))
     (ssdf-quit))
@@ -375,18 +377,27 @@ Returns non-nil if a button was found and activated."
     "Reject the pending agent-shell diff and quit ssdf."
     (gatsby>>ssdf-agent-shell-do #'agent-shell-diff-reject-all))
 
+  (defun gatsby>>ssdf-setup-agent-shell-keybindings (&rest _)
+    "Wire accept/reject keys in ssdf buffers after opening from a diff buffer."
+    (dolist (ssdf-buf (list (get-buffer ssdf--left-name) (get-buffer ssdf--right-name)))
+      (when ssdf-buf
+        (with-current-buffer ssdf-buf
+          (evil-local-set-key 'motion (kbd "y") #'gatsby>>ssdf-agent-shell-accept)
+          (evil-local-set-key
+           'motion (kbd "C-c C-c") #'gatsby>>ssdf-agent-shell-reject)))))
+
+  (with-eval-after-load 'side-by-side-diff
+    (advice-add
+     'ssdf-from-diff-buffer
+     :after #'gatsby>>ssdf-setup-agent-shell-keybindings))
+
   (gatsby>defcommand gatsby>agent-shell-permission-view-diff ()
     "View diff (v) if pending permission with diff, else enter visual mode."
     (if (and (gatsby>>agent-shell-pending-permission-p)
              (gatsby>>agent-shell-activate-permission-button "v"))
         (when (featurep 'side-by-side-diff)
           (let ((pre-config (current-window-configuration)))
-            (when-let* ((buf
-                         (seq-find
-                          (lambda (b)
-                            (with-current-buffer b
-                              (derived-mode-p 'agent-shell-diff-mode)))
-                          (buffer-list))))
+            (when-let* ((buf (seq-find #'gatsby>>agent-shell-diff-buf-p (buffer-list))))
               (let* ((file
                       (or (buffer-local-value 'gatsby>>agent-shell-diff-file buf)
                           "file"))
@@ -394,6 +405,12 @@ Returns non-nil if a button was found and activated."
                       (with-current-buffer buf
                         (buffer-substring-no-properties (point-min) (point-max)))))
                 (set-window-configuration pre-config)
+                (when-let* ((main-win
+                             (seq-find
+                              (lambda (w)
+                                (not (window-parameter w 'window-side)))
+                              (window-list))))
+                  (select-window main-win))
                 (ssdf-display-diff
                  (concat "diff --git a/" file " b/" file "\n" diff-text))
                 (dolist (ssdf-buf
@@ -628,5 +645,5 @@ Must be called from within an agent-shell buffer."
    ("y" . #'agent-shell-diff-accept-all)
    ("C-c C-c" . #'agent-shell-diff-reject-all)))
 
-(provide 'gatsby>ai)
+(provide 'gatsby-ai)
 ;;; gatsby>ai.el ends here

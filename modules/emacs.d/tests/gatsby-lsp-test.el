@@ -1,7 +1,7 @@
 ;;; gatsby-lsp-test.el --- tests for gatsby>lsp.el  -*- lexical-binding: t; -*-
 
 (require 'ert)
-(require 'gatsby>lsp)
+(require 'gatsby-lsp)
 
 (defmacro gatsby>>with-corfu-state (index last-cmd &rest body)
   "Run BODY with `corfu--index' set to INDEX and `last-command' to LAST-CMD.

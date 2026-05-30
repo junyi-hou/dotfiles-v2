@@ -1,7 +1,7 @@
 ;;; gatsby-repl-test.el --- tests for gatsby>repl.el  -*- lexical-binding: t; -*-
 
 (require 'ert)
-(require 'gatsby>repl)
+(require 'gatsby-repl)
 
 (ert-deftest gatsby>jupyter-insert-cell-separator--no-markdown ()
   "Without prefix arg: insert newline, trimmed comment-start, ` +`, newline."
@@ -238,6 +238,7 @@
                 ((symbol-function 'jupyter-launch-notebook) (lambda () (setq launch-called t) 8888))
                 ((symbol-function 'jupyter-server)
                  (lambda (&rest args) (setq constructed-url (plist-get args :url)) fake-server))
+                ((symbol-function 'jupyter-notebook-process) (lambda (_) nil))
                 ((symbol-function 'jupyter-kernelspecs) (lambda (_) 'mock-specs))
                 ((symbol-function 'jupyter-completing-read-kernelspec) (lambda (_) fake-kernel))
                 ((symbol-function 'jupyter-run-server-repl) (lambda (&rest args) (setq run-args args)))

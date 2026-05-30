@@ -4,7 +4,7 @@
 
 ;;; Code:
 
-(require 'gatsby>>utility)
+(require 'gatsby--utility)
 
 (use-package jupyter
   :ensure (:host github :repo "nnicandro/emacs-jupyter")
@@ -277,5 +277,5 @@ Forwards the server port over SSH and connects a REPL to CODE-BUFFER."
    (:maps gatsby>jupyter-managed-mode-map :states (insert normal))
    ("M-RET" . #'gatsby>jupyter-insert-cell-separator)))
 
-(provide 'gatsby>repl)
+(provide 'gatsby-repl)
 ;;; gatsby>repl.el ends here

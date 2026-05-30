@@ -1,7 +1,7 @@
 ;;; gatsby-default-test.el --- tests for gatsby>default.el  -*- lexical-binding: t; -*-
 
 (require 'ert)
-(require 'gatsby>default)
+(require 'gatsby-default)
 
 (ert-deftest gatsby>split-window-sensibly--wide-window ()
   "Test horizontal split when window is wider than 2*fill-column."

@@ -4,7 +4,7 @@
 
 ;;; Code:
 
-(require 'gatsby>>utility)
+(require 'gatsby--utility)
 
 ;; completion
 (use-package corfu
@@ -223,5 +223,5 @@
 
   :evil-bind ((:maps (normal visual motion)) ("SPC r h" . #'gatsby>eldoc-pop)))
 
-(provide 'gatsby>lsp)
+(provide 'gatsby-lsp)
 ;;; gatsby>lsp.el ends here

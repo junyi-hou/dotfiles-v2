@@ -267,5 +267,5 @@ If the prefix arg ALL is not given, query the user for a package to update."
                                                           pkg
                                                           event)))))))))
 
-(provide 'gatsby>>utility)
+(provide 'gatsby--utility)
 ;;; gatsby>>utility.el ends here

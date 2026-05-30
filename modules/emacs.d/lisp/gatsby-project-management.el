@@ -4,7 +4,7 @@
 
 ;;; Code:
 
-(require 'gatsby>>utility)
+(require 'gatsby--utility)
 
 (gatsby>use-internal-package project
   :custom
@@ -355,5 +355,5 @@ interactively select a single test to run instead."
    ("SPC p g" . #'sops-retrieve-secret)))
 
 
-(provide 'gatsby>project-management)
+(provide 'gatsby-project-management)
 ;;; gatsby>project-management.el ends here

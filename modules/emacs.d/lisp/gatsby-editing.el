@@ -4,7 +4,7 @@
 
 ;;; Code:
 
-(require 'gatsby>>utility)
+(require 'gatsby--utility)
 
 (use-package evil
   :ensure (:host github :repo "emacs-evil/evil")
@@ -232,5 +232,5 @@
    ("*" . #'gatsby>consult-search-visual-line)
    ("#" . #'gatsby>consult-search-visual-outline)))
 
-(provide 'gatsby>editing)
+(provide 'gatsby-editing)
 ;;; gatsby>editing.el ends here

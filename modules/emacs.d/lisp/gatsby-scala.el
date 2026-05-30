@@ -11,5 +11,5 @@
    'scala "https://github.com/tree-sitter/tree-sitter-scala"
    "v0.25.0"))
 
-(provide 'gatsby>scala)
+(provide 'gatsby-scala)
 ;;; gatsby>scala.el ends here
