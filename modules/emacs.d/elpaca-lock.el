@@ -233,11 +233,6 @@
                  :source "elpaca-menu-lock-file" :protocol https :inherit t :depth
                  treeless :host github :wait t :ref
                  "0089f9c3a6d4e9a310d0791cf6fa8f35642ecfd9" :id gcmh :type git))
- (ghostel :source "elpaca-menu-lock-file" :recipe
-          (:source "elpaca-menu-lock-file" :protocol https :inherit t :depth treeless
-                   :host github :repo "dakra/ghostel" :files
-                   (:defaults ("etc/*" "etc/*")) :package "ghostel" :ref
-                   "c851d4878ff8ad22772ecb8055b04477f0bfe6be" :id ghostel :type git))
  (goto-chg :source "elpaca-menu-lock-file" :recipe
            (:package "goto-chg" :repo "emacs-evil/goto-chg" :fetcher github :files
                      ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"
