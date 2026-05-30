@@ -47,9 +47,11 @@ DATA is a parsed JSON alist; the top-level `sops' metadata key is skipped."
       (user-error "No public key found in ~/.config/age/key"))))
 
 ;;;###autoload
-(defun sops-retrieve-secret (secret-path)
+(defun sops-retrieve-secret (secret-path &optional no-error)
   "Retrieve the secret at SECRET-PATH via passage and copy it to the clipboard.
-The clipboard is cleared after 30 seconds."
+The clipboard is cleared after 30 seconds.
+If NO-ERROR is non-nil, return nil instead of signaling an error when the
+enc-file is missing or SECRET-PATH is not found."
   (interactive
    (let* ((enc-file (expand-file-name sops-enc-file gatsby>dotfiles-repo-location)))
      (unless (file-exists-p enc-file)
@@ -57,20 +59,38 @@ The clipboard is cleared after 30 seconds."
      (let* ((data (json-read-file enc-file))
             (paths (sops--passage-paths data)))
        (list (completing-read "Getting secret: " paths)))))
-  (let* ((default-directory "~/")
-         (secret (string-trim (shell-command-to-string
-                               (format "passage %s" (shell-quote-argument secret-path))))))
-    (if (called-interactively-p 'interactive)
-        (progn
-          (kill-new secret)
-          (run-at-time 30 nil
-                       (lambda (s)
-                         (gui-set-selection 'CLIPBOARD "")
-                         (setq kill-ring (delete s kill-ring))
-                         (message "Secret cleaned"))
-                       secret)
-          (message "Secret %s copied to the clipboard..." secret-path))
-      secret)))
+  (let* ((enc-file (expand-file-name sops-enc-file gatsby>dotfiles-repo-location)))
+    (if (not (file-exists-p enc-file))
+        (unless no-error
+          (user-error "Encrypted secrets not found: %s" enc-file))
+      (let* ((default-directory "~/")
+             (secret (with-temp-buffer
+                       (when (= 0 (call-process "passage" nil t nil secret-path))
+                         (string-trim (buffer-string))))))
+        (if (null secret)
+            (unless no-error
+              (user-error "Secret not found: %s" secret-path))
+          (if (called-interactively-p 'interactive)
+              (progn
+                (kill-new secret)
+                (run-at-time 30 nil
+                             (lambda (s)
+                               (gui-set-selection 'CLIPBOARD "")
+                               (setq kill-ring (delete s kill-ring))
+                               (message "Secret cleaned"))
+                             secret)
+                (message "Secret %s copied to the clipboard..." secret-path))
+            secret))))))
+
+
+;;;###autoload
+(defun sops-get-secret-try-env-variable (secret-path)
+  "Return the secret at SECRET-PATH, falling back to the corresponding env var.
+Strips the leading \"env/\" prefix from SECRET-PATH to derive the env var name.
+Returns nil if neither source has a value."
+  (let ((env-name (string-trim-left secret-path "^env/")))
+    (or (sops-retrieve-secret secret-path 'no-error)
+        (getenv env-name))))
 
 ;; sops-secret-ts-mode
 
