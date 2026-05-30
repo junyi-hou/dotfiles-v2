@@ -317,10 +317,6 @@ interactively select a single test to run instead."
    ("M-j" . #'git-rebase-move-line-down)
    ("M-k" . #'git-rebase-move-line-up)))
 
-(use-package magit-delta
-  :ensure (:host github :repo "dandavison/magit-delta")
-  :hook (magit-mode . magit-delta-mode))
-
 (gatsby>use-internal-package diff-mode
   :custom
   (diff-font-lock-prettify t)
