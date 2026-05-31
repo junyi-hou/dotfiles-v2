@@ -457,17 +457,36 @@ side is padded so context lines stay vertically aligned."
   (interactive "p")
   (ssdf--adjust-context (- (* (or arg 1) 3))))
 
+(defun ssdf--current-file-name ()
+  "Return the file name from the nearest `=== file ===' heading at or above point."
+  (save-excursion
+    (beginning-of-line)
+    (or (re-search-backward "^=== \\(.+\\) ===" nil t)
+        (re-search-forward  "^=== \\(.+\\) ===" nil t))
+    (match-string 1)))
+
+(defun ssdf--goto-file-heading (file-name)
+  "Move point to the start of the `=== FILE-NAME ===' heading and recenter."
+  (goto-char (point-min))
+  (when (re-search-forward
+         (concat "^=== " (regexp-quote file-name) " ===") nil t)
+    (goto-char (line-beginning-position))
+    (recenter 0)))
+
 (defun ssdf--adjust-context (delta)
   "Change context lines by DELTA and refresh."
-  (let ((source-fn (or ssdf--source-fn
-                       (and (buffer-live-p ssdf--peer)
-                            (buffer-local-value 'ssdf--source-fn ssdf--peer))))
-        (new-ctx (max 0 (+ (or ssdf--context ssdf-default-context) delta))))
+  (let* ((file-name (ssdf--current-file-name))
+         (source-fn (or ssdf--source-fn
+                        (and (buffer-live-p ssdf--peer)
+                             (buffer-local-value 'ssdf--source-fn ssdf--peer))))
+         (new-ctx (max 0 (+ (or ssdf--context ssdf-default-context) delta))))
     (unless source-fn
       (user-error "Cannot adjust context: diff source unavailable"))
     (ssdf-display-diff (funcall source-fn new-ctx)
                        :context new-ctx
-                       :source-fn source-fn)))
+                       :source-fn source-fn)
+    (when file-name
+      (ssdf--goto-file-heading file-name))))
 
 ;;;; Quit
 
