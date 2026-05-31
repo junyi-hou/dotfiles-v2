@@ -3,32 +3,18 @@
 (require 'ert)
 (require 'gatsby-repl)
 
-(ert-deftest gatsby>jupyter-insert-cell-separator--no-markdown ()
-  "Without prefix arg: insert newline, trimmed comment-start, ` +`, newline."
+(ert-deftest gatsby>jupyter-insert-cell-separator--basic ()
+  "Insert newline, trimmed comment-start, cell marker, newline."
   (with-temp-buffer
     (let ((comment-start "# "))
-      (gatsby>jupyter-insert-cell-separator nil)
+      (gatsby>jupyter-insert-cell-separator)
       (should (equal (buffer-string) "\n# +\n")))))
-
-(ert-deftest gatsby>jupyter-insert-cell-separator--with-markdown ()
-  "With prefix arg: insert cell separator with [markdown] tag and docstring delimiters."
-  (with-temp-buffer
-    (let ((comment-start "# "))
-      (gatsby>jupyter-insert-cell-separator t)
-      (should (equal (buffer-string) "\n# + [markdown]\n\"\"\"\"\"\"")))))
-
-(ert-deftest gatsby>jupyter-insert-cell-separator--markdown-cursor-position ()
-  "With prefix arg: cursor lands between the two triple-quote groups."
-  (with-temp-buffer
-    (let ((comment-start "# "))
-      (gatsby>jupyter-insert-cell-separator t)
-      (should (equal (point) (- (point-max) 3))))))
 
 (ert-deftest gatsby>jupyter-insert-cell-separator--trims-comment-start-whitespace ()
   "comment-start whitespace is trimmed before inserting."
   (with-temp-buffer
     (let ((comment-start "-- "))
-      (gatsby>jupyter-insert-cell-separator nil)
+      (gatsby>jupyter-insert-cell-separator)
       (should (equal (buffer-string) "\n-- +\n")))))
 
 (ert-deftest gatsby>jupyter-insert-cell-separator--inserts-after-point ()
@@ -36,7 +22,7 @@
   (with-temp-buffer
     (let ((comment-start "# "))
       (insert "existing")
-      (gatsby>jupyter-insert-cell-separator nil)
+      (gatsby>jupyter-insert-cell-separator)
       (should (string-prefix-p "existing\n# +\n" (buffer-string))))))
 
 (ert-deftest gatsby>jupyter-next-cell--moves-past-separator ()
@@ -276,7 +262,8 @@
                    (setq proc-name (nth 0 args)
                          proc-args (cddr args))
                    fake-proc))
-                ((symbol-function 'set-process-filter) #'ignore))
+                ((symbol-function 'set-process-filter) #'ignore)
+                ((symbol-function 'set-process-sentinel) #'ignore))
         (gatsby>>jupyter-start-remote-repl (current-buffer))
         (should (equal proc-name "jupyter-remote-myhost"))
         (should (equal (nth 0 proc-args) "ssh"))
@@ -302,6 +289,7 @@
                       ((symbol-function 'start-process) (lambda (&rest _) fake-proc))
                       ((symbol-function 'set-process-filter)
                        (lambda (_proc fn) (setq captured-filter fn)))
+                      ((symbol-function 'set-process-sentinel) #'ignore)
                       ((symbol-function 'run-with-timer)
                        (lambda (_d _r fn) (setq timer-fn fn)))
                       ((symbol-function 'jupyter-server) (lambda (&rest _) fake-server))
@@ -337,6 +325,7 @@
                 ((symbol-function 'start-process) (lambda (&rest _) fake-proc))
                 ((symbol-function 'set-process-filter)
                  (lambda (_proc fn) (setq captured-filter fn)))
+                ((symbol-function 'set-process-sentinel) #'ignore)
                 ((symbol-function 'run-with-timer) (lambda (&rest _) (setq timer-called t))))
         (gatsby>>jupyter-start-remote-repl (current-buffer))
         (funcall captured-filter fake-proc "Starting Jupyter server...")
@@ -354,6 +343,7 @@
                 ((symbol-function 'start-process) (lambda (&rest _) fake-proc))
                 ((symbol-function 'set-process-filter)
                  (lambda (_proc fn) (setq captured-filter fn)))
+                ((symbol-function 'set-process-sentinel) #'ignore)
                 ((symbol-function 'run-with-timer)
                  (lambda (&rest _) (setq timer-count (1+ (or timer-count 0))))))
         (gatsby>>jupyter-start-remote-repl (current-buffer))
