@@ -15,6 +15,7 @@
 (require 'cl-lib)
 (require 'outline)
 (require 'ansi-color)
+(require 'magit)
 
 ;;;; Customization
 
@@ -391,9 +392,7 @@ side is padded so context lines stay vertically aligned."
     (define-key map (kbd "}")   #'ssdf-next-file)
     (define-key map (kbd "{")   #'ssdf-prev-file)
     (define-key map (kbd "+")   #'ssdf-increase-context)
-    (define-key map (kbd "=")   #'ssdf-increase-context)
     (define-key map (kbd "-")   #'ssdf-decrease-context)
-    (define-key map (kbd "TAB") #'ssdf-next-file)
     (define-key map (kbd "q")   #'ssdf-quit)
     map)
   "Keymap for `ssdf-mode'.")
@@ -593,8 +592,6 @@ In `magit-status-mode' this checks the section at point; in
 (defun ssdf-from-magit ()
   "Open side-by-side view for the current magit diff buffer."
   (interactive)
-  (unless (featurep 'magit)
-    (user-error "Magit is not loaded"))
   (pcase major-mode
     ('magit-revision-mode
      (let* ((rev (bound-and-true-p magit-buffer-revision))
@@ -604,7 +601,6 @@ In `magit-status-mode' this checks the section at point; in
        (ssdf-display-diff (funcall source-fn ssdf-default-context)
                           :context ssdf-default-context
                           :source-fn source-fn)))
-
     ('magit-stash-mode
      (let* ((rev (bound-and-true-p magit-buffer-revision))
             (source-fn (lambda (ctx)
@@ -614,48 +610,77 @@ In `magit-status-mode' this checks the section at point; in
        (ssdf-display-diff (funcall source-fn ssdf-default-context)
                           :context ssdf-default-context
                           :source-fn source-fn)))
-
-    ((or 'magit-status-mode 'magit-diff-mode)
-     (if (and (derived-mode-p 'magit-status-mode)
-              (magit-section-match 'stash))
-         (let* ((rev (oref (magit-current-section) value))
-                (source-fn (lambda (ctx)
-                             (ssdf--git "diff" (format "-U%d" ctx)
-                                        (concat rev "^1") rev))))
-           (ssdf-display-diff (funcall source-fn ssdf-default-context)
-                              :context ssdf-default-context
-                              :source-fn source-fn))
-       (let* ((stage-arg (if (ssdf--magit-staged-p) '("--staged") nil))
+    ('magit-diff-mode
+     (let* ((stage-arg (if (ssdf--magit-staged-p) '("--staged") nil))
               (source-fn (lambda (ctx)
                            (apply #'ssdf--git "diff" (format "-U%d" ctx) stage-arg))))
          (ssdf-display-diff (funcall source-fn ssdf-default-context)
                             :context ssdf-default-context
-                            :source-fn source-fn))))
-
+                            :source-fn source-fn)))
+    ('magit-status-mode
+     (let* ((section (magit-current-section))
+            (lineage (magit-section-lineage section)))
+       (pcase lineage
+         (`(commit . ,_)
+          (let* ((rev (oref section value))
+                 (source-fn (lambda (ctx)
+                              (ssdf--git "show" (format "-U%d" ctx) "--format=" rev))))
+            (ssdf-display-diff (funcall source-fn ssdf-default-context)
+                               :context ssdf-default-context
+                               :source-fn source-fn)))
+         (`(stash . ,_)
+          (let* ((rev (oref section value))
+                 (source-fn (lambda (ctx)
+                              (ssdf--git "diff" (format "-U%d" ctx)
+                                         (concat rev "^1") rev))))
+            (ssdf-display-diff (funcall source-fn ssdf-default-context)
+                               :context ssdf-default-context
+                               :source-fn source-fn)))
+         (`(hunk file staged . ,_)
+          (let* ((file (oref (oref section parent) value))
+                 (source-fn (lambda (ctx)
+                              (ssdf--git "diff" (format "-U%d" ctx)
+                                         "--staged" "--" file))))
+            (ssdf-display-diff (funcall source-fn ssdf-default-context)
+                               :context ssdf-default-context
+                               :source-fn source-fn)))
+         (`(hunk file unstaged . ,_)
+          (let* ((file (oref (oref section parent) value))
+                 (source-fn (lambda (ctx)
+                              (ssdf--git "diff" (format "-U%d" ctx) "--" file))))
+            (ssdf-display-diff (funcall source-fn ssdf-default-context)
+                               :context ssdf-default-context
+                               :source-fn source-fn)))
+         (`(file staged . ,_)
+          (let* ((file (oref section value))
+                 (source-fn (lambda (ctx)
+                              (ssdf--git "diff" (format "-U%d" ctx)
+                                         "--staged" "--" file))))
+            (ssdf-display-diff (funcall source-fn ssdf-default-context)
+                               :context ssdf-default-context
+                               :source-fn source-fn)))
+         (`(file unstaged . ,_)
+          (let* ((file (oref section value))
+                 (source-fn (lambda (ctx)
+                              (ssdf--git "diff" (format "-U%d" ctx) "--" file))))
+            (ssdf-display-diff (funcall source-fn ssdf-default-context)
+                               :context ssdf-default-context
+                               :source-fn source-fn)))
+         (`(staged . ,_)
+          (let ((source-fn (lambda (ctx)
+                             (ssdf--git "diff" (format "-U%d" ctx) "--staged"))))
+            (ssdf-display-diff (funcall source-fn ssdf-default-context)
+                               :context ssdf-default-context
+                               :source-fn source-fn)))
+         (`(unstaged . ,_)
+          (let ((source-fn (lambda (ctx)
+                             (ssdf--git "diff" (format "-U%d" ctx)))))
+            (ssdf-display-diff (funcall source-fn ssdf-default-context)
+                               :context ssdf-default-context
+                               :source-fn source-fn)))
+         (_ (user-error "Unsupported section at point (lineage: %s)" lineage)))))
     (_ (user-error "Not in a magit diff buffer (got %s)" major-mode))))
 
-;;;; Evil integration
-
-(declare-function evil-set-initial-state  "evil-core"     (mode state))
-(declare-function evil-define-key*        "evil-core"     (state keymap &rest bindings))
-(declare-function magit-current-section   "magit-section" ())
-(declare-function magit-section-match     "magit-section" (condition &optional section))
-
-(with-eval-after-load 'evil
-  (evil-set-initial-state 'ssdf-mode 'motion)
-  (evil-define-key* 'motion ssdf-mode-map
-    "n" #'ssdf-next-hunk
-    "p" #'ssdf-prev-hunk
-    "N" #'ssdf-next-file
-    "P" #'ssdf-prev-file
-    "]" #'ssdf-next-hunk
-    "[" #'ssdf-prev-hunk
-    "}" #'ssdf-next-file
-    "{" #'ssdf-prev-file
-    "+" #'ssdf-increase-context
-    "=" #'ssdf-increase-context
-    "-" #'ssdf-decrease-context
-    "q" #'ssdf-quit))
 
 (provide 'side-by-side-diff)
 ;;; side-by-side-diff.el ends here
