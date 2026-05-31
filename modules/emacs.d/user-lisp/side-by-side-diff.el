@@ -2,10 +2,19 @@
 
 ;;; Commentary:
 
+;; Display unified diffs side-by-side in two synchronized buffers.
+;; The raw diff is piped through `delta' which supplies syntax
+;; highlighting, per-line diff colours, intra-line word highlights,
+;; and a line-number gutter.  The gutter is parsed to find the +/-
+;; marker (driving left/right placement) and then stripped before
+;; rendering.  ANSI escapes in delta's output are converted to text
+;; properties via `ansi-color-apply'.
+
 ;;; Code:
 
 (require 'cl-lib)
 (require 'outline)
+(require 'ansi-color)
 
 ;;;; Customization
 
@@ -19,23 +28,20 @@
   :type 'natnum
   :group 'side-by-side-diff)
 
-(defcustom ssdf-syntax-highlight t
-  "When non-nil, apply syntax highlighting to diff content lines."
-  :type 'boolean
+(defcustom ssdf-delta-program "delta"
+  "Path to the delta executable.
+Delta is a hard requirement: `ssdf-display-diff' errors out if it
+cannot be found on `exec-path'."
+  :type 'string
+  :group 'side-by-side-diff)
+
+(defcustom ssdf-delta-extra-args nil
+  "Extra command-line arguments appended to every delta invocation."
+  :type '(repeat string)
   :group 'side-by-side-diff)
 
 
 ;;;; Faces
-
-(defface ssdf-removed
-  '((t :inherit magit-diff-removed))
-  "Background for removed lines (left buffer)."
-  :group 'side-by-side-diff)
-
-(defface ssdf-added
-  '((t :inherit magit-diff-added))
-  "Background for added lines (right buffer)."
-  :group 'side-by-side-diff)
 
 (defface ssdf-padding
   '((t :inherit magit-diff-context))
@@ -93,20 +99,10 @@
   :group 'side-by-side-diff)
 
 
-(defface ssdf-removed-word
-  '((t :inherit magit-diff-removed-highlight))
-  "Face for intra-line removed word spans."
-  :group 'side-by-side-diff)
-
-(defface ssdf-added-word
-  '((t :inherit magit-diff-added-highlight))
-  "Face for intra-line added word spans."
-  :group 'side-by-side-diff)
-
 ;;;; Global state
 
-(defconst ssdf--left-name    "*ssdf-left*")
-(defconst ssdf--right-name   "*ssdf-right*")
+(defconst ssdf--left-name  "*ssdf-left*")
+(defconst ssdf--right-name "*ssdf-right*")
 
 (defvar ssdf--window-config nil
   "Window configuration saved before opening the side-by-side view.")
@@ -120,7 +116,7 @@
   "Number of context lines currently displayed.")
 
 (defvar-local ssdf--source-fn nil
-  "Function (context-lines -> diff-string) to regenerate the diff.
+  "Function (CONTEXT-LINES -> DIFF-STRING) to regenerate the diff.
 Nil when the diff cannot be regenerated (e.g. static diff-mode buffer).")
 
 (defvar ssdf--syncing nil
@@ -130,120 +126,86 @@ Nil when the diff cannot be regenerated (e.g. static diff-mode buffer).")
   "Overlays covering non-current hunk lines.")
 
 
-(defvar-local ssdf--parser nil
-  "Parser function (diff-text -> hunks) used for this session.
-Stored so context adjustment can regenerate with the same parser.")
-
-;;;; Parsing
+;;;; Data structure
 
 (cl-defstruct (ssdf--hunk (:constructor ssdf--hunk-create) (:copier nil))
   file header old-start new-start lines)
 
-(defun ssdf--parse (diff-text)
-  "Return list of `ssdf--hunk' structs parsed from unified DIFF-TEXT."
-  (let (result file header old new pending)
-    (cl-flet ((flush ()
-                (when header
-                  (push (ssdf--hunk-create
-                         :file file :header header
-                         :old-start old :new-start new
-                         :lines (nreverse pending))
-                        result)
-                  (setq header nil pending nil))))
-      (dolist (line (split-string diff-text "\n"))
-        (cond
-         ((string-match "^diff --git a/.+ b/\\(.+\\)" line)
-          (flush)
-          (setq file (match-string 1 line)))
-         ((string-match "^@@ -\\([0-9]+\\)[^+]* \\+\\([0-9]+\\)" line)
-          (flush)
-          (setq header line
-                old (string-to-number (match-string 1 line))
-                new (string-to-number (match-string 2 line))))
-         ((and header (not (string-empty-p line)))
-          (let ((ch (aref line 0)))
-            (cond ((= ch ?-) (push (cons 'removed (substring line 1)) pending))
-                  ((= ch ?+) (push (cons 'added   (substring line 1)) pending))
-                  ((= ch ? ) (push (cons 'context (substring line 1)) pending)))))))
-      (flush))
-    (nreverse result)))
+;;;; Delta integration
 
-;;;; Word-diff support
-
-(defun ssdf--propertize-word-spans (text side)
-  "Return TEXT with word-diff markers converted to Emacs text properties.
-SIDE is `left' or `right'.
-For `left': highlight [-...-] content with `ssdf-removed-word', drop {+...+}.
-For `right': highlight {+...+} content with `ssdf-added-word', drop [-...-]."
+(defun ssdf--run-delta (diff-text)
+  "Pipe DIFF-TEXT through delta and return its ANSI-coloured output."
+  (unless (executable-find ssdf-delta-program)
+    (user-error "Delta executable %S not found on PATH" ssdf-delta-program))
   (with-temp-buffer
-    (insert text)
-    (goto-char (point-min))
-    (while (re-search-forward "\\[\\-\\(.*?\\)\\-\\]" nil t)
-      (replace-match
-       (if (eq side 'left)
-           (propertize (match-string 1) 'face 'ssdf-removed-word)
-         "")
-       t t))
-    (goto-char (point-min))
-    (while (re-search-forward "{\\+\\(.*?\\)\\+}" nil t)
-      (replace-match
-       (if (eq side 'right)
-           (propertize (match-string 1) 'face 'ssdf-added-word)
-         "")
-       t t))
+    (insert diff-text)
+    (apply #'call-process-region
+           (point-min) (point-max) ssdf-delta-program t t nil
+           (append (list "--paging=never"
+                         "--true-color=always"
+                         "--no-gitconfig"
+                         "--file-style=raw"
+                         "--hunk-header-style=raw"
+                         "--keep-plus-minus-markers"
+                         "--line-numbers")
+                   ssdf-delta-extra-args))
     (buffer-string)))
 
-(defun ssdf--parse-word-diff (diff-text)
-  "Return list of `ssdf--hunk' structs parsed from --word-diff=plain DIFF-TEXT.
-Lines with both [-...-] and {+...+} markers produce a `word-changed' entry
-whose cdr is (left-propertized . right-propertized).
-Lines wrapped entirely in [-...-] or {+...+} produce `removed'/`added' entries."
-  (let (result file header old new pending)
+(defun ssdf--parse-delta-line (line)
+  "Parse one content LINE from delta output.
+Return (TYPE . PROPERTIZED-CONTENT) or nil if LINE is not a content line.
+The leading line-number gutter is stripped; ANSI escapes in the content
+become text properties via `ansi-color-apply'."
+  (let ((colored (ansi-color-apply line)))
+    (when (string-match "│\\([-+ ]\\)\\(.*\\)$" colored)
+      (let ((marker  (aref (match-string 1 colored) 0))
+            (content (match-string 2 colored)))
+        (pcase marker
+          (?-  (cons 'removed content))
+          (?+  (cons 'added   content))
+          (?\s (cons 'context content)))))))
+
+(defun ssdf--parse-delta (raw-diff)
+  "Run delta on RAW-DIFF and return a list of `ssdf--hunk' structs."
+  (let* ((delta-out (ssdf--run-delta raw-diff))
+         (lines     (split-string delta-out "\n"))
+         result file header old-start new-start pending)
     (cl-flet ((flush ()
                 (when header
                   (push (ssdf--hunk-create
                          :file file :header header
-                         :old-start old :new-start new
+                         :old-start old-start :new-start new-start
                          :lines (nreverse pending))
                         result)
                   (setq header nil pending nil))))
-      (dolist (line (split-string diff-text "\n"))
-        (cond
-         ((string-match "^diff --git a/.+ b/\\(.+\\)" line)
-          (flush)
-          (setq file (match-string 1 line)))
-         ((string-match "^@@ -\\([0-9]+\\)[^+]* \\+\\([0-9]+\\)" line)
-          (flush)
-          (setq header line
-                old (string-to-number (match-string 1 line))
-                new (string-to-number (match-string 2 line))))
-         ((and header (not (string-empty-p line)))
+      (dolist (line lines)
+        (let ((plain (ansi-color-filter-apply line)))
           (cond
-           ((string-prefix-p "[-" line)
-            (push (cons 'removed
-                        (substring line 2 (- (length line) 2)))
-                  pending))
-           ((string-prefix-p "{+" line)
-            (push (cons 'added
-                        (substring line 2 (- (length line) 2)))
-                  pending))
-           ((= (aref line 0) ? )
-            (let ((content (substring line 1)))
-              (if (string-match-p "\\[\\-\\|{\\+" content)
-                  (push (cons 'word-changed
-                              (cons (ssdf--propertize-word-spans content 'left)
-                                    (ssdf--propertize-word-spans content 'right)))
-                        pending)
-                (push (cons 'context content) pending))))))))
+           ((string-empty-p plain))
+           ((string-match "^diff --git a/.+ b/\\(.+\\)" plain)
+            (flush)
+            (setq file (match-string 1 plain)))
+           ((string-match "^@@ -\\([0-9]+\\)\\(?:,[0-9]+\\)? \\+\\([0-9]+\\)" plain)
+            (flush)
+            (setq header    plain
+                  old-start (string-to-number (match-string 1 plain))
+                  new-start (string-to-number (match-string 2 plain))))
+           ;; Skip delta decoration: "\ No newline" markers and box-drawing rules.
+           ((string-prefix-p "\\" plain))
+           ((<= #x2500 (aref plain 0) #x257F))
+           (header
+            (when-let* ((entry (ssdf--parse-delta-line line)))
+              (push entry pending))))))
       (flush))
     (nreverse result)))
 
 ;;;; Alignment
 
 (defun ssdf--align (lines)
-  "Align hunk LINES into (left-tagged . right-tagged) for side-by-side display.
-Each element is (type . text) where type is context/removed/added/padding.
-Runs of removed/added are padded so both sides have equal line counts."
+  "Align LINES into (LEFT . RIGHT) for side-by-side display.
+Each element is (TYPE . CONTENT) where TYPE is context/removed/added/padding.
+Consecutive removed/added runs are paired index-by-index; the shorter
+side is padded so context lines stay vertically aligned."
   (let (left right rm-acc add-acc)
     (cl-flet ((flush ()
                 (let* ((r (nreverse rm-acc))
@@ -256,28 +218,15 @@ Runs of removed/added are padded so both sides have equal line counts."
                   (setq rm-acc nil add-acc nil))))
       (dolist (cell lines)
         (pcase (car cell)
-          ('context     (flush)
-                        (push (cons 'context (cdr cell)) left)
-                        (push (cons 'context (cdr cell)) right))
-          ('removed     (push (cdr cell) rm-acc))
-          ('added       (push (cdr cell) add-acc))
-          ('word-changed
-           (flush)
-           (push (cons 'word-changed (cadr cell)) left)
-           (push (cons 'word-changed (cddr cell)) right))))
+          ('context (flush)
+                    (push cell left)
+                    (push cell right))
+          ('removed (push (cdr cell) rm-acc))
+          ('added   (push (cdr cell) add-acc))))
       (flush))
     (cons (nreverse left) (nreverse right))))
 
 ;;;; Rendering
-
-(defun ssdf--line-face (type side)
-  "Return face for line TYPE on SIDE (\\='left or \\='right), or nil."
-  (pcase type
-    ('removed      (when (eq side 'left)  'ssdf-removed))
-    ('added        (when (eq side 'right) 'ssdf-added))
-    ('word-changed (if   (eq side 'left)  'ssdf-removed 'ssdf-added))
-    ('padding      'ssdf-padding)
-    (_ nil)))
 
 (defun ssdf--propertize-file-heading (filename)
   "Return a propertized file-heading string for FILENAME."
@@ -307,6 +256,15 @@ Runs of removed/added are padded so both sides have equal line counts."
      (concat header "\n"))
    'face 'ssdf-hunk-heading))
 
+(defun ssdf--insert-line (buf type text)
+  "Insert TEXT plus a newline into BUF; apply padding face when TYPE is padding."
+  (with-current-buffer buf
+    (let ((inhibit-read-only t)
+          (start (point)))
+      (insert text "\n")
+      (when (eq type 'padding)
+        (add-face-text-property start (point) 'ssdf-padding nil)))))
+
 (defun ssdf--render (hunks left-buf right-buf)
   "Fill LEFT-BUF and RIGHT-BUF with the side-by-side rendering of HUNKS."
   (let (cur-file)
@@ -316,108 +274,16 @@ Runs of removed/added are padded so both sides have equal line counts."
         (let ((heading (ssdf--propertize-file-heading cur-file)))
           (dolist (buf (list left-buf right-buf))
             (with-current-buffer buf
-              (let ((inhibit-read-only t))
-                (insert heading))))))
+              (let ((inhibit-read-only t)) (insert heading))))))
       (let* ((aligned     (ssdf--align (ssdf--hunk-lines hunk)))
-             (left-lines  (car aligned))
-             (right-lines (cdr aligned))
              (hunk-header (ssdf--propertize-hunk-header (ssdf--hunk-header hunk))))
         (dolist (buf (list left-buf right-buf))
           (with-current-buffer buf
-            (let ((inhibit-read-only t))
-              (insert hunk-header))))
-        (cl-loop for (ltype . ltext) in left-lines
-                 for (rtype . rtext) in right-lines
-                 do
-                 (with-current-buffer left-buf
-                   (let ((inhibit-read-only t)
-                         (face (ssdf--line-face ltype 'left)))
-                     (let ((s (concat ltext "\n")))
-                       (when face (add-face-text-property 0 (length s) face t s))
-                       (insert s))))
-                 (with-current-buffer right-buf
-                   (let ((inhibit-read-only t)
-                         (face (ssdf--line-face rtype 'right)))
-                     (let ((s (concat rtext "\n")))
-                       (when face (add-face-text-property 0 (length s) face t s))
-                       (insert s)))))))))
-
-
-;;;; Syntax highlighting
-
-(defun ssdf--mode-for-file (filename)
-  "Return the major mode to use for syntax-highlighting FILENAME."
-  (or (assoc-default filename auto-mode-alist #'string-match-p)
-      'fundamental-mode))
-
-(defun ssdf--fontify-lines (buf positions mode)
-  "Syntax-highlight lines at POSITIONS in BUF using MODE.
-POSITIONS is a list of (start . end) cons cells of content in BUF.
-Syntax faces are prepended so foreground colours show through diff backgrounds."
-  (when (and positions (not (eq mode 'fundamental-mode)))
-    (let* ((texts (with-current-buffer buf
-                    (mapcar (lambda (p)
-                              (buffer-substring-no-properties (car p) (cdr p)))
-                            positions)))
-           (combined (string-join texts "\n")))
-      (condition-case nil
-          (with-temp-buffer
-            (insert combined)
-            (let ((inhibit-message t)
-                  (delay-mode-hooks t))
-              (funcall mode))
-            (font-lock-ensure)
-            (let ((base 0))
-              (cl-loop
-               for (bstart . bend) in positions
-               for len    = (- bend bstart)
-               for tstart = (1+ base)
-               for tend   = (+ tstart len)
-               do (let ((pos tstart))
-                    (while (< pos tend)
-                      (let* ((face (or (get-text-property pos 'font-lock-face)
-                                       (get-text-property pos 'face)))
-                             (next (min tend
-                                        (or (next-single-property-change
-                                             pos 'font-lock-face nil tend)
-                                            tend)
-                                        (or (next-single-property-change
-                                             pos 'face nil tend)
-                                            tend))))
-                        (when face
-                          (with-current-buffer buf
-                            (let ((inhibit-read-only t))
-                              (add-face-text-property
-                               (+ bstart (- pos tstart))
-                               (+ bstart (- next tstart))
-                               face nil))))
-                        (setq pos (max (1+ pos) next)))))
-                  (setq base (+ base len 1)))))
-        (error nil)))))
-
-(defun ssdf--apply-syntax-highlighting (buf)
-  "Walk BUF and syntax-highlight each file section's content lines."
-  (with-current-buffer buf
-    (save-excursion
-      (goto-char (point-min))
-      (let (cur-file section-start)
-        (cl-flet ((process (end)
-                    (when cur-file
-                      (let ((mode (ssdf--mode-for-file cur-file))
-                            positions)
-                        (save-excursion
-                          (goto-char section-start)
-                          (while (< (point) end)
-                            (unless (looking-at "^\\(@@ \\|=== \\|$\\)")
-                              (push (cons (point) (line-end-position)) positions))
-                            (forward-line 1)))
-                        (ssdf--fontify-lines buf (nreverse positions) mode)))))
-          (while (re-search-forward "^=== \\(.*\\) ===$" nil t)
-            (process (line-beginning-position))
-            (setq cur-file    (match-string-no-properties 1)
-                  section-start (line-beginning-position 2)))
-          (process (point-max)))))))
-
+            (let ((inhibit-read-only t)) (insert hunk-header))))
+        (cl-loop for (ltype . ltext) in (car aligned)
+                 for (rtype . rtext) in (cdr aligned)
+                 do (ssdf--insert-line left-buf  ltype ltext)
+                    (ssdf--insert-line right-buf rtype rtext))))))
 
 ;;;; Dimming
 
@@ -452,9 +318,8 @@ Syntax faces are prepended so foreground colours show through diff backgrounds."
         (let ((ov (make-overlay hend (point-max))))
           (overlay-put ov 'face 'ssdf-dimmed)
           (push ov ssdf--dim-overlays)))
-      ;; Apply per-heading faces at priority 1 so they stand out from ssdf-dimmed
-      ;; (priority 0). Current hunk/file get -highlight variants; others get the
-      ;; normal variants, preventing them from being uniformly dimmed.
+      ;; Heading overlays sit at priority 1 so they show through the
+      ;; priority-0 dimming overlay covering the rest of the buffer.
       (let ((cur-file-pos (save-excursion
                             (goto-char hstart)
                             (when (re-search-backward "^=== " nil t)
@@ -466,19 +331,18 @@ Syntax faces are prepended so foreground colours show through diff backgrounds."
                    (lend    (line-beginning-position 2))
                    (is-hunk (string= (match-string 1) "@@ "))
                    (face    (cond
-                              ((and is-hunk (= lstart hstart))
-                               'ssdf-hunk-heading-highlight)
-                              ((and (not is-hunk) cur-file-pos (= lstart cur-file-pos))
-                               'ssdf-file-heading-highlight)
-                              (is-hunk
-                               'ssdf-hunk-heading)
-                              (t
-                               'ssdf-file-heading)))
+                             ((and is-hunk (= lstart hstart))
+                              'ssdf-hunk-heading-highlight)
+                             ((and (not is-hunk) cur-file-pos (= lstart cur-file-pos))
+                              'ssdf-file-heading-highlight)
+                             (is-hunk
+                              'ssdf-hunk-heading)
+                             (t
+                              'ssdf-file-heading)))
                    (ov      (make-overlay lstart lend)))
               (overlay-put ov 'face face)
               (overlay-put ov 'priority 1)
               (push ov ssdf--dim-overlays))))))))
-
 
 (defun ssdf--update-dimming ()
   "Refresh dim overlays in both ssdf buffers."
@@ -548,7 +412,7 @@ Syntax faces are prepended so foreground colours show through diff backgrounds."
   "Move to the next hunk header."
   (interactive)
   (when-let* ((pos (save-excursion (end-of-line)
-                                  (re-search-forward "^@@ " nil t))))
+                                   (re-search-forward "^@@ " nil t))))
     (goto-char pos)
     (beginning-of-line)))
 
@@ -563,7 +427,7 @@ Syntax faces are prepended so foreground colours show through diff backgrounds."
   "Move to the next file heading."
   (interactive)
   (when-let* ((pos (save-excursion (end-of-line)
-                                  (re-search-forward "^=== " nil t))))
+                                   (re-search-forward "^=== " nil t))))
     (goto-char pos)
     (beginning-of-line)))
 
@@ -591,17 +455,12 @@ Syntax faces are prepended so foreground colours show through diff backgrounds."
   (let ((source-fn (or ssdf--source-fn
                        (and (buffer-live-p ssdf--peer)
                             (buffer-local-value 'ssdf--source-fn ssdf--peer))))
-        (parser    (or ssdf--parser
-                       (and (buffer-live-p ssdf--peer)
-                            (buffer-local-value 'ssdf--parser ssdf--peer))
-                       #'ssdf--parse))
-        (new-ctx   (max 0 (+ (or ssdf--context ssdf-default-context) delta))))
+        (new-ctx (max 0 (+ (or ssdf--context ssdf-default-context) delta))))
     (unless source-fn
       (user-error "Cannot adjust context: diff source unavailable"))
     (ssdf-display-diff (funcall source-fn new-ctx)
                        :context new-ctx
-                       :source-fn source-fn
-                       :parser parser)))
+                       :source-fn source-fn)))
 
 ;;;; Quit
 
@@ -621,19 +480,20 @@ Syntax faces are prepended so foreground colours show through diff backgrounds."
 ;;;; Main entry point
 
 ;;;###autoload
-(cl-defun ssdf-display-diff (diff-text &key context source-fn (parser #'ssdf--parse))
+(cl-defun ssdf-display-diff (diff-text &key context source-fn)
   "Display DIFF-TEXT as a side-by-side diff in two windows.
 
+DIFF-TEXT is raw unified diff output; it is piped through `delta'
+to obtain syntax highlighting and per-line diff colours.
+
 CONTEXT is the context-line count encoded in DIFF-TEXT (informational).
-SOURCE-FN is a function (context-lines -> diff-string) enabling live
-context adjustment via `ssdf-increase-context' / `ssdf-decrease-context'.
-PARSER is the function used to parse DIFF-TEXT (default `ssdf--parse').
-Pass `ssdf--parse-word-diff' when DIFF-TEXT was produced with --word-diff=plain."
-  (let ((hunks (funcall parser diff-text)))
+SOURCE-FN is a function (CONTEXT-LINES -> DIFF-STRING) enabling live
+context adjustment via `ssdf-increase-context' / `ssdf-decrease-context'."
+  (let ((hunks (ssdf--parse-delta diff-text)))
     (unless hunks
       (user-error "No diff hunks found"))
-    ;; Preserve the original window layout unless we are refreshing from
-    ;; within an existing ssdf session (context adjustment).
+    ;; Preserve the original window layout unless we are refreshing
+    ;; from within an existing ssdf session (context adjustment).
     (unless (memq (current-buffer)
                   (delq nil (list (get-buffer ssdf--left-name)
                                   (get-buffer ssdf--right-name))))
@@ -646,20 +506,15 @@ Pass `ssdf--parse-word-diff' when DIFF-TEXT was produced with --word-diff=plain.
           (let ((inhibit-read-only t)) (erase-buffer))
           (ssdf-mode)))
       (ssdf--render hunks left-buf right-buf)
-      (when ssdf-syntax-highlight
-        (ssdf--apply-syntax-highlighting left-buf)
-        (ssdf--apply-syntax-highlighting right-buf))
       (with-current-buffer left-buf
         (setq ssdf--peer right-buf
               ssdf--context ctx
-              ssdf--source-fn source-fn
-              ssdf--parser parser)
+              ssdf--source-fn source-fn)
         (goto-char (point-min)))
       (with-current-buffer right-buf
         (setq ssdf--peer left-buf
               ssdf--context ctx
-              ssdf--source-fn source-fn
-              ssdf--parser parser)
+              ssdf--source-fn source-fn)
         (goto-char (point-min)))
       ;; Lay out windows: collapse non-side windows to one, split [left | right]
       (let* ((non-side (seq-filter
@@ -687,11 +542,13 @@ Pass `ssdf--parse-word-diff' when DIFF-TEXT was produced with --word-diff=plain.
 
 (defun ssdf--magit-staged-p ()
   "Return non-nil if the current magit context refers to staged changes.
-In `magit-status-mode' this checks the section at point; in `magit-diff-mode'
-it checks `magit-buffer-typearg' and `magit-buffer-diff-args'."
+In `magit-status-mode' this checks the section at point; in
+`magit-diff-mode' it checks `magit-buffer-typearg' and `magit-buffer-diff-args'."
   (cond
    ((derived-mode-p 'magit-status-mode)
-    (magit-section-match '(staged * *)))
+    (cl-loop for s = (magit-current-section) then (oref s parent)
+             while s
+             thereis (eq (oref s type) 'staged)))
    (t
     (let ((typearg  (bound-and-true-p magit-buffer-typearg))
           (diffargs (bound-and-true-p magit-buffer-diff-args)))
@@ -714,74 +571,65 @@ it checks `magit-buffer-typearg' and `magit-buffer-diff-args'."
     (user-error "Magit is not loaded"))
   (pcase major-mode
     ('magit-revision-mode
-     (let ((rev (bound-and-true-p magit-buffer-revision)))
+     (let* ((rev (bound-and-true-p magit-buffer-revision))
+            (source-fn (lambda (ctx)
+                         (ssdf--git "show" (format "-U%d" ctx) "--format=" rev))))
        (unless rev (user-error "Cannot determine revision"))
-       (ssdf-display-diff
-        (ssdf--git "show" (format "-U%d" ssdf-default-context) "--word-diff=plain" "--format=" rev)
-        :context ssdf-default-context
-        :parser #'ssdf--parse-word-diff
-        :source-fn (lambda (ctx)
-                     (ssdf--git "show" (format "-U%d" ctx) "--word-diff=plain" "--format=" rev)))))
+       (ssdf-display-diff (funcall source-fn ssdf-default-context)
+                          :context ssdf-default-context
+                          :source-fn source-fn)))
 
     ('magit-stash-mode
-     (let ((rev (bound-and-true-p magit-buffer-revision)))
+     (let* ((rev (bound-and-true-p magit-buffer-revision))
+            (source-fn (lambda (ctx)
+                         (ssdf--git "diff" (format "-U%d" ctx)
+                                    (concat rev "^1") rev))))
        (unless rev (user-error "Cannot determine revision"))
-       (ssdf-display-diff
-        (ssdf--git "diff" (format "-U%d" ssdf-default-context) "--word-diff=plain"
-                   (concat rev "^1") rev)
-        :context ssdf-default-context
-        :parser #'ssdf--parse-word-diff
-        :source-fn (lambda (ctx)
-                     (ssdf--git "diff" (format "-U%d" ctx) "--word-diff=plain"
-                                (concat rev "^1") rev)))))
+       (ssdf-display-diff (funcall source-fn ssdf-default-context)
+                          :context ssdf-default-context
+                          :source-fn source-fn)))
 
     ((or 'magit-status-mode 'magit-diff-mode)
      (if (and (derived-mode-p 'magit-status-mode)
               (magit-section-match 'stash))
-         (let ((rev (oref (magit-current-section) value)))
-           (ssdf-display-diff
-            (ssdf--git "diff" (format "-U%d" ssdf-default-context) "--word-diff=plain"
-                       (concat rev "^1") rev)
-            :context ssdf-default-context
-            :parser #'ssdf--parse-word-diff
-            :source-fn (lambda (ctx)
-                         (ssdf--git "diff" (format "-U%d" ctx) "--word-diff=plain"
-                                    (concat rev "^1") rev))))
-       (let* ((staged (ssdf--magit-staged-p))
-              (extra  (if staged '("--staged") nil))
+         (let* ((rev (oref (magit-current-section) value))
+                (source-fn (lambda (ctx)
+                             (ssdf--git "diff" (format "-U%d" ctx)
+                                        (concat rev "^1") rev))))
+           (ssdf-display-diff (funcall source-fn ssdf-default-context)
+                              :context ssdf-default-context
+                              :source-fn source-fn))
+       (let* ((stage-arg (if (ssdf--magit-staged-p) '("--staged") nil))
               (source-fn (lambda (ctx)
-                           (apply #'ssdf--git "diff"
-                                  (format "-U%d" ctx) "--word-diff=plain" extra))))
-         (ssdf-display-diff
-          (funcall source-fn ssdf-default-context)
-          :context ssdf-default-context
-          :parser #'ssdf--parse-word-diff
-          :source-fn source-fn))))
+                           (apply #'ssdf--git "diff" (format "-U%d" ctx) stage-arg))))
+         (ssdf-display-diff (funcall source-fn ssdf-default-context)
+                            :context ssdf-default-context
+                            :source-fn source-fn))))
 
     (_ (user-error "Not in a magit diff buffer (got %s)" major-mode))))
 
 ;;;; Evil integration
 
-(declare-function evil-set-initial-state  "evil-core"    (mode state))
-(declare-function evil-define-key*        "evil-core"    (state keymap &rest bindings))
+(declare-function evil-set-initial-state  "evil-core"     (mode state))
+(declare-function evil-define-key*        "evil-core"     (state keymap &rest bindings))
 (declare-function magit-current-section   "magit-section" ())
 (declare-function magit-section-match     "magit-section" (condition &optional section))
 
 (with-eval-after-load 'evil
   (evil-set-initial-state 'ssdf-mode 'motion)
   (evil-define-key* 'motion ssdf-mode-map
-    "n"         #'ssdf-next-hunk
-    "p"         #'ssdf-prev-hunk
-    "N"         #'ssdf-next-file
-    "P"         #'ssdf-prev-file
-    "]"         #'ssdf-next-hunk
-    "["         #'ssdf-prev-hunk
-    "}"         #'ssdf-next-file
-    "{"         #'ssdf-prev-file
-    "+"         #'ssdf-increase-context
-    "="         #'ssdf-increase-context
-    "-"         #'ssdf-decrease-context
-    "q"         #'ssdf-quit))
+    "n" #'ssdf-next-hunk
+    "p" #'ssdf-prev-hunk
+    "N" #'ssdf-next-file
+    "P" #'ssdf-prev-file
+    "]" #'ssdf-next-hunk
+    "[" #'ssdf-prev-hunk
+    "}" #'ssdf-next-file
+    "{" #'ssdf-prev-file
+    "+" #'ssdf-increase-context
+    "=" #'ssdf-increase-context
+    "-" #'ssdf-decrease-context
+    "q" #'ssdf-quit))
 
 (provide 'side-by-side-diff)
 ;;; side-by-side-diff.el ends here
