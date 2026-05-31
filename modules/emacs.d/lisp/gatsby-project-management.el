@@ -338,10 +338,8 @@ interactively select a single test to run instead."
   ((:maps ssdf-mode-map :states motion)
    (">" . #'ssdf-next-hunk)
    ("<" . #'ssdf-prev-hunk)
-   ("n" . #'ssdf-next-file)
-   ("p" . #'ssdf-prev-file)
    (:maps diff-mode-map)
-   ("RET" . #'ssdf-from-diff-buffer)
+   ("M-RET" . #'ssdf-from-diff-buffer)
    (:maps
     (magit-status-mode-map magit-diff-mode-map magit-revision-mode-map)
     :states motion)
