@@ -193,9 +193,16 @@ become text properties via `ansi-color-apply'."
            ;; Skip delta decoration: "\ No newline" markers and box-drawing rules.
            ((string-prefix-p "\\" plain))
            ((<= #x2500 (aref plain 0) #x257F))
-           (header
-            (when-let* ((entry (ssdf--parse-delta-line line)))
-              (push entry pending))))))
+           ;; Content line: delta's --line-numbers gutter always contains │.
+           ((string-match "│" plain)
+            (when header
+              (when-let* ((entry (ssdf--parse-delta-line line)))
+                (push entry pending))))
+           ;; Anything else is a file name emitted by delta's --file-style=raw
+           ;; (just the bare path, no "diff --git" prefix).  Flush any open hunk.
+           (t
+            (flush)
+            (setq file (string-trim plain))))))
       (flush))
     (nreverse result)))
 
