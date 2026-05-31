@@ -24,9 +24,19 @@
 
   (defvar gatsby>jupyter-managed-mode-map (make-sparse-keymap))
 
+  (defcustom gatsby>jupyter-cell-marker "+"
+    "Marker string appended to `comment-start' to delimit notebook cells.
+  For example, with Python's `comment-start' of \"# \", the default \"+\"
+  produces cells delimited by \"# +\".  Safe to set buffer-locally in
+  `.dir-locals.el'."
+    :type 'string
+    :group 'jupyter)
+
+  (put 'gatsby>jupyter-cell-marker 'safe-local-variable #'stringp)
+
   (defvar gatsby>>jupyter-sessions nil
     "List of Jupyter sessions started by gatsby commands.
-Each entry is a plist with :label (string) and :procs (list of processes).")
+  Each entry is a plist with :label (string) and :procs (list of processes).")
 
   (define-minor-mode gatsby>jupyter-managed-mode
     "Minor mode that provides keybinds and commands to major-modes that support jupyter repl."
@@ -34,21 +44,22 @@ Each entry is a plist with :label (string) and :procs (list of processes).")
     :group jupyter
     :keymap gatsby>jupyter-managed-mode-map)
 
-  (gatsby>defcommand gatsby>jupyter-insert-cell-separator (markdown)
-    (insert (format "\n%s +" (string-trim comment-start)))
-    (when markdown
-      (insert " [markdown]"))
-    (insert "\n")
-    (when markdown
-      (insert "\"\"\"\"\"\"")
-      (backward-char 3)))
+  (gatsby>defcommand gatsby>jupyter-insert-cell-separator ()
+    (insert (format "\n%s %s" (string-trim comment-start) gatsby>jupyter-cell-marker))
+    (insert "\n"))
 
   (gatsby>defcommand gatsby>jupyter-next-cell ()
-    (let ((cell-regexp (format "^%s\\+\\(.\\)*\n" comment-start)))
+    (let ((cell-regexp
+           (format "^%s%s\\(.\\)*\n"
+                   (regexp-quote comment-start)
+                   (regexp-quote gatsby>jupyter-cell-marker))))
       (re-search-forward cell-regexp nil 'noerror)))
 
   (gatsby>defcommand gatsby>jupyter-prev-cell ()
-    (let ((cell-regexp (format "^%s\\+\\(.\\)*\n" comment-start)))
+    (let ((cell-regexp
+           (format "^%s%s\\(.\\)*\n"
+                   (regexp-quote comment-start)
+                   (regexp-quote gatsby>jupyter-cell-marker))))
       (re-search-backward cell-regexp nil 'noerror)))
 
   (gatsby>defcommand gatsby>jupyter-generate-notebook (run)
@@ -57,7 +68,14 @@ Each entry is a plist with :label (string) and :procs (list of processes).")
    If the prefix argument RUN is non-nil, execute all cells to produce output."
     (let* ((file (buffer-file-name))
            (jupytext (executable-find "jupytext"))
-           (command (concat jupytext " --set-kernel - --to ipynb " file)))
+           (command
+            (concat
+             jupytext
+             " --set-kernel - --to ipynb"
+             " --opt cell_markers="
+             (shell-quote-argument gatsby>jupyter-cell-marker)
+             " "
+             file)))
       (when run
         (setq
          command
@@ -72,16 +90,19 @@ Each entry is a plist with :label (string) and :procs (list of processes).")
 
   (gatsby>defcommand gatsby>jupyter-eval-region-or-cell (from-top)
     "Evaluate the active region or the current cell.
-If the region is active, pass it to `jupyter-eval-string' and exit to
-normal state.  Otherwise evaluate from the previous cell separator (or
-`point-min' when FROM-TOP is non-nil) to the next cell separator (or
-`point-max' when none follows)."
+  If the region is active, pass it to `jupyter-eval-string' and exit to
+  normal state.  Otherwise evaluate from the previous cell separator (or
+  `point-min' when FROM-TOP is non-nil) to the next cell separator (or
+  `point-max' when none follows)."
     (if (region-active-p)
         (let ((b (region-beginning))
               (e (region-end)))
           (prog1 (jupyter-eval-string (buffer-substring-no-properties b e))
             (evil-normal-state)))
-      (let* ((cell-regexp (format "^%s\\+\\(.\\)*\n" comment-start))
+      (let* ((cell-regexp
+              (format "^%s%s\\(.\\)*\n"
+                      (regexp-quote comment-start)
+                      (regexp-quote gatsby>jupyter-cell-marker)))
              (b
               (save-excursion
                 (or (and (not from-top) (re-search-backward cell-regexp nil 'noerror))
@@ -127,7 +148,7 @@ normal state.  Otherwise evaluate from the previous cell separator (or
 
   (defun gatsby>>jupyter-start-remote-repl (code-buffer)
     "Launch a Jupyter server on the TRAMP remote host of CODE-BUFFER.
-Forwards the server port over SSH and connects a REPL to CODE-BUFFER."
+  Forwards the server port over SSH and connects a REPL to CODE-BUFFER."
     (let* ((dir
             (with-current-buffer code-buffer
               default-directory))
