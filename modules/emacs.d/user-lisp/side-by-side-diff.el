@@ -187,7 +187,7 @@ become text properties via `ansi-color-apply'."
             (setq file (match-string 1 plain)))
            ((string-match "^@@ -\\([0-9]+\\)\\(?:,[0-9]+\\)? \\+\\([0-9]+\\)" plain)
             (flush)
-            (setq header    plain
+            (setq header    (string-trim-right plain "[ \t│]+")
                   old-start (string-to-number (match-string 1 plain))
                   new-start (string-to-number (match-string 2 plain))))
            ;; Skip delta decoration: "\ No newline" markers and box-drawing rules.
