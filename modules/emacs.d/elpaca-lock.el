@@ -554,4 +554,11 @@
                              agent-shell-to-go :host github :repo
                              "junyi-hou/agent-shell-to-go" :type git :protocol https
                              :inherit t :depth treeless :ref
-                             "a677f4dc03aaff415e43bb0d657caf39e0ff5bd1" :branch "stable")))
+                             "a677f4dc03aaff415e43bb0d657caf39e0ff5bd1" :branch "stable"))
+ (ghostel :source "elpaca-menu-lock-file" :recipe
+          (:package "ghostel" :fetcher github :repo "dakra/ghostel" :files
+                    (:defaults (:exclude "etc" "src")) :source "MELPA" :id ghostel :host
+                    github :build
+                    (:after elpaca-build-link gatsby>>ghostel-install-other-files)
+                    :branch "evil-ghostel-rewrite" :type git :protocol https :inherit t
+                    :depth treeless :ref "994835027f709da9a9e8e0786773cf8f0dd3f6f8")))

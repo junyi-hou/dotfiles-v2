@@ -5,6 +5,7 @@
 ;;; Code:
 
 (require 'gatsby--utility)
+(require 'elpaca)
 
 (eval-when-compile
   (require 'cl-lib)
@@ -279,6 +280,83 @@ If there is an idle eshell in the same PWD, switch to that window."
           (evil-insert-state)))))
 
   :evil-bind ((:maps normal) ("SPC o s" . #'gatsby>eshell-open-or-switch)))
+
+
+(defun gatsby>>ghostel-install-other-files (e)
+  "Elpaca build step for ghostel: symlink files from etc/shell and etc/terminfo in
+source into etc in build dir."
+  (elpaca--signal e "Installing shell/terminfo" 'install-other-files)
+  (let ((source (elpaca<-source-dir e))
+        (build (elpaca<-build-dir e)))
+    (make-directory (expand-file-name "etc" build) 'parents)
+    (dolist (file (directory-files (expand-file-name "etc/shell" source) t "^[^.]"))
+      (make-symbolic-link file
+                          (expand-file-name (file-name-nondirectory file)
+                                            (expand-file-name "etc" build))
+                          t))
+    (dolist (file (directory-files (expand-file-name "etc/terminfo" source) t "^[^.]"))
+      (make-symbolic-link file
+                          (expand-file-name (file-name-nondirectory file)
+                                            (expand-file-name "etc" build))
+                          t)))
+  (elpaca--continue-build e))
+
+(use-package ghostel
+  :ensure
+  (:host
+   github
+   :repo "dakra/ghostel"
+   :build (:after elpaca-build-link gatsby>>ghostel-install-other-files)
+   :files (:defaults (:exclude "etc" "src"))
+   :branch "evil-ghostel-rewrite")
+  :hook (ghostel-mode . gatsby>>ghostel-enable-line-mode)
+  :custom
+  (ghostel-module-auto-install 'download)
+  (ghostel-shell-integration t)
+  (ghostel-tramp-shell-integration '(bash))
+  (ghostel-module-directory (expand-file-name ".config/ghostel"))
+  :config
+  (add-to-list
+   'display-buffer-alist
+   '("^\\*ghostel\\*"
+     .
+     (display-buffer-in-side-window (side . bottom) (window-height . 0.3) (slot . 0))))
+
+  (defun gatsby>>ghostel-enable-line-mode (&rest _)
+    "Enable line-mode after a short period of time (so terminal is ready)."
+    (run-at-time
+     0.1 nil
+     (lambda ()
+       (let ((inhibit-message t))
+         (ghostel-line-mode)))))
+
+  (gatsby>defcommand gatsby>ghostel-open-or-switch (home)
+    "Open a new ghostel terminal.
+If the prefix argument (HOME) is not null, go to the home directory.
+If there is a ghostel buffer in the same PWD, switch to that window."
+    (let* ((default-directory
+            (if home
+                (expand-file-name "~/")
+              default-directory))
+           (dir default-directory)
+           (existing
+            (thread-last
+             (buffer-list)
+             (cl-remove-if-not
+              (lambda (buf)
+                (with-current-buffer buf
+                  (and (derived-mode-p 'ghostel-mode)
+                       (file-equal-p dir default-directory)))))
+             car)))
+      (if existing
+          (progn
+            (display-buffer existing)
+            (select-window (get-buffer-window existing))
+            (evil-insert-state))
+        (prog1 (ghostel t)
+          (evil-insert-state)))))
+
+  :evil-bind ((:maps normal) ("SPC o S" . #'gatsby>ghostel-open-or-switch)))
 
 (provide 'gatsby-terminal)
 ;;; gatsby-terminal.el ends here
