@@ -13,6 +13,7 @@
 ;;; Code:
 
 (require 'cl-lib)
+(require 'eieio)
 (require 'outline)
 (require 'ansi-color)
 
