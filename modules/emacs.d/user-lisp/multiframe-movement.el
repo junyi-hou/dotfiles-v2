@@ -109,5 +109,71 @@ Does nothing if there is only one monitor or all monitors have frames."
           (select-frame-set-input-focus frame))
       (message "multiframe-movement: no empty monitor found"))))
 
+(defun multiframe-movement--visible-frames ()
+  "Return all visible non-child frames."
+  (seq-filter (lambda (f)
+                (and (frame-visible-p f)
+                     (null (frame-parameter f 'parent-frame))))
+              (frame-list)))
+
+(defun multiframe-movement--extreme-frames (direction)
+  "Return frames at the extreme position in DIRECTION."
+  (let* ((frames (multiframe-movement--visible-frames))
+         (coord-fn (pcase direction
+                     ((or 'right 'left)   (lambda (f) (car (frame-position f))))
+                     ((or 'top 'bottom)   (lambda (f) (cdr (frame-position f))))))
+         (extreme (pcase direction
+                    ((or 'right 'bottom) (apply #'max (mapcar coord-fn frames)))
+                    ((or 'left 'top)     (apply #'min (mapcar coord-fn frames))))))
+    (seq-filter (lambda (f) (= (funcall coord-fn f) extreme)) frames)))
+
+(defun multiframe-movement--frame-distance-sq (frame px py)
+  "Return squared pixel distance from (PX PY) to center of FRAME."
+  (let* ((pos (frame-position frame))
+         (cx (+ (car pos) (/ (frame-pixel-width frame) 2)))
+         (cy (+ (cdr pos) (/ (frame-pixel-height frame) 2))))
+    (+ (* (- cx px) (- cx px)) (* (- cy py) (- cy py)))))
+
+(defun multiframe-movement--best-frame-for-side (side)
+  "Return the best frame on which to open a window with SIDE."
+  (let* ((direction (pcase side
+                      ('right 'right) ('left 'left)
+                      ('bottom 'bottom) ('top 'top)))
+         (candidates (and direction
+                          (multiframe-movement--extreme-frames direction))))
+    (cond
+     ((null candidates) nil)
+     ((= 1 (length candidates)) (car candidates))
+     (t
+      (let ((cur (selected-frame)))
+        (if (memq cur candidates)
+            cur
+          (let* ((ppos (window-absolute-pixel-position))
+                 (mx (car ppos))
+                 (my (cdr ppos)))
+            (car (sort (copy-sequence candidates)
+                       (lambda (a b)
+                         (< (multiframe-movement--frame-distance-sq a mx my)
+                            (multiframe-movement--frame-distance-sq b mx my))))))))))))
+
+(defun multiframe-movement--side-window-advice (orig-fn buffer alist)
+  "Route side windows to the frame at the extreme position matching their side."
+  (let* ((side (alist-get 'side alist))
+         (target (and side (multiframe-movement--best-frame-for-side side))))
+    (if target
+        (with-selected-frame target
+          (funcall orig-fn buffer alist))
+      (funcall orig-fn buffer alist))))
+
+;;;###autoload
+(define-minor-mode multiframe-movement-side-window-mode
+  "Route side windows to the extreme frame matching their side direction."
+  :global t
+  (if multiframe-movement-side-window-mode
+      (advice-add 'display-buffer-in-side-window :around
+                  #'multiframe-movement--side-window-advice)
+    (advice-remove 'display-buffer-in-side-window
+                   #'multiframe-movement--side-window-advice)))
+
 (provide 'multiframe-movement)
 ;;; multiframe-movement.el ends here
