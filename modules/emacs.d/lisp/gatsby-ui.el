@@ -291,6 +291,7 @@ current candidate"
 
 ;; multiframe support
 (gatsby>use-internal-package multiframe-movement
+  :hook (elpaca-after-init . multiframe-movement-side-window-mode)
   :evil-bind
   ((:maps normal)
    ("SPC o c" . #'multiframe-movement-open-frame-on-empty-monitor)
