@@ -122,6 +122,47 @@
       (gatsby>>newline (lambda (&rest _) (insert "\n")))
       (should (string= "  ;; some text\n  " (buffer-string))))))
 
+(ert-deftest gatsby>>newline--custom-prefix-first-newline ()
+  "gatsby>newline-prefix set: first newline inserts the custom prefix."
+  (with-temp-buffer
+    (insert "// some text")
+    (let ((gatsby>newline-prefix "//+ ?")
+          (comment-start-skip nil)
+          (last-command 'other))
+      (gatsby>>newline (lambda (&rest _) (insert "\n")))
+      (should (string= "// some text\n// " (buffer-string))))))
+
+(ert-deftest gatsby>>newline--custom-prefix-second-newline ()
+  "gatsby>newline-prefix set: second newline removes the custom prefix."
+  (with-temp-buffer
+    (insert "// some text\n// ")
+    (goto-char (point-max))
+    (let ((gatsby>newline-prefix "//+ ?")
+          (comment-start-skip nil)
+          (last-command 'newline))
+      (gatsby>>newline (lambda (&rest _) (insert "\n")))
+      (should (string= "// some text\n" (buffer-string))))))
+
+(ert-deftest gatsby>>newline--custom-prefix-overrides-comment-start-skip ()
+  "gatsby>newline-prefix takes precedence over comment-start-skip."
+  (with-temp-buffer
+    (insert "// some text")
+    (let ((gatsby>newline-prefix "//+ ?")
+          (comment-start-skip ";+\\s-*")
+          (last-command 'other))
+      (gatsby>>newline (lambda (&rest _) (insert "\n")))
+      (should (string= "// some text\n// " (buffer-string))))))
+
+(ert-deftest gatsby>>newline--nil-prefix-falls-back-to-comment-start-skip ()
+  "When gatsby>newline-prefix is nil, comment-start-skip is used."
+  (with-temp-buffer
+    (insert ";; some text")
+    (let ((gatsby>newline-prefix nil)
+          (comment-start-skip ";+\\s-*")
+          (last-command 'other))
+      (gatsby>>newline (lambda (&rest _) (insert "\n")))
+      (should (string= ";; some text\n;; " (buffer-string))))))
+
 (ert-deftest gatsby>>balance-windows-ignore-side--no-side-windows ()
   "When there are no side windows, call orig-fun directly."
   (let ((orig-called nil))
