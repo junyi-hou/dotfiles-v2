@@ -12,11 +12,13 @@
   :demand t
   :ensure (:host github :repo "emacsmirror/gcmh" :wait t)
   :custom (gcmh-high-cons-threshold 33554432)
-  :hook (elpaca-after-init . gatsby>>reset-gc)
   :config (gcmh-mode 1)
 
   (defun gatsby>>reset-gc ()
-    (setq gc-cons-threshold 25165824)))
+    (setq gc-cons-threshold 25165824))
+
+  ;; run `gatsby>>reset-gc' last in `elpaca-after-init-hook'
+  (add-hook 'elpaca-after-init-hook #'gatsby>>reset-gc 90))
 
 (use-package no-littering
   :demand t
