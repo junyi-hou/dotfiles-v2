@@ -73,21 +73,25 @@ Otherwise splits vertically, returning bottom window."
 
   (add-hook 'kill-buffer-query-functions #'gatsby>>bury-not-kill)
 
+  (defvar-local gatsby>newline-prefix nil
+    "Regexp prefix to auto-insert after a newline.
+  When nil, falls back to `comment-start-skip'.")
+  (put 'gatsby>newline-prefix 'safe-local-variable #'stringp)
+
   (defun gatsby>>newline (newline-fun &rest args)
-    "When calling `newline', check whether current line is a comment line.  If so,
-automatically indent and insert `comment-start-skip' after calling `newline' for
-the first call.  Delete the auto-inserted comment for the second call.
+    "When calling `newline', check whether current line starts with
+`gatsby>newline-prefix' (or `comment-start-skip' if nil).  If so,
+automatically indent and insert the prefix after calling `newline' for
+the first call.  Delete the auto-inserted prefix for the second call.
 Otherwise call `newline' as default."
-    (let* ( ;; line - the current line as string
+    (let* ((effective-prefix (or gatsby>newline-prefix comment-start-skip))
            (line
             (buffer-substring-no-properties
              (line-beginning-position) (line-end-position)))
-           ;; only-comment - t if the current line starts with comment
            (only-comment
-            (and comment-start-skip
+            (and effective-prefix
                  (string-match
-                  (concat "\\(^[\t ]*\\)\\(" comment-start-skip "\\)") line)))
-           ;; newline-string - string insert into newline
+                  (concat "\\(^[\t ]*\\)\\(" effective-prefix "\\)") line)))
            (newline-string
             (if only-comment
                 (match-string 2 line)
