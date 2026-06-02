@@ -294,11 +294,9 @@ source into etc in build dir."
                           (expand-file-name (file-name-nondirectory file)
                                             (expand-file-name "etc" build))
                           t))
-    (dolist (file (directory-files (expand-file-name "etc/terminfo" source) t "^[^.]"))
-      (make-symbolic-link file
-                          (expand-file-name (file-name-nondirectory file)
-                                            (expand-file-name "etc" build))
-                          t)))
+    (make-symbolic-link
+     (expand-file-name "etc/terminfo" source) (expand-file-name "etc/terminfo" build)
+     t))
   (elpaca--continue-build e))
 
 (use-package ghostel
@@ -309,12 +307,14 @@ source into etc in build dir."
    :build (:after elpaca-build-link gatsby>>ghostel-install-other-files)
    :files (:defaults (:exclude "etc" "src"))
    :branch "evil-ghostel-rewrite")
-  :hook (ghostel-mode . gatsby>>ghostel-enable-line-mode)
+  :hook
+  (ghostel-mode . gatsby>>ghostel-enable-line-mode)
+  (ghostel-mode . corfu-mode)
   :custom
   (ghostel-module-auto-install 'download)
   (ghostel-shell-integration t)
   (ghostel-tramp-shell-integration '(bash))
-  (ghostel-module-directory (expand-file-name ".config/ghostel"))
+  (ghostel-module-directory (expand-file-name ".config/ghostel" (getenv "HOME")))
   :config
   (add-to-list
    'display-buffer-alist
