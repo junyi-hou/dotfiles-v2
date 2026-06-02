@@ -60,18 +60,26 @@
                       :width 'normal
                       :weight 'Regular)
 
-  (gatsby>defcommand gatsby>theme-fontsize-up ()
-    "Increase the font size in all frames."
+  (gatsby>defcommand gatsby>theme-fontsize-up (current-frame)
+    "Increase the font size in all frames.
+  If the prefix arg CURRENT-FRAME is not null, increase fontsize only for the current frame."
     (let* ((current-size (plist-get (custom-face-attributes-get 'default nil) :height))
            (new-size (+ 10 current-size)))
-      (set-face-attribute 'default nil :height new-size)))
+      (set-face-attribute 'default
+                          (when current-frame
+                            (selected-frame))
+                          :height new-size)))
 
-  (gatsby>defcommand gatsby>theme-fontsize-down ()
-    "Decrease the font size in all frames."
+  (gatsby>defcommand gatsby>theme-fontsize-down (current-frame)
+    "Decrease the font size in all frames.
+  If the prefix arg CURRENT-FRAME is not null, decrease fontsize only for the current frame."
     (interactive)
     (let* ((current-size (plist-get (custom-face-attributes-get 'default nil) :height))
            (new-size (- current-size 10)))
-      (set-face-attribute 'default nil :height new-size)))
+      (set-face-attribute 'default
+                          (when current-frame
+                            (selected-frame))
+                          :height new-size)))
 
   ;; use mode line color to indicate mode
   (with-eval-after-load 'evil
