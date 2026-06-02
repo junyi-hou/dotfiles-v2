@@ -15,7 +15,9 @@
 (require 'cl-lib)
 (require 'outline)
 (require 'ansi-color)
-(require 'magit)
+
+(declare-function magit-current-section "magit-section")
+(declare-function magit-section-lineage "magit-section")
 
 ;;;; Customization
 

@@ -321,7 +321,9 @@ interactively select a single test to run instead."
   :custom
   (diff-font-lock-prettify t)
   (diff-font-lock-syntax nil)
-  :hook (diff-mode . outline-minor-mode)
+  :hook
+  (diff-mode . outline-minor-mode)
+  (diff-mode . (lambda () (gatsby>>put-mode-to-evil-state 'diff-mode 'motion)))
   :evil-bind
   ((:maps diff-mode-map)
    (">" . #'diff-hunk-next)
@@ -334,10 +336,12 @@ interactively select a single test to run instead."
    ("C-c C-c" . #'agent-shell-diff-reject-all)))
 
 (gatsby>use-internal-package side-by-side-diff
+  :hook (ssdf-mode . (lambda () (gatsby>>put-mode-to-evil-state 'ssdf-mode 'motion)))
   :evil-bind
   ((:maps ssdf-mode-map :states motion)
    (">" . #'ssdf-next-hunk)
    ("<" . #'ssdf-prev-hunk)
+   ("q" . #'ssdf-quit)
    (:maps diff-mode-map)
    ("M-RET" . #'ssdf-from-diff-buffer)
    (:maps
