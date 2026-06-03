@@ -356,7 +356,12 @@ If there is a ghostel buffer in the same PWD, switch to that window."
         (prog1 (ghostel t)
           (evil-insert-state)))))
 
-  :evil-bind ((:maps normal) ("SPC o S" . #'gatsby>ghostel-open-or-switch)))
+  :evil-bind
+  ((:maps normal)
+   ("SPC o S" . #'gatsby>ghostel-open-or-switch)
+   (:maps ghostel-line-mode-map :states insert)
+   ("<up>" . #'ghostel--send-event)
+   ("<down>" . #'ghostel--send-event)))
 
 (provide 'gatsby-terminal)
 ;;; gatsby-terminal.el ends here
