@@ -69,6 +69,9 @@
   :custom
   ;; reduce eglot logging
   (eglot-events-buffer-config '(:size 0 :format lisp))
+  (eglot-autoshutdown t)
+  (eglot-autoreconnect nil)
+  (eglot-send-changes-idle-time 2)
   ;; increase data read from subrocess
   (read-process-output-max (* 1024 1024))
   (eglot-extend-to-xref t)
