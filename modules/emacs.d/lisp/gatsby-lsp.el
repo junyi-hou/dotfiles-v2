@@ -67,6 +67,8 @@
 (use-package eglot
   :ensure (:host github :repo "joaotavora/eglot")
   :custom
+  ;; reduce eglot logging
+  (eglot-events-buffer-config '(:size 0 :format lisp))
   ;; increase data read from subrocess
   (read-process-output-max (* 1024 1024))
   (eglot-extend-to-xref t)
