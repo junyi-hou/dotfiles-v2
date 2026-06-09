@@ -12,7 +12,7 @@
   (vc-handled-backends '(Git))
   (tramp-use-scp-direct-remote-copying t)
   (tramp-copy-size-limit (* 1024 1024))
-  (tramp-chunksize 500)
+  (tramp-chunksize 4096)
   (tramp-ssh-controlmaster-options
    (concat
     "-o ControlPath=/tmp/ssh-ControlPath-%%r@%%h:%%p "
