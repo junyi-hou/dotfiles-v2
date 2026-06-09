@@ -505,16 +505,16 @@
                       :source "elpaca-menu-lock-file" :protocol https :inherit t :depth
                       treeless :ref "2195e1247ecb04c30321702aa5f5618a51c329c5" :id
                       websocket :type git))
- (with-editor :source "elpaca-menu-lock-file" :recipe
-              (:package "with-editor" :fetcher github :repo "magit/with-editor" :files
-                        ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"
-                         "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el"
-                         "docs/dir" "docs/*.info" "docs/*.texi" "docs/*.texinfo"
-                         (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
-                                   "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
-                        :source "elpaca-menu-lock-file" :protocol https :inherit t
-                        :depth treeless :ref "902b4d572af2c2f36060da01e3c33d194cdec32b"
-                        :id with-editor :type git))
+ (with-editor :source "elpaca-menu-lock-file"
+   :recipe
+   (:package "with-editor" :fetcher github :repo "magit/with-editor" :files
+             ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"
+              "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el" "docs/dir"
+              "docs/*.info" "docs/*.texi" "docs/*.texinfo"
+              (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el" "*-tests.el"
+                        "LICENSE" "README*" "*-pkg.el"))
+             :source "elpaca-menu-lock-file" :protocol https :inherit t :depth treeless
+             :ref "902b4d572af2c2f36060da01e3c33d194cdec32b" :id with-editor :type git))
  (ws-butler :source "elpaca-menu-lock-file" :recipe
             (:package "ws-butler" :fetcher git :url
                       "https://git.savannah.gnu.org/git/emacs/nongnu.git" :branch
@@ -561,4 +561,9 @@
                     :id ghostel :host github :build
                     (:after elpaca-build-link gatsby>>ghostel-install-other-files)
                     :branch "evil-ghostel-rewrite" :type git :protocol https :inherit t
-                    :depth treeless :ref "994835027f709da9a9e8e0786773cf8f0dd3f6f8")))
+                    :depth treeless :ref "994835027f709da9a9e8e0786773cf8f0dd3f6f8"))
+ (tramp-hlo :source "elpaca-menu-lock-file" :recipe
+            (:package "tramp-hlo" :repo "jsadusk/tramp-hlo" :tar "0.0.2" :host github
+                      :files ("*" (:exclude ".git")) :source "GNU ELPA" :id tramp-hlo
+                      :type git :protocol https :inherit t :depth treeless :ref
+                      "b726b4042e96ac5cead396c8d12c01e6bad2bd78")))
