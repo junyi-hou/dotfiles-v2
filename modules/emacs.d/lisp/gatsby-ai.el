@@ -79,9 +79,35 @@ Shows running agents for the project; selecting one focuses it, selecting \"new\
 (use-package agent-shell
   :ensure (:host github :repo "xenodium/agent-shell")
   :hook ((agent-shell-mode . corfu-mode))
+  :init
+  (defun gatsby>>agent-shell-display-in-rightmost-frame (buffer alist)
+    "Display BUFFER as a right side window in the rightmost visible frame.
+Uses the current frame if its right edge is within half the rightmost
+frame's width of the rightmost right edge."
+    (let* ((frames (seq-filter (lambda (f)
+                                 (and (frame-visible-p f)
+                                      (null (frame-parameter f 'parent-frame))))
+                               (frame-list)))
+           (right-edge (lambda (f)
+                         (+ (car (frame-position f)) (frame-pixel-width f))))
+           (rightmost (seq-reduce
+                       (lambda (best f)
+                         (if (or (null best)
+                                 (> (funcall right-edge f) (funcall right-edge best)))
+                             f best))
+                       frames nil))
+           (target (if (and rightmost
+                            (<= (- (funcall right-edge rightmost)
+                                   (funcall right-edge (selected-frame)))
+                                (/ (frame-pixel-width rightmost) 2)))
+                       (selected-frame)
+                     rightmost)))
+      (when target
+        (with-selected-frame target
+          (display-buffer-in-side-window buffer alist)))))
   :custom
   (agent-shell-display-action
-   '(display-buffer-in-side-window (side . right) (window-width . 0.33) (slot . 0)))
+   '(gatsby>>agent-shell-display-in-rightmost-frame (side . right) (window-width . 0.33) (slot . 0)))
   (agent-shell-file-completion-enabled t)
   (agent-shell-session-strategy 'new)
   (agent-shell-mcp-servers
