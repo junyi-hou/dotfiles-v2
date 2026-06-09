@@ -65,10 +65,11 @@
         ('left  (windmove-left))
         ('up    (windmove-up))
         ('down  (windmove-down)))
-    (let ((next (multiframe-movement--next-frame direction)))
-      (when next
-        (select-frame-set-input-focus next)
-        (select-window (multiframe-movement--frame-entry-window next direction))))))
+    (unless (and (eq direction 'down) (active-minibuffer-window))
+      (let ((next (multiframe-movement--next-frame direction)))
+        (when next
+          (select-frame-set-input-focus next)
+          (select-window (multiframe-movement--frame-entry-window next direction)))))))
 
 (defun multiframe-movement-right ()
   "Move right, crossing to the leftmost window of the next frame if at the rightmost window."
