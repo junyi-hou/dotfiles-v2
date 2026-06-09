@@ -30,6 +30,10 @@
     (remove-hook
      'compilation-mode-hook #'tramp-compile-disable-ssh-controlmaster-options)))
 
+(use-package tramp-hlo
+  :ensure (:host github :repo "jsadusk/tramp-hlo")
+  :config (tramp-hlo-setup))
+
 ;; dependency for tramp-rpc
 (use-package msgpack
   :ensure (:host github :repo "xuchunyang/msgpack.el"))
