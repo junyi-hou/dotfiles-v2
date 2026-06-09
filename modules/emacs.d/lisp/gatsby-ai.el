@@ -15,6 +15,11 @@
   :ensure (:host github :repo "jethrokuan/agent-shell-manager")
   :after agent-shell
   :config
+  (gatsby>defcommand gatsby>>agent-shell-manager-goto ()
+    "Go to the agent shell at point using the default display action."
+    (let ((agent-shell-display-action nil))
+      (call-interactively #'agent-shell-manager-goto)))
+
   (gatsby>defcommand gatsby>>agent-shell-manager-launch (arg)
     "Switch to an existing agent shell for the current project, or launch a new one.
 Shows running agents for the project; selecting one focuses it, selecting \"new\" calls
@@ -36,8 +41,7 @@ Shows running agents for the project; selecting one focuses it, selecting \"new\
         (if (equal picked "new")
             (gatsby>agent-shell-launch arg)
           (let ((shell (map-elt collections picked)))
-            (display-buffer shell agent-shell-display-action)
-            (switch-to-buffer-other-window shell)
+            (select-window (display-buffer shell agent-shell-display-action))
             (evil-insert-state))))
       (gatsby>agent-shell-launch arg)))
 
@@ -46,7 +50,7 @@ Shows running agents for the project; selecting one focuses it, selecting \"new\
    ("SPC a a" . #'gatsby>>agent-shell-manager-launch)
    ("SPC a p" . #'agent-shell-manager-toggle)
    (:maps agent-shell-manager-mode-map :states motion)
-   ("RET" . #'agent-shell-manager-goto)
+   ("RET" . #'gatsby>>agent-shell-manager-goto)
    ("C-c C-c" . #'agent-shell-interrupt)
    ("m" . #'agent-shell-manager-set-mode)
    ("M" . #'agent-shell-manager-set-model)
