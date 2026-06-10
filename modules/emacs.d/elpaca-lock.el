@@ -49,16 +49,16 @@
                             :depth treeless :host github :ref
                             "96fdffcbe9e1b8ebf9ad14e23b06f62cc3422e22" :id
                             clojure-ts-mode :type git))
- (cond-let
-   :source "elpaca-menu-lock-file" :recipe
-   (:package "cond-let" :fetcher github :repo "tarsius/cond-let" :files
-             ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"
-              "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el" "docs/dir"
-              "docs/*.info" "docs/*.texi" "docs/*.texinfo"
-              (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el" "*-tests.el"
-                        "LICENSE" "README*" "*-pkg.el"))
-             :source "elpaca-menu-lock-file" :protocol https :inherit t :depth treeless
-             :ref "0430bd1eb3493ea90d69feb6b7eb7dac3e10d0ba" :id cond-let :type git))
+ (cond-let :source "elpaca-menu-lock-file" :recipe
+           (:package "cond-let" :fetcher github :repo "tarsius/cond-let" :files
+                     ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"
+                      "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el" "docs/dir"
+                      "docs/*.info" "docs/*.texi" "docs/*.texinfo"
+                      (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
+                                "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
+                     :source "elpaca-menu-lock-file" :protocol https :inherit t :depth
+                     treeless :ref "0430bd1eb3493ea90d69feb6b7eb7dac3e10d0ba" :id
+                     cond-let :type git))
  (consult :source "elpaca-menu-lock-file" :recipe
           (:package "consult" :repo "minad/consult" :fetcher github :files
                     ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"
@@ -505,16 +505,16 @@
                       :source "elpaca-menu-lock-file" :protocol https :inherit t :depth
                       treeless :ref "2195e1247ecb04c30321702aa5f5618a51c329c5" :id
                       websocket :type git))
- (with-editor :source "elpaca-menu-lock-file"
-   :recipe
-   (:package "with-editor" :fetcher github :repo "magit/with-editor" :files
-             ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"
-              "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el" "docs/dir"
-              "docs/*.info" "docs/*.texi" "docs/*.texinfo"
-              (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el" "*-tests.el"
-                        "LICENSE" "README*" "*-pkg.el"))
-             :source "elpaca-menu-lock-file" :protocol https :inherit t :depth treeless
-             :ref "902b4d572af2c2f36060da01e3c33d194cdec32b" :id with-editor :type git))
+ (with-editor :source "elpaca-menu-lock-file" :recipe
+              (:package "with-editor" :fetcher github :repo "magit/with-editor" :files
+                        ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"
+                         "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el"
+                         "docs/dir" "docs/*.info" "docs/*.texi" "docs/*.texinfo"
+                         (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
+                                   "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
+                        :source "elpaca-menu-lock-file" :protocol https :inherit t
+                        :depth treeless :ref "902b4d572af2c2f36060da01e3c33d194cdec32b"
+                        :id with-editor :type git))
  (ws-butler :source "elpaca-menu-lock-file" :recipe
             (:package "ws-butler" :fetcher git :url
                       "https://git.savannah.gnu.org/git/emacs/nongnu.git" :branch
@@ -566,4 +566,31 @@
             (:package "tramp-hlo" :repo "jsadusk/tramp-hlo" :tar "0.0.2" :host github
                       :files ("*" (:exclude ".git")) :source "GNU ELPA" :id tramp-hlo
                       :type git :protocol https :inherit t :depth treeless :ref
-                      "b726b4042e96ac5cead396c8d12c01e6bad2bd78")))
+                      "b726b4042e96ac5cead396c8d12c01e6bad2bd78"))
+ (clipetty :source "elpaca-menu-lock-file" :recipe
+           (:package "clipetty" :repo "spudlyo/clipetty" :fetcher github :files
+                     ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"
+                      "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el" "docs/dir"
+                      "docs/*.info" "docs/*.texi" "docs/*.texinfo"
+                      (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
+                                "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
+                     :source "MELPA" :id clipetty :host github :type git :protocol https
+                     :inherit t :depth treeless :ref
+                     "01b39044b9b65fa4ea7d3166f8b1ffab6f740362"))
+ (popon :source "elpaca-menu-lock-file" :recipe
+        (:package "popon" :repo ("https://codeberg.org/akib/emacs-popon" . "popon") :tar
+                  "0.13" :host nongnu :files ("*" (:exclude ".git")) :source
+                  "NonGNU ELPA" :id popon :type git :protocol https :inherit t :depth
+                  treeless :ref "bf8174cb7e6e8fe0fe91afe6b01b6562c4dc39da"))
+ (corfu-terminal :source "elpaca-menu-lock-file" :recipe
+                 (:package "corfu-terminal" :repo "akib/emacs-corfu-terminal" :tar "0.7"
+                           :host codeberg :files ("*" (:exclude ".git")) :source
+                           "NonGNU ELPA" :id corfu-terminal :type git :protocol https
+                           :inherit t :depth treeless :ref
+                           "501548c3d51f926c687e8cd838c5865ec45d03cc"))
+ (flymake-popon :source "elpaca-menu-lock-file" :recipe
+                (:package "flymake-popon" :repo "akib/emacs-flymake-popon" :tar "0.5.1"
+                          :host codeberg :files ("*" (:exclude ".git")) :source
+                          "NonGNU ELPA" :id flymake-popon :type git :protocol https
+                          :inherit t :depth treeless :ref
+                          "99ea813346f3edef7220d8f4faeed2ec69af6060")))

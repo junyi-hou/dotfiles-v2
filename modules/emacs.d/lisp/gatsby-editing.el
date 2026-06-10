@@ -224,7 +224,7 @@
    ([remap switch-to-buffer] . #'consult-buffer)
    ("SPC r g" . #'consult-ripgrep)
    (:maps isearch-mode-map)
-   ("<C-return>" . #'gatsby>consult-line-from-evil)
+   ("<M-RET>" . #'gatsby>consult-line-from-evil)
    (:maps (motion normal))
    ("*" . #'consult-line)
    ("#" . #'consult-outline)
