@@ -156,6 +156,7 @@
   :evil-bind
   ((:maps tempel-map)
    ("<tab>" . #'gatsby>indent-or-complete)
+   ("C-i" . #'gatsby>indent-or-complete)
    ("C-g" . #'tempel-abort)
    ("M-j" . #'tempel-next)
    ("M-k" . #'tempel-prev)))

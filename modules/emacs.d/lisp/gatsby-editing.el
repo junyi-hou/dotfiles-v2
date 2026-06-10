@@ -120,6 +120,7 @@
    ("L" . #'evil-end-of-visual-line)
    (:maps (motion normal))
    ("<tab>" . #'evil-jump-item)
+   ("C-i" . #'evil-jump-item)
    (:maps (motion normal visual))
    ("SPC k" . #'delete-window)
    ("SPC w" . #'evil-write)
@@ -132,8 +133,10 @@
    ("SPC o m" . #'gatsby>switch-to-message)
    (:maps visual)
    ("<tab>" . #'gatsby>evil-visual-tab)
+   ("C-i" . #'gatsby>evil-visual-tab)
    (:maps insert)
-   ("<tab>" . #'gatsby>indent-or-complete)))
+   ("<tab>" . #'gatsby>indent-or-complete)
+   ("C-i" . #'gatsby>indent-or-complete)))
 
 (use-package expand-region
   :ensure (expand-region :host github :repo "magnars/expand-region.el")
