@@ -279,7 +279,7 @@ current candidate"
    ("<backspace>" . #'gatsby>vertico-better-backspace)
    (:maps vertico-map :states insert)
    ("<tab>" . #'gatsby>vertico-complete-common-or-select)
-
+   ("C-i" . #'gatsby>vertico-complete-common-or-select)
    (:maps minibuffer-mode-map)
    ("C-k" . #'windmove-up)))
 
