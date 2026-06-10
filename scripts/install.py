@@ -9,7 +9,10 @@ from dataclasses import dataclass
 from ._lib import logger, git_root, symlink, move, get_target_path, get_backup_path
 
 
-AVAILABLE_MODULES: list[str] = [m.name for m in (git_root(__file__) / "modules").iterdir()]
+AVAILABLE_MODULES: list[str] = [
+    m.name for m in (git_root(__file__) / "modules").iterdir()
+]
+
 
 def install(module: str | Path, *, dry_run: bool = True) -> None:
     """
@@ -36,7 +39,6 @@ def install(module: str | Path, *, dry_run: bool = True) -> None:
     logger.debug(f"Installing {relative_path} ...")
 
     if install_path.exists():
-
         if install_path.resolve() == module.resolve():
             logger.debug(f"{relative_path} already installed, skipping")
             return
@@ -57,7 +59,7 @@ def install(module: str | Path, *, dry_run: bool = True) -> None:
         logger.debug(f"Recursively installing {module} ...")
         for child in module.iterdir():
             install(child, dry_run=dry_run)
-    
+
 
 def symlink_project_root(dry_run: bool = True) -> None:
     """
@@ -74,6 +76,7 @@ def main() -> int:
     """
     Entry point for the installer. Parses arguments and installs requested modules.
     """
+
     @dataclass
     class Arguments:
         dry_run: bool
@@ -82,21 +85,21 @@ def main() -> int:
 
     parser = argparse.ArgumentParser()
     _ = parser.add_argument(
-        "--modules", "-m",
+        "--modules",
+        "-m",
         nargs="+",
         choices=AVAILABLE_MODULES,
         default=AVAILABLE_MODULES,
         help="modules to install into $HOME.",
     )
     _ = parser.add_argument(
-        "--dry_run", "-d",
+        "--dry_run",
+        "-d",
         action="store_true",
-        help="echo the command, instead of running it."
+        help="echo the command, instead of running it.",
     )
     _ = parser.add_argument(
-        "--verbose", "-v",
-        action="store_true",
-        help="show debug level log messages."
+        "--verbose", "-v", action="store_true", help="show debug level log messages."
     )
 
     args = parser.parse_args()
@@ -118,6 +121,7 @@ def main() -> int:
     logger.info("Installation Finishes!")
 
     return 0
+
 
 if __name__ == "__main__":
     main()

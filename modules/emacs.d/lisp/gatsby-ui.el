@@ -30,35 +30,38 @@
   (horizontal-scroll-bar-mode -1)
   (blink-cursor-mode -1)
   (menu-bar-mode
-   (if (eq system-type 'darwin)
+   (if (and (eq system-type 'darwin) (display-graphic-p))
        1
      -1))
-  (unless (frame-parameter nil 'fullscreen)
-    (set-frame-parameter nil 'fullscreen 'maximized))
+  (when (display-graphic-p)
+    (unless (frame-parameter nil 'fullscreen)
+      (set-frame-parameter nil 'fullscreen 'maximized)))
 
   ;; lower the height of emoji fonts
-  (let ((emoji-font
-         (cond
-          ((eq system-type 'darwin)
-           "Apple Color Emoji")
-          ((eq system-type 'windows-nt)
-           "Segoe UI Emoji")
-          ((eq system-type 'gnu/linux)
-           "Noto Color Emoji"))))
-    (when (and emoji-font (find-font (font-spec :family emoji-font)))
-      (set-fontset-font t 'emoji (font-spec :family emoji-font) nil 'prepend)
-      (add-to-list 'face-font-rescale-alist `(,emoji-font . 0.8))))
+  (when (display-graphic-p)
+    (let ((emoji-font
+           (cond
+            ((eq system-type 'darwin)
+             "Apple Color Emoji")
+            ((eq system-type 'windows-nt)
+             "Segoe UI Emoji")
+            ((eq system-type 'gnu/linux)
+             "Noto Color Emoji"))))
+      (when (and emoji-font (find-font (font-spec :family emoji-font)))
+        (set-fontset-font t 'emoji (font-spec :family emoji-font) nil 'prepend)
+        (add-to-list 'face-font-rescale-alist `(,emoji-font . 0.8)))))
 
   ;; setup ligature if support
   (when (and (eq system-type 'darwin) (fboundp #'mac-auto-operator-composition-mode))
     (mac-auto-operator-composition-mode))
 
   ;; font
-  (set-face-attribute 'default nil
-                      :family "PragmataPro Liga"
-                      :height 120
-                      :width 'normal
-                      :weight 'Regular)
+  (when (and (display-graphic-p) (find-font (font-spec :family "PragmataPro Liga")))
+    (set-face-attribute 'default nil
+                        :family "PragmataPro Liga"
+                        :height 120
+                        :width 'normal
+                        :weight 'Regular))
 
   (gatsby>defcommand gatsby>theme-fontsize-up (current-frame)
     "Increase the font size in all frames.
@@ -121,7 +124,25 @@
        evil-insert-state-exit-hook
        evil-operator-state-exit-hook
        evil-replace-state-exit-hook
-       window-selection-change-functions)))
+       window-selection-change-functions))
+
+    (unless (display-graphic-p)
+      (defun gatsby>>set-evil-cursor-shape (&rest _)
+        (send-string-to-terminal
+         (cond
+          ((evil-insert-state-p)
+           "\e[6 q") ; steady bar
+          ((evil-replace-state-p)
+           "\e[4 q") ; steady underline
+          (t
+           "\e[2 q")))) ; steady block
+      (mapc
+       (lambda (hook) (add-hook hook #'gatsby>>set-evil-cursor-shape))
+       '(evil-insert-state-entry-hook
+         evil-insert-state-exit-hook
+         evil-replace-state-entry-hook
+         evil-replace-state-exit-hook
+         evil-normal-state-entry-hook))))
 
   :evil-bind
   ((:maps (motion normal visual emacs insert))
@@ -291,6 +312,7 @@ current candidate"
 
 ;; multiframe support
 (gatsby>use-internal-package multiframe-movement
+  :if (display-graphic-p)
   :evil-bind
   ((:maps normal)
    ("SPC o c" . #'multiframe-movement-open-frame-on-empty-monitor)
@@ -299,6 +321,15 @@ current candidate"
    ([remap windmove-left] . #'multiframe-movement-left)
    ([remap windmove-down] . #'multiframe-movement-down)
    ([remap windmove-up] . #'multiframe-movement-up)))
+
+(gatsby>use-internal-package xt-mouse
+  :unless (display-graphic-p)
+  :hook (elpaca-after-init . xterm-mouse-mode))
+
+(use-package clipetty
+  :unless (display-graphic-p)
+  :ensure (:host github :repo "spudlyo/clipetty")
+  :hook (elpaca-after-init . global-clipetty-mode))
 
 (provide 'gatsby-ui)
 ;;; gatsby-ui.el ends here

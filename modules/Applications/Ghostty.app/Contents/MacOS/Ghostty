@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+exec "$HOME/dotfiles-v2/.pixi/envs/all/Applications/Ghostty.app/Contents/MacOS/ghostty" "$@"

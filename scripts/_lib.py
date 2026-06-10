@@ -61,6 +61,10 @@ def get_backup_path(install_path: Path) -> Path:
     return install_path.parent / backup_filename
 
 
+# Top-level module names that map directly to $HOME without a leading dot.
+_VERBATIM_MODULES: set[str] = {"Applications"}
+
+
 def get_target_path(relative_path: Path) -> Path:
     """
     Resolve the absolute installation path for a dotfile.
@@ -69,12 +73,17 @@ def get_target_path(relative_path: Path) -> Path:
     1. Adding a leading dot to the filename
     2. Placing it under the user's home directory
 
+    Modules listed in _VERBATIM_MODULES are installed without the leading dot
+    (e.g. Applications/ -> ~/Applications/).
+
     Args:
         relative_path (Path): Path relative to the dotfiles module root
 
     Returns:
         Path: Absolute target path in the home directory
     """
+    if relative_path.parts[0] in _VERBATIM_MODULES:
+        return HOME / relative_path
     return HOME / f".{relative_path}"
 
 
