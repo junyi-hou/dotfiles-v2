@@ -9,6 +9,7 @@
   :custom
   (remote-file-name-inhibit-locks t)
   (remote-file-name-inhibit-auto-save-visited t)
+  (remote-file-name-inhibit-cache 10)
   (vc-handled-backends '(Git))
   (tramp-use-scp-direct-remote-copying t)
   (tramp-copy-size-limit (* 1024 1024))
@@ -25,6 +26,8 @@
   :config
 
   (add-to-list 'tramp-remote-path 'tramp-own-remote-path)
+  (setq vc-ignore-dir-regexp
+        (rx (or (regexp tramp-file-name-regexp) (regexp vc-ignore-dir-regexp))))
 
   (with-eval-after-load 'compile
     (remove-hook
