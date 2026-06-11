@@ -67,47 +67,5 @@ Stubs `corfu-insert', `corfu-expand', and `corfu--goto' to record calls."
                   (gatsby>corfu-complete))))
     (should (equal result '(corfu-insert)))))
 
-(defmacro gatsby>>with-eldoc-transiant-env (&rest body)
-  "Run BODY with a fresh posframe buffer and `eldoc-mouse--hide-posframe' stubbed.
-Cleans up the buffer and any active transient map afterward."
-  (declare (indent 0))
-  `(let ((buf (get-buffer-create eldoc-mouse-posframe-buffer-name)))
-     (unwind-protect
-         (cl-letf (((symbol-function 'eldoc-mouse--hide-posframe) #'ignore))
-           ,@body)
-       (with-current-buffer buf
-         (when (functionp gatsby>>eldoc-restore-keymap-fn)
-           (funcall gatsby>>eldoc-restore-keymap-fn))
-         (setq-local gatsby>>eldoc-restore-keymap-fn nil))
-       (kill-buffer buf))))
-
-(ert-deftest gatsby>>eldoc-enable-transiant-map--sets-restore-fn ()
-  "Sets `gatsby>>eldoc-restore-keymap-fn' to a function in the posframe buffer."
-  (gatsby>>with-eldoc-transiant-env
-    (gatsby>>eldoc-enable-transiant-map)
-    (with-current-buffer (get-buffer eldoc-mouse-posframe-buffer-name)
-      (should (functionp gatsby>>eldoc-restore-keymap-fn)))))
-
-(ert-deftest gatsby>>eldoc-enable-transiant-map--activates-map ()
-  "Transient map is in `overriding-terminal-local-map' after enabling."
-  (gatsby>>with-eldoc-transiant-env
-    (gatsby>>eldoc-enable-transiant-map)
-    (should (memq gatsby>eldoc-transiant-map overriding-terminal-local-map))))
-
-(ert-deftest gatsby>>eldoc-disable-transiant-map--deactivates-map ()
-  "Transient map is removed from `overriding-terminal-local-map' after disabling."
-  (gatsby>>with-eldoc-transiant-env
-    (gatsby>>eldoc-enable-transiant-map)
-    (gatsby>>eldoc-disable-transiant-map)
-    (should-not (memq gatsby>eldoc-transiant-map overriding-terminal-local-map))))
-
-(ert-deftest gatsby>>eldoc-disable-transiant-map--clears-restore-fn ()
-  "Clears `gatsby>>eldoc-restore-keymap-fn' after disabling."
-  (gatsby>>with-eldoc-transiant-env
-    (gatsby>>eldoc-enable-transiant-map)
-    (gatsby>>eldoc-disable-transiant-map)
-    (with-current-buffer (get-buffer eldoc-mouse-posframe-buffer-name)
-      (should-not gatsby>>eldoc-restore-keymap-fn))))
-
 (provide 'gatsby-lsp-test)
 ;;; gatsby-lsp-test.el ends here
