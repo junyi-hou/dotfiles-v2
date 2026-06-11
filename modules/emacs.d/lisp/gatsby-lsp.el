@@ -14,7 +14,7 @@
   (corfu-preselect 'prompt)
   :hook
   (prog-mode . corfu-mode)
-  (corfu-mode . corfu-popupinfo-mode)
+  (corfu-mode . (lambda () (when (display-graphic-p) (corfu-popupinfo-mode))))
   :config
   (gatsby>defcommand gatsby>corfu-complete ()
     "Complete common parts of all the candidates, or insert the current selection.
@@ -42,6 +42,11 @@
    ("J" . #'corfu-popupinfo-scroll-up)
    ("K" . #'corfu-popupinfo-scroll-down)
    ("<esc>" . #'corfu-popupinfo-toggle)))
+
+(use-package corfu-terminal
+  :unless (display-graphic-p)
+  :ensure (:host nil :repo "https://codeberg.org/akib/emacs-corfu-terminal")
+  :hook (corfu-mode . corfu-terminal-mode))
 
 (use-package cape
   :ensure (:host github :repo "minad/cape")
@@ -167,8 +172,14 @@
 
 ;; display flymake information in a childframe
 (use-package flymake-childframe
+  :if (display-graphic-p)
   :ensure (:host github :repo "junyi-hou/flymake-childframe")
-  :hook ((flymake-mode eglot-managed-mode) . flymake-childframe-mode))
+  :hook (flymake-mode . flymake-childframe-mode))
+
+(use-package flymake-popon
+  :unless (display-graphic-p)
+  :ensure (:host nil :repo "https://codeberg.org/akib/emacs-flymake-popon")
+  :hook (flymake-mode . flymake-popon-mode))
 
 (provide 'gatsby-lsp)
 ;;; gatsby-lsp.el ends here
