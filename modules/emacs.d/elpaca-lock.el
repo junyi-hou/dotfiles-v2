@@ -593,4 +593,8 @@
                           :host codeberg :files ("*" (:exclude ".git")) :source
                           "NonGNU ELPA" :id flymake-popon :type git :protocol https
                           :inherit t :depth treeless :ref
-                          "99ea813346f3edef7220d8f4faeed2ec69af6060")))
+                          "99ea813346f3edef7220d8f4faeed2ec69af6060"))
+ (scrollview :source "elpaca-menu-lock-file" :recipe
+             (:source nil :package "scrollview" :id scrollview :host github :repo
+                      "roife/scrollview.el" :type git :protocol https :inherit t :depth
+                      treeless :ref "b9377ca4457e732ba3efca20b74603157b1755b4")))
