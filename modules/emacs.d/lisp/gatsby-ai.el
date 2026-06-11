@@ -52,6 +52,8 @@ Shows running agents for the project; selecting one focuses it, selecting \"new\
    (:maps agent-shell-manager-mode-map :states motion)
    ("RET" . #'gatsby>>agent-shell-manager-goto)
    ("C-c C-c" . #'agent-shell-interrupt)
+   ("M-j" . #'evil-next-visual-line)
+   ("M-k" . #'evil-previous-visual-line)
    ("m" . #'agent-shell-manager-set-mode)
    ("M" . #'agent-shell-manager-set-model)
    ("q" . #'quit-window)
