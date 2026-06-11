@@ -4,41 +4,6 @@ font-size = 12
 macos-option-as-alt = true
 cursor-style-blink = false
 
-# Remap cmd shortcuts to opt so they still work when Karabiner makes cmd act as M- in Emacs
-keybind = super+t=unbind
-keybind = alt+t=new_tab
-keybind = super+w=unbind
-keybind = alt+w=close_surface
-keybind = super+n=unbind
-keybind = alt+n=new_window
-keybind = super+d=unbind
-keybind = alt+d=new_split:right
-keybind = super+shift+d=unbind
-keybind = alt+shift+d=new_split:down
-keybind = super+shift+[=unbind
-keybind = alt+shift+[=previous_tab
-keybind = super+shift+]=unbind
-keybind = alt+shift+]=next_tab
-keybind = super+1=unbind
-keybind = alt+1=goto_tab:1
-keybind = super+2=unbind
-keybind = alt+2=goto_tab:2
-keybind = super+3=unbind
-keybind = alt+3=goto_tab:3
-keybind = super+4=unbind
-keybind = alt+4=goto_tab:4
-keybind = super+5=unbind
-keybind = alt+5=goto_tab:5
-keybind = super+6=unbind
-keybind = alt+6=goto_tab:6
-keybind = super+7=unbind
-keybind = alt+7=goto_tab:7
-keybind = super+8=unbind
-keybind = alt+8=goto_tab:8
-keybind = super+9=unbind
-keybind = alt+9=goto_tab:9
-keybind = super+c=unbind
-keybind = alt+c=copy_to_clipboard
-keybind = super+v=unbind
-keybind = alt+v=paste_from_clipboard
-keybind = alt+enter=unbind
+# cmd acts as M- in Emacs; option triggers Ghostty shortcuts
+key-remap = super=alt
+key-remap = alt=super
