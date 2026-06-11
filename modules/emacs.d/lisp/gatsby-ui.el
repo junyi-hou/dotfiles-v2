@@ -174,6 +174,14 @@
   (indent-bars-color-by-depth nil)
   (indent-bars-display-on-blank-lines nil))
 
+(use-package scrollview
+  :ensure (:host github :repo "roife/scrollview.el")
+  :hook (elpaca-after-init . global-scrollview-mode)
+  :custom
+  (scrollview-visibility "Overflow")
+  (scrollview-current-window-only t)
+  (scrollview-signs-on-startup '(search)))
+
 (gatsby>use-internal-package paren
   :hook (elpaca-after-init . show-paren-mode))
 
