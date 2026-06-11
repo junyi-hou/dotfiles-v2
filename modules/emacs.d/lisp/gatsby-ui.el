@@ -26,8 +26,9 @@
   (line-number-mode -1)
   (column-number-mode -1)
   (tool-bar-mode -1)
-  (scroll-bar-mode -1)
-  (horizontal-scroll-bar-mode -1)
+  (when (display-graphic-p)
+    (scroll-bar-mode -1)
+    (horizontal-scroll-bar-mode -1))
   (blink-cursor-mode -1)
   (menu-bar-mode
    (if (and (eq system-type 'darwin) (display-graphic-p))
@@ -142,7 +143,8 @@
          evil-insert-state-exit-hook
          evil-replace-state-entry-hook
          evil-replace-state-exit-hook
-         evil-normal-state-entry-hook))))
+         evil-normal-state-entry-hook
+         window-selection-change-functions))))
 
   :evil-bind
   ((:maps (motion normal visual emacs insert))
