@@ -321,18 +321,6 @@ current candidate"
   :ensure (:host github :repo "purcell/page-break-lines")
   :hook (prog-mode . page-break-lines-mode))
 
-;; multiframe support
-(gatsby>use-internal-package multiframe-movement
-  :if (display-graphic-p)
-  :evil-bind
-  ((:maps normal)
-   ("SPC o c" . #'multiframe-movement-open-frame-on-empty-monitor)
-   (:maps (visual emacs insert motion normal))
-   ([remap windmove-right] . #'multiframe-movement-right)
-   ([remap windmove-left] . #'multiframe-movement-left)
-   ([remap windmove-down] . #'multiframe-movement-down)
-   ([remap windmove-up] . #'multiframe-movement-up)))
-
 (gatsby>use-internal-package xt-mouse
   :unless (display-graphic-p)
   :hook (elpaca-after-init . xterm-mouse-mode))
@@ -341,6 +329,23 @@ current candidate"
   :unless (display-graphic-p)
   :ensure (:host github :repo "spudlyo/clipetty")
   :hook (elpaca-after-init . global-clipetty-mode))
+
+(defun gatsby>>make-i3-mode (e)
+  "Custom build step for i3-mode (E)."
+  (elpaca--signal e "Building" 'building)
+  (let* ((default-directory (elpaca<-source-dir e)))
+    (call-process "make" nil nil nil "install")
+    (elpaca--continue-build e)))
+
+(use-package i3-mode
+  :if (eq system-type 'darwin)
+  :ensure
+  (:host
+   github
+   :repo "junyi-hou/i3-mode"
+   :build (:before elpaca-build-link gatsby>>make-i3-mode))
+  :custom (i3-flavor 'aerospace)
+  :hook (elpaca-after-init . i3-mode))
 
 (provide 'gatsby-ui)
 ;;; gatsby-ui.el ends here
