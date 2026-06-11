@@ -287,6 +287,7 @@ current candidate"
    ("C-k" . #'windmove-up)
    ("C-l" . #'windmove-right)
    ("<backspace>" . #'gatsby>vertico-better-backspace)
+   ("DEL" . #'gatsby>vertico-better-backspace)
    (:maps vertico-map :states insert)
    ("<tab>" . #'gatsby>vertico-complete-common-or-select)
    ("C-i" . #'gatsby>vertico-complete-common-or-select)
