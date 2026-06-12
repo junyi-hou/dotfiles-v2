@@ -22,4 +22,5 @@ def handle_result(args, answer, target_window_id, boss):
     if 'emacs' in window.title.lower():
         window.write_to_child(CTRL_BYTES[direction])
     else:
-        subprocess.Popen(['/opt/homebrew/bin/aerospace', 'focus', direction])
+        subprocess.run(['/opt/homebrew/bin/aerospace', 'focus', direction])
+        subprocess.Popen(['/opt/homebrew/bin/aerospace', 'move-mouse', 'window-lazy-center'])
