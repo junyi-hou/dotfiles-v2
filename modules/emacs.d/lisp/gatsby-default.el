@@ -117,7 +117,8 @@ Otherwise call `newline' as default."
            (cond
             ;; GUI emacs: call aerospace directly
             ((display-graphic-p)
-             (call-process "aerospace" nil nil nil "focus" dir-str))
+             (call-process "aerospace" nil nil nil "focus" dir-str)
+             (call-process "aerospace" nil nil nil "move-mouse" "window-lazy-center"))
             ;; kitty terminal (local or SSH): escape sequence triggers local aerospace
             ((string-match-p "kitty" (or (getenv "TERM") ""))
              (send-string-to-terminal
