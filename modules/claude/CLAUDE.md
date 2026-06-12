@@ -31,3 +31,6 @@ This file contains instructions that Claude should read at the start of each con
 
 - Whenever planning new features, use the `grill-with-doc` skills to write down ARD as much as possible.
 - Whenever implementing new features, use the `/tdd` skills for test-driven development as much as possible.
+
+## Writing Style
+- Do not use em dashes (—) in responses. Use commas, semicolons, or plain hyphens instead.
