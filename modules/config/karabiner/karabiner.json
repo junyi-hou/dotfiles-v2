@@ -29,6 +29,35 @@
                 "type": "basic"
               }
             ]
+          },
+          {
+            "description": "ctrl-hjkl → alt-hjkl for aerospace focus (except Emacs and kitty)",
+            "manipulators": [
+              {
+                "type": "basic",
+                "from": {"key_code": "h", "modifiers": {"mandatory": ["control"]}},
+                "to": [{"key_code": "h", "modifiers": ["option"]}],
+                "conditions": [{"type": "frontmost_application_unless", "bundle_identifiers": ["^org\\.gnu\\.Emacs$", "^net\\.kovidgoyal\\.kitty$"]}]
+              },
+              {
+                "type": "basic",
+                "from": {"key_code": "j", "modifiers": {"mandatory": ["control"]}},
+                "to": [{"key_code": "j", "modifiers": ["option"]}],
+                "conditions": [{"type": "frontmost_application_unless", "bundle_identifiers": ["^org\\.gnu\\.Emacs$", "^net\\.kovidgoyal\\.kitty$"]}]
+              },
+              {
+                "type": "basic",
+                "from": {"key_code": "k", "modifiers": {"mandatory": ["control"]}},
+                "to": [{"key_code": "k", "modifiers": ["option"]}],
+                "conditions": [{"type": "frontmost_application_unless", "bundle_identifiers": ["^org\\.gnu\\.Emacs$", "^net\\.kovidgoyal\\.kitty$"]}]
+              },
+              {
+                "type": "basic",
+                "from": {"key_code": "l", "modifiers": {"mandatory": ["control"]}},
+                "to": [{"key_code": "l", "modifiers": ["option"]}],
+                "conditions": [{"type": "frontmost_application_unless", "bundle_identifiers": ["^org\\.gnu\\.Emacs$", "^net\\.kovidgoyal\\.kitty$"]}]
+              }
+            ]
           }
         ]
       },

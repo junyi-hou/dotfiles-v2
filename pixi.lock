@@ -73,7 +73,6 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/eza-0.23.4-h8d80559_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/fd-find-10.3.0-h0ca00b2_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/gh-2.88.1-h01237fd_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/ghostty-1.3.1-h955c060_2.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/git-delta-0.19.2-h248350f_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/gmp-6.3.0-h7bae524_2.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/go-sops-3.12.2-hce30654_0.conda
@@ -3550,14 +3549,6 @@ packages:
   purls: []
   size: 21742200
   timestamp: 1773332985739
-- conda: https://conda.anaconda.org/conda-forge/osx-arm64/ghostty-1.3.1-h955c060_2.conda
-  sha256: a5acf24671a2507e7349e9c041bdbf9f03566b1a81a468236561c3861c16178e
-  md5: 91ebb1a3bc0316266dd7529af2237f81
-  license: MIT
-  license_family: MIT
-  purls: []
-  size: 20328305
-  timestamp: 1779649271136
 - conda: https://conda.anaconda.org/conda-forge/osx-arm64/git-delta-0.19.2-h248350f_0.conda
   sha256: 53e333f894227bbcaf0a6cef2ebc98a903f6e6c21a6251af747b8d1a1faef95b
   md5: 0c25858eec0a2a8e9211a175866b5866

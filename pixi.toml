@@ -41,9 +41,6 @@ taplo = "*"
 typos-lsp = "*"
 codebook-lsp = "*"
 
-[feature.global.target.osx-arm64.dependencies]
-ghostty = "*"
-
 [feature.global.tasks]
 install-claude = "npm install -g @anthropic-ai/claude-code@2.1.140"
 install-acp = "npm install -g @agentclientprotocol/claude-agent-acp@0.33.1"
