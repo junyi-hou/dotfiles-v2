@@ -105,7 +105,30 @@ Otherwise call `newline' as default."
         (apply newline-fun args)
         (insert newline-string))))
 
-  (advice-add #'newline :around #'gatsby>>newline))
+  (advice-add #'newline :around #'gatsby>>newline)
+
+  ;; aerospace integration
+  (defun gatsby>>windmove-aerospace-fallback (fn dir &rest args)
+    (condition-case nil
+        (apply fn dir args)
+      (error
+       (unless (minibuffer-window-active-p (selected-window))
+         (let ((dir-str (symbol-name dir)))
+           (cond
+            ;; GUI emacs: call aerospace directly
+            ((display-graphic-p)
+             (call-process "aerospace" nil nil nil "focus" dir-str))
+            ;; kitty terminal (local or SSH): escape sequence triggers local aerospace
+            ((string-match-p "kitty" (or (getenv "TERM") ""))
+             (send-string-to-terminal
+              (format
+               "\033P@kitty-cmd{\"cmd\":\"run\",\"version\":[0,14,2],\"no_response\":true,\"payload\":{\"cmdline\":[\"aerospace\",\"focus\",\"%s\"]}}\033\\"
+               dir-str)))
+            ;; other terminal: call directly
+            ((executable-find "aerospace")
+             (call-process "aerospace" nil nil nil "focus" dir-str))))))))
+
+  (advice-add 'windmove-do-window-select :around #'gatsby>>windmove-aerospace-fallback))
 
 (gatsby>use-internal-package server
   :hook (elpaca-after-init . gatsby>>start-server)
