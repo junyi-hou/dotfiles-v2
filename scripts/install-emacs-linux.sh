@@ -12,7 +12,10 @@ install_build_deps() {
         echo "Using apt-get..."
         sudo apt-get install -y gcc make autoconf automake pkg-config \
             libgnutls28-dev libncurses-dev libxml2-dev zlib1g-dev libgmp-dev texinfo \
-            libtree-sitter-dev libgccjit-dev
+            libtree-sitter-dev
+        local gcc_ver
+        gcc_ver=$(gcc -dumpversion | cut -d. -f1)
+        sudo apt-get install -y "libgccjit-${gcc_ver}-dev"
     elif command -v dnf >/dev/null 2>&1; then
         echo "Using dnf..."
         sudo dnf install -y gcc make autoconf automake pkgconfig \
