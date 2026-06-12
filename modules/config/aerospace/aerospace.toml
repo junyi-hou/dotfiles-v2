@@ -17,10 +17,22 @@ outer.top = 0
 outer.right = 0
 
 [mode.main.binding]
-alt-h = ['focus left', 'move-mouse window-lazy-center']
-alt-j = ['focus down', 'move-mouse window-lazy-center']
-alt-k = ['focus up', 'move-mouse window-lazy-center']
-alt-l = ['focus right', 'move-mouse window-lazy-center']
+alt-h = [
+    'focus --boundaries all-monitors-outer-frame left',
+    'move-mouse window-lazy-center',
+]
+alt-j = [
+    'focus --boundaries all-monitors-outer-frame down',
+    'move-mouse window-lazy-center',
+]
+alt-k = [
+    'focus --boundaries all-monitors-outer-frame up',
+    'move-mouse window-lazy-center',
+]
+alt-l = [
+    'focus --boundaries all-monitors-outer-frame right',
+    'move-mouse window-lazy-center',
+]
 
 # Move
 alt-shift-h = 'move left'
