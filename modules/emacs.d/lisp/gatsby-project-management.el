@@ -302,7 +302,9 @@ interactively select a single test to run instead."
     (magit-status-mode-map
      magit-diff-mode-map magit-log-mode-map magit-revision-mode-map)
     :states motion)
-   ("SPC r" . #'magit-refresh-buffer)))
+   ("SPC r" . #'magit-refresh-buffer)
+   ("SPC o s" . #'gatsby>eshell-open-or-switch)
+   ("SPC o S" . #'gatsby>ghostel-open-or-switch)))
 
 (gatsby>use-internal-package git-rebase
   :evil-bind
