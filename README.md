@@ -21,7 +21,7 @@ brew install direnv
 
 ### Linux
 
-Linux is supported via a headless Emacs AppImage. Run `make build` to install.
+Linux is supported by building Emacs 31 from source. Run `make build` to install.
 
 ## Install Configuration
 
@@ -107,15 +107,15 @@ Decrypts into a scratch buffer. `C-c C-c` re-encrypts and saves; `C-c C-k` cance
 
 **Karabiner** (`modules/config/karabiner/karabiner.json`) remaps `Ctrl+hjkl` → `Alt+hjkl` for all apps *except* Emacs and Kitty, which handle `Ctrl+hjkl` directly.
 
-**Aerospace** (`modules/config/aerospace/aerospace.toml`) binds `Alt+hjkl` to `focus left/down/up/right`. It is the final recipient for all non-Emacs, non-Kitty apps.
+**Aerospace** (`modules/config/aerospace/aerospace.toml`) binds `Alt+hjkl` to `focus left/down/up/right` followed by `move-mouse window-lazy-center`. It is the final recipient for all non-Emacs, non-Kitty apps.
 
-**Kitty** (`modules/config/kitty/kitty.conf`) intercepts `Ctrl+hjkl` and routes through a kitten (`focus_or_aerospace.py`):
+**Kitty** (`modules/config/kitty/kitty.conf`) intercepts `Ctrl+hjkl` using native `--when-focus-on` title matching (no Python kitten):
 - If the focused pane title contains "emacs" → sends the raw control byte to Emacs.
-- Otherwise → calls `aerospace focus <dir>` directly.
+- Otherwise → calls `aerospace focus --boundaries all-monitors-outer-frame <dir>` then `aerospace move-mouse window-lazy-center`.
 
-**Emacs** (`modules/emacs.d/lisp/gatsby-default.el`, `gatsby-editing.el`) binds `Ctrl+hjkl` to `windmove-*`. An advice on `windmove-do-window-select` provides fallback when no adjacent Emacs pane exists:
-- GUI Emacs → calls `aerospace focus <dir>` via `call-process`.
-- Terminal Emacs in Kitty → sends a Kitty remote-control escape sequence, which triggers Aerospace on the local machine (works over SSH too).
+**Emacs** (`modules/emacs.d/lisp/gatsby-default.el`) binds `Ctrl+hjkl` to `windmove-*`. An advice on `windmove-do-window-select` provides fallback when no adjacent Emacs pane exists:
+- Local (GUI or terminal with aerospace in PATH) → calls `aerospace focus --boundaries all-monitors-outer-frame <dir>` then `move-mouse window-lazy-center` via `call-process`.
+- SSH terminal (detected via `KITTY_WINDOW_ID`) → sends a Kitty `launch` DCS escape sequence, which triggers Aerospace on the local machine.
 
 ### Flow by Context
 
@@ -126,7 +126,7 @@ Karabiner → remaps `Ctrl+hjkl` to `Alt+hjkl` → Aerospace focuses the adjacen
 Karabiner passes through → Kitty kitten → `aerospace focus <dir>`.
 
 **Emacs pane inside Kitty:**
-Karabiner passes through → Kitty kitten detects "emacs" in title → sends raw byte → Emacs `windmove-*` → if no adjacent pane, Emacs sends Kitty escape sequence → Aerospace.
+Karabiner passes through → Kitty `--when-focus-on` detects "emacs" in title → sends raw byte → Emacs `windmove-*` → if no adjacent pane, Emacs calls aerospace directly (local) or sends Kitty `launch` DCS (SSH) → Aerospace.
 
 **GUI Emacs:**
 Emacs `windmove-*` → if no adjacent pane, Emacs calls `aerospace focus <dir>` directly.

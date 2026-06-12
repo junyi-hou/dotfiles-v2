@@ -115,19 +115,35 @@ Otherwise call `newline' as default."
        (unless (minibuffer-window-active-p (selected-window))
          (let ((dir-str (symbol-name dir)))
            (cond
-            ;; GUI emacs: call aerospace directly
-            ((display-graphic-p)
-             (call-process "aerospace" nil nil nil "focus" dir-str)
-             (call-process "aerospace" nil nil nil "move-mouse" "window-lazy-center"))
-            ;; kitty terminal (local or SSH): escape sequence triggers local aerospace
-            ((string-match-p "kitty" (or (getenv "TERM") ""))
-             (send-string-to-terminal
-              (format
-               "\033P@kitty-cmd{\"cmd\":\"run\",\"version\":[0,14,2],\"no_response\":true,\"payload\":{\"cmdline\":[\"aerospace\",\"focus\",\"%s\"]}}\033\\"
-               dir-str)))
-            ;; other terminal: call directly
+            ;; Local (GUI or terminal with aerospace in PATH): call directly.
             ((executable-find "aerospace")
-             (call-process "aerospace" nil nil nil "focus" dir-str))))))))
+             (call-process "aerospace"
+                           nil
+                           nil
+                           nil
+                           "focus"
+                           "--boundaries"
+                           "all-monitors-outer-frame"
+                           dir-str)
+             (call-process "aerospace" nil nil nil "move-mouse" "window-lazy-center"))
+            ;; SSH terminal: aerospace not on remote machine, tell kitty via DCS.
+            ;; Kitty (local) receives and executes; other terminals ignore unknown DCS.
+            ((getenv "KITTY_WINDOW_ID")
+             (let*
+                 ((dir-str "right")
+                  (kitty-cmd
+                   `(("cmd" . "launch")
+                     ("version" . [0 14 2]) ("no_response" . t)
+                     ("payload" .
+                      (("type" . "background")
+                       ("args" .
+                        ["sh" "-c"
+                         ,(format
+                           "/opt/homebrew/bin/aerospace focus --boundaries all-monitors-outer-frame %s; /opt/homebrew/bin/aerospace move-mouse window-lazy-center"
+                           dir-str)])))))
+                  (raw-string
+                   (concat "\033P@kitty-cmd" (json-encode kitty-cmd) "\033\\")))
+               (send-string-to-terminal raw-string)))))))))
 
   (advice-add 'windmove-do-window-select :around #'gatsby>>windmove-aerospace-fallback))
 
