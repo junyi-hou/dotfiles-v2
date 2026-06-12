@@ -6,6 +6,9 @@
 (require 'gatsby--utility)
 (require 'elpaca)
 
+;; include "emacs" in title so kitty's focus_or_aerospace kitten can detect it
+(setq frame-title-format "emacs: %b")
+
 ;; theme
 (use-package doom-themes
   :ensure (:host github :repo "doomemacs/themes")
@@ -34,9 +37,6 @@
    (if (and (eq system-type 'darwin) (display-graphic-p))
        1
      -1))
-  (when (display-graphic-p)
-    (unless (frame-parameter nil 'fullscreen)
-      (set-frame-parameter nil 'fullscreen 'maximized)))
 
   ;; lower the height of emoji fonts
   (when (display-graphic-p)
@@ -322,22 +322,6 @@ current candidate"
   :ensure (:host github :repo "spudlyo/clipetty")
   :hook (elpaca-after-init . global-clipetty-mode))
 
-(defun gatsby>>make-i3-mode (e)
-  "Custom build step for i3-mode (E)."
-  (elpaca--signal e "Building" 'building)
-  (let* ((default-directory (elpaca<-source-dir e)))
-    (call-process "make" nil nil nil "install")
-    (elpaca--continue-build e)))
-
-(use-package i3-mode
-  :if (eq system-type 'darwin)
-  :ensure
-  (:host
-   github
-   :repo "junyi-hou/i3-mode"
-   :build (:before elpaca-build-link gatsby>>make-i3-mode))
-  :custom (i3-flavor 'aerospace)
-  :hook (elpaca-after-init . i3-mode))
 
 (provide 'gatsby-ui)
 ;;; gatsby-ui.el ends here
