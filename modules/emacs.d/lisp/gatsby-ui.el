@@ -317,10 +317,31 @@ current candidate"
   :unless (display-graphic-p)
   :hook (elpaca-after-init . xterm-mouse-mode))
 
+
 (use-package clipetty
   :unless (display-graphic-p)
   :ensure (:host github :repo "spudlyo/clipetty")
-  :hook (elpaca-after-init . global-clipetty-mode))
+  :hook (elpaca-after-init . global-clipetty-mode)
+  :init
+  (defun gatsby>>osc52-paste ()
+    "Read system clipboard via OSC 52 query.  Works locally and over SSH."
+    (let ((response "")
+          (deadline (time-add (current-time) (seconds-to-time 1))))
+      (send-string-to-terminal "\e]52;c;?\a")
+      (catch 'done
+        (while (time-less-p (current-time) deadline)
+          (if-let ((c (read-char nil nil 0.01)))
+            (progn
+              (setq response (concat response (char-to-string c)))
+              (when (or (string-suffix-p "\a" response)
+                        (string-suffix-p "\e\\" response))
+                (throw 'done nil)))
+            (when (not (string-empty-p response))
+              (throw 'done nil)))))
+      (when (string-match "\e]52;[^;]*;\\([A-Za-z0-9+/=]+\\)" response)
+        (decode-coding-string
+         (base64-decode-string (match-string 1 response)) 'utf-8))))
+  :config (setq interprogram-paste-function #'gatsby>>osc52-paste))
 
 
 (provide 'gatsby-ui)
