@@ -128,7 +128,7 @@ Otherwise call `newline' as default."
              (call-process "aerospace" nil nil nil "move-mouse" "window-lazy-center"))
             ;; SSH terminal: aerospace not on remote machine, tell kitty via DCS.
             ;; Kitty (local) receives and executes; other terminals ignore unknown DCS.
-            ((getenv "KITTY_WINDOW_ID")
+            ((getenv "SSH_CLIENT")
              (let*
                  ((dir-str "right")
                   (kitty-cmd
