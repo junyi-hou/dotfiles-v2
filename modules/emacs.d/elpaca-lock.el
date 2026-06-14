@@ -18,7 +18,7 @@
                                    "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
                         :source "elpaca-menu-lock-file" :protocol https :inherit t
                         :depth treeless :host github :ref
-                        "530620eab82a7c71e379bb44a75561e6532ca1bb" :id agent-shell :type
+                        "7fdd9aa93f60a21805454f0c0c03f8abb391a7a9" :id agent-shell :type
                         git))
  (agent-shell-tramp :source "elpaca-menu-lock-file" :recipe
                     (:source "elpaca-menu-lock-file" :protocol https :inherit t :depth
@@ -440,7 +440,7 @@
                          (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
                                    "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
                         :source "elpaca-menu-lock-file" :protocol https :inherit t
-                        :depth treeless :ref "11f4a9913e7625f122625dd89d668ad5c93cf151"
+                        :depth treeless :ref "43ee9e1862994cbaa89715d324edb7a424181f22"
                         :id shell-maker :type git))
  (simple-httpd :source "elpaca-menu-lock-file" :recipe
                (:package "simple-httpd" :repo "skeeto/emacs-web-server" :fetcher github
