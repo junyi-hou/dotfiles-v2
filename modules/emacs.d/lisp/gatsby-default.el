@@ -130,8 +130,7 @@ Otherwise call `newline' as default."
             ;; Kitty (local) receives and executes; other terminals ignore unknown DCS.
             ((getenv "SSH_CLIENT")
              (let*
-                 ((dir-str "right")
-                  (kitty-cmd
+                 ((kitty-cmd
                    `(("cmd" . "launch")
                      ("version" . [0 14 2]) ("no_response" . t)
                      ("payload" .
