@@ -122,6 +122,8 @@ frame's width of the rightmost right edge."
        .
        (((name . "CONTEXT7_API_KEY")
          (value . ,(sops-get-secret-try-env-variable "env/CONTEXT7_API_KEY"))))))))
+  (agent-shell-markdown-render-function #'agent-shell-markdown-replace-markup)
+  (agent-shell-highlight-blocks t)
 
   :config
   (defcustom gatsby>agent-shell-configs
