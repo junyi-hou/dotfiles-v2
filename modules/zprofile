@@ -5,15 +5,6 @@ fi
 
 export EDITOR="emacsclient -r -a ''"
 
-# mac setting
-if [[ "$(uname)" == "Darwin" ]]; then
-  current_value=$(defaults read com.apple.dock show-recents 2>/dev/null)
-  if [[ "$current_value" != "0" && "$current_value" != "false" ]]; then
-    defaults write com.apple.dock show-recents -bool false
-    killall Dock >/dev/null 2>&1
-  fi
-fi
-
 source $HOME/.profile
 
 # Local Variables:
