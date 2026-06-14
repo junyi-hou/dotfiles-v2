@@ -3,6 +3,7 @@
 install:
 	@python -m scripts.uninstall
 	@python -m scripts.install
+	@if [ "$$(uname -s)" = "Darwin" ]; then bash ./scripts/macos-defaults.sh; fi
 
 uninstall:
 	@python -m scripts.uninstall
