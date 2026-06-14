@@ -21,7 +21,6 @@ def test_uninstall_skips_when_install_path_missing():
 
         with patch("scripts.uninstall.git_root", return_value=Path(tmp).resolve()):
             with patch("scripts._lib.HOME", install_root):
-                # install_path does not exist — should not raise
                 uninstall(module_file, dry_run=False)
 
 
@@ -36,7 +35,6 @@ def test_uninstall_skips_broken_symlink_in_module():
 
         with patch("scripts.uninstall.git_root", return_value=Path(tmp).resolve()):
             with patch("scripts._lib.HOME", install_root):
-                # broken symlink in dotfiles dir — should not raise ValueError
                 uninstall(broken_link, dry_run=False)
 
 
@@ -54,3 +52,79 @@ def test_uninstall_removes_symlink_when_installed():
                 uninstall(module_file, dry_run=False)
 
         assert not install_link.exists()
+
+
+def test_uninstall_records_mtime_in_state():
+    with tempfile.TemporaryDirectory() as tmp:
+        module_root, module_file = _make_module_tree(tmp)
+        install_root = Path(tmp).resolve() / "home"
+        install_dir = install_root / ".mymod"
+        install_dir.mkdir(parents=True)
+        install_link = install_dir / "rc"
+        install_link.symlink_to(module_file)
+
+        state: dict[str, float] = {}
+        with patch("scripts.uninstall.git_root", return_value=Path(tmp).resolve()):
+            with patch("scripts._lib.HOME", install_root):
+                uninstall(module_file, dry_run=False, state=state)
+
+        assert "mymod/rc" in state
+        assert isinstance(state["mymod/rc"], float)
+
+
+def test_uninstall_restores_backup():
+    with tempfile.TemporaryDirectory() as tmp:
+        module_root, module_file = _make_module_tree(tmp)
+        install_root = Path(tmp).resolve() / "home"
+        install_dir = install_root / ".mymod"
+        install_dir.mkdir(parents=True)
+        install_link = install_dir / "rc"
+        install_link.symlink_to(module_file)
+        backup_path = install_dir / ".rc.backup"
+        backup_path.write_text("original content")
+
+        with patch("scripts.uninstall.git_root", return_value=Path(tmp).resolve()):
+            with patch("scripts._lib.HOME", install_root):
+                uninstall(module_file, dry_run=False)
+
+        assert not install_link.is_symlink()
+        assert (install_dir / "rc").read_text() == "original content"
+
+
+def test_uninstall_skips_non_our_symlink():
+    with tempfile.TemporaryDirectory() as tmp:
+        module_root, module_file = _make_module_tree(tmp)
+        install_root = Path(tmp).resolve() / "home"
+        install_dir = install_root / ".mymod"
+        install_dir.mkdir(parents=True)
+        other_file = Path(tmp) / "other"
+        other_file.touch()
+        install_link = install_dir / "rc"
+        install_link.symlink_to(other_file)
+
+        with patch("scripts.uninstall.git_root", return_value=Path(tmp).resolve()):
+            with patch("scripts._lib.HOME", install_root):
+                uninstall(module_file, dry_run=False)
+
+        assert install_link.is_symlink()
+        assert install_link.resolve() == other_file.resolve()
+
+
+def test_uninstall_removes_empty_dir():
+    with tempfile.TemporaryDirectory() as tmp:
+        module_root = Path(tmp).resolve() / "modules"
+        module_dir = module_root / "mymod"
+        module_dir.mkdir(parents=True)
+        child_file = module_dir / "rc"
+        child_file.touch()
+        install_root = Path(tmp).resolve() / "home"
+        install_dir = install_root / ".mymod"
+        install_dir.mkdir(parents=True)
+        install_link = install_dir / "rc"
+        install_link.symlink_to(child_file)
+
+        with patch("scripts.uninstall.git_root", return_value=Path(tmp).resolve()):
+            with patch("scripts._lib.HOME", install_root):
+                uninstall(module_dir, dry_run=False)
+
+        assert not install_dir.exists()

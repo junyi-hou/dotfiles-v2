@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
 import argparse
+import atexit
+import json
 import logging
 from pathlib import Path
 from typing import cast
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from ._lib import logger, git_root, symlink, move, get_target_path, get_backup_path
 
@@ -14,7 +16,7 @@ AVAILABLE_MODULES: list[str] = [
 ]
 
 
-def install(module: str | Path, *, dry_run: bool = True) -> None:
+def install(module: str | Path, *, dry_run: bool = True, state: dict[str, float] | None = None) -> None:
     """
     Install MODULE by symlinking it to the corresponding position in the current user's $HOME directory.
     If MODULE is an immediate child of the repo root, symlink it to its target location.
@@ -40,7 +42,11 @@ def install(module: str | Path, *, dry_run: bool = True) -> None:
 
     if install_path.exists():
         if install_path.resolve() == module.resolve():
-            logger.debug(f"{relative_path} already installed, skipping")
+            prev_mtime = state.get(str(relative_path)) if state is not None else install_path.lstat().st_mtime
+            if module.stat().st_mtime > prev_mtime:
+                logger.info(f"Module {relative_path} updated!")
+            else:
+                logger.debug(f"{relative_path} already installed, skipping")
             return
 
         if not install_path.is_dir():
@@ -49,7 +55,14 @@ def install(module: str | Path, *, dry_run: bool = True) -> None:
 
     if module.is_file():
         symlink(module, install_path, dry_run)
-        logger.info(f"Module {relative_path} installed!")
+        prev_mtime = state.get(str(relative_path)) if state is not None else None
+        if prev_mtime is not None:
+            if module.stat().st_mtime > prev_mtime:
+                logger.info(f"Module {relative_path} updated!")
+            else:
+                logger.debug(f"{relative_path} reinstalled, no changes")
+        else:
+            logger.info(f"Module {relative_path} installed!")
 
     elif module.is_dir():
         if dry_run:
@@ -58,7 +71,7 @@ def install(module: str | Path, *, dry_run: bool = True) -> None:
             install_path.mkdir(parents=True, exist_ok=True)
         logger.debug(f"Recursively installing {module} ...")
         for child in module.iterdir():
-            install(child, dry_run=dry_run)
+            install(child, dry_run=dry_run, state=state)
 
 
 def symlink_project_root(dry_run: bool = True) -> None:
@@ -81,7 +94,8 @@ def main() -> int:
     class Arguments:
         dry_run: bool
         verbose: bool
-        modules: list[str]
+        state_file: str | None
+        modules: list[str] = field(default_factory=list)
 
     parser = argparse.ArgumentParser()
     _ = parser.add_argument(
@@ -101,6 +115,11 @@ def main() -> int:
     _ = parser.add_argument(
         "--verbose", "-v", action="store_true", help="show debug level log messages."
     )
+    _ = parser.add_argument(
+        "--state-file", "-s",
+        default=None,
+        help="read uninstalled file mtimes from this JSON file to detect updates.",
+    )
 
     args = parser.parse_args()
     args = cast(Arguments, cast(object, args))
@@ -112,11 +131,18 @@ def main() -> int:
     if args.verbose:
         logger.setLevel(logging.DEBUG)
 
+    state: dict[str, float] | None = None
+    if args.state_file:
+        state_path = Path(args.state_file)
+        atexit.register(state_path.unlink, missing_ok=True)
+        if state_path.exists():
+            state = json.loads(state_path.read_text())
+
     # Symlink project root to ~/dotfiles-v2
     symlink_project_root(dry_run=args.dry_run)
 
     for module in args.modules:
-        install(module, dry_run=args.dry_run)
+        install(module, dry_run=args.dry_run, state=state)
 
     logger.info("Installation Finishes!")
 

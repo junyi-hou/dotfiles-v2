@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
 import argparse
+import json
 import logging
 
 from pathlib import Path
 from typing import cast
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from ._lib import logger, git_root, move, get_backup_path, get_target_path, remove_file
 
@@ -13,7 +14,7 @@ from ._lib import logger, git_root, move, get_backup_path, get_target_path, remo
 AVAILABLE_MODULES: list[str] = [m.name for m in (git_root(__file__) / "modules").iterdir()]
 
 
-def uninstall(module: str | Path, *, dry_run: bool = True) -> None:
+def uninstall(module: str | Path, *, dry_run: bool = True, state: dict[str, float] | None = None) -> None:
     """
     """
     module_root = git_root(__file__) / "modules"
@@ -38,11 +39,13 @@ def uninstall(module: str | Path, *, dry_run: bool = True) -> None:
     backup_path = get_backup_path(install_path)
 
     logger.debug(f"Uninstalling {relative_path} ...")
-    
+
     if module.is_file():
         # if module is file, install_path must be symlink
         # make sure that install_path is what we have installed!
         if install_path.is_symlink() and install_path.resolve() == module:
+            if state is not None:
+                state[str(relative_path)] = install_path.lstat().st_mtime
             remove_file(install_path, dry_run)
             logger.info(f"Module {relative_path} uninstalled!")
         else:
@@ -52,7 +55,7 @@ def uninstall(module: str | Path, *, dry_run: bool = True) -> None:
         # go into install_path
         logger.debug(f"Recursively uninstalling {relative_path} ...")
         for child in module.iterdir():
-            uninstall(child, dry_run=dry_run)
+            uninstall(child, dry_run=dry_run, state=state)
 
         # if module is dir, install_path must be dir
         if install_path.is_dir() and next(install_path.iterdir(), None) is None:
@@ -82,7 +85,9 @@ def main() -> int:
     class Arguments:
         dry_run: bool
         verbose: bool
-        modules: list[str]
+        quiet: bool
+        state_file: str | None
+        modules: list[str] = field(default_factory=list)
 
     parser = argparse.ArgumentParser()
     _ = parser.add_argument(
@@ -102,6 +107,16 @@ def main() -> int:
         action="store_true",
         help="show debug level log messages."
     )
+    _ = parser.add_argument(
+        "--quiet", "-q",
+        action="store_true",
+        help="suppress info-level output.",
+    )
+    _ = parser.add_argument(
+        "--state-file", "-s",
+        default=None,
+        help="write uninstalled file paths and their symlink mtimes to this JSON file.",
+    )
 
     args, _ = parser.parse_known_args()
     args = cast(Arguments, cast(object, args))
@@ -112,12 +127,19 @@ def main() -> int:
 
     if args.verbose:
         logger.setLevel(logging.DEBUG)
+    elif args.quiet:
+        logger.setLevel(logging.WARNING)
+
+    state: dict[str, float] | None = {} if args.state_file else None
 
     # Remove ~/dotfiles-v2 symlink
     remove_project_root_symlink(dry_run=args.dry_run)
 
     for module in args.modules:
-        uninstall(module, dry_run=args.dry_run)
+        uninstall(module, dry_run=args.dry_run, state=state)
+
+    if state is not None and args.state_file:
+        Path(args.state_file).write_text(json.dumps(state))
 
     logger.info("Uninstallation Finishes!")
 

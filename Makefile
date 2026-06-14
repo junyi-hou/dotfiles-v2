@@ -1,8 +1,8 @@
 .PHONY: install uninstall build java test test-emacs
 
 install:
-	@python -m scripts.uninstall
-	@python -m scripts.install
+	@python -m scripts.uninstall --quiet --state-file /tmp/dotfiles_state.json
+	@python -m scripts.install --state-file /tmp/dotfiles_state.json
 	@if [ "$$(uname -s)" = "Darwin" ]; then bash ./scripts/macos-defaults.sh; fi
 
 uninstall:
