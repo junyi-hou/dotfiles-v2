@@ -11,7 +11,10 @@
   ("BUILD\\.bazel\\'" . bazel-mode)
   ("WORKSPACE\\'" . bazel-mode)
   ("WORKSPACE\\.bazel\\'" . bazel-mode)
-  ("\\.bzl\\'" . bazel-starlark-mode))
+  ("\\.bzl\\'" . bazel-starlark-mode)
+  :config
+  ;; better monorepo support
+  (add-to-list 'project-vc-extra-root-markers "BUILD.bazel"))
 
 (provide 'gatsby-bazel)
 ;;; gatsby-bazel.el ends here
