@@ -42,11 +42,7 @@ def install(module: str | Path, *, dry_run: bool = True, state: dict[str, float]
 
     if install_path.exists():
         if install_path.resolve() == module.resolve():
-            prev_mtime = state.get(str(relative_path)) if state is not None else install_path.lstat().st_mtime
-            if module.stat().st_mtime > prev_mtime:
-                logger.info(f"Module {relative_path} updated!")
-            else:
-                logger.debug(f"{relative_path} already installed, skipping")
+            logger.debug(f"{relative_path} already installed, skipping")
             return
 
         if not install_path.is_dir():
@@ -55,12 +51,8 @@ def install(module: str | Path, *, dry_run: bool = True, state: dict[str, float]
 
     if module.is_file():
         symlink(module, install_path, dry_run)
-        prev_mtime = state.get(str(relative_path)) if state is not None else None
-        if prev_mtime is not None:
-            if module.stat().st_mtime > prev_mtime:
-                logger.info(f"Module {relative_path} updated!")
-            else:
-                logger.debug(f"{relative_path} reinstalled, no changes")
+        if state is not None and str(relative_path) in state:
+            logger.debug(f"{relative_path} reinstalled, no changes")
         else:
             logger.info(f"Module {relative_path} installed!")
 
@@ -118,7 +110,7 @@ def main() -> int:
     _ = parser.add_argument(
         "--state-file", "-s",
         default=None,
-        help="read uninstalled file mtimes from this JSON file to detect updates.",
+        help="read uninstalled file paths from this JSON file to detect new modules.",
     )
 
     args = parser.parse_args()
