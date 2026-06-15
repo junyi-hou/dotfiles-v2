@@ -5,7 +5,7 @@
 ;;; Code:
 
 (use-package bazel
-  :ensure (:host github :repo "bazel-contrib/bazel")
+  :ensure (:host github :repo "bazel-contrib/bazel.el")
   :mode
   ("BUILD\\'" . bazel-mode)
   ("BUILD\\.bazel\\'" . bazel-mode)
