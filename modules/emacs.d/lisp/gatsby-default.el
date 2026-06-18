@@ -117,15 +117,9 @@ Otherwise call `newline' as default."
            (cond
             ;; Local (GUI or terminal with aerospace in PATH): call directly.
             ((executable-find "aerospace")
-             (call-process "aerospace"
-                           nil
-                           nil
-                           nil
-                           "focus"
-                           "--boundaries"
-                           "all-monitors-outer-frame"
-                           dir-str)
-             (call-process "aerospace" nil nil nil "move-mouse" "window-lazy-center"))
+             (start-process "aerospace" nil
+                            "sh" "-c"
+                            (format "aerospace focus --boundaries all-monitors-outer-frame %s && aerospace move-mouse window-lazy-center" dir-str)))
             ;; SSH terminal: aerospace not on remote machine, tell kitty via DCS.
             ;; Kitty (local) receives and executes; other terminals ignore unknown DCS.
             ((getenv "SSH_CLIENT")
