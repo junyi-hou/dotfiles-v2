@@ -675,6 +675,7 @@ Must be called from within an agent-shell buffer."
    ("z c" . #'agent-shell-ui-toggle-fragment)
    ("m" . #'agent-shell-set-session-mode)
    ("M" . #'agent-shell-set-session-model)
+   ("t" . #'agent-shell-set-session-thought-level)
    ("q" . #'delete-window)
    ("M-v" . #'agent-shell-yank-dwim)
    ([remap kill-buffer-and-window] . #'delete-window)
