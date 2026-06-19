@@ -6,6 +6,9 @@
 
 (require 'gatsby--utility)
 
+(gatsby>use-internal-package jupyter-kitty-graphics
+  :after (jupyter kitty-graphics))
+
 (use-package jupyter
   :ensure (:host github :repo "nnicandro/emacs-jupyter")
   :custom-face (jupyter-repl-traceback ((t (:extend t :background "firebrick"))))
