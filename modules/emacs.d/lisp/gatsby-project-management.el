@@ -75,6 +75,9 @@ interactively select a single test to run instead."
   :ensure (:host github :repo "purcell/envrc")
   :hook (elpaca-after-init . envrc-global-mode)
   :config
+  ;; info is somehow not loaded
+  (require 'info)
+
   ;; wrap commands that need to be aware of the local environment
   (advice-add #'executable-find :around #'envrc-propagate-environment)
 
