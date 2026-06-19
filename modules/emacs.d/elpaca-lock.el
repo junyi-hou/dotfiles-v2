@@ -614,4 +614,9 @@
                              "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
                   :source "MELPA" :id bazel :host github :type git :protocol https
                   :inherit t :depth treeless :ref
-                  "619a6300d1082bdeb64f4a1cacb6c79bd880bc21")))
+                  "619a6300d1082bdeb64f4a1cacb6c79bd880bc21"))
+ (kitty-graphics :source "elpaca-menu-lock-file" :recipe
+                 (:source nil :package "kitty-graphics" :id kitty-graphics :host github
+                          :repo "cashmeredev/kitty-graphics.el" :type git :protocol
+                          https :inherit t :depth treeless :ref
+                          "056fb063f08310fd5021cf52bda04fb107bc8617")))

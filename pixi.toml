@@ -30,6 +30,7 @@ fd-find = "*"
 ripgrep = "*"
 nodejs = "*"      # for acp
 go-sops = "*"     # for secret management
+libsixel = "*"    # for displaying image inside kitty
 
 # lsp
 harper = "*"

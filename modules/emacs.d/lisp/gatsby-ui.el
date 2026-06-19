@@ -322,6 +322,11 @@ current candidate"
   :ensure (:host github :repo "spudlyo/clipetty")
   :hook (elpaca-after-init . global-clipetty-mode))
 
+(use-package kitty-graphics
+  :ensure (:host github :repo "cashmeredev/kitty-graphics.el")
+  :unless (display-graphic-p)
+  :hook (elpaca-after-init . kitty-graphics-setup))
+
 
 (provide 'gatsby-ui)
 ;;; gatsby-ui.el ends here
