@@ -6,9 +6,6 @@
 
 (require 'gatsby--utility)
 
-(gatsby>use-internal-package jupyter-kitty-graphics
-  :after (jupyter kitty-graphics))
-
 (use-package jupyter
   :ensure (:host github :repo "nnicandro/emacs-jupyter")
   :custom-face (jupyter-repl-traceback ((t (:extend t :background "firebrick"))))
@@ -24,6 +21,72 @@
   (jupyter-use-zmq nil)
   :hook (jupyter-repl-mode . corfu-mode)
   :init
+  ;; jupyter-repl-mode inherits font-lock settings from
+  ;; jupyter-repl-lang-mode (e.g. python-ts-mode).  In Emacs 31,
+  ;; tree-sitter modes that lack a parser produce font-lock-keywords
+  ;; = (t nil), which crashes C-level font-lock functions
+  ;; (font-lock-fontify-keywords-region, indent-bars--fontify,
+  ;; font-lock-unfontify-region) with "void-function nil".
+  ;;
+  ;; Fix: advise jupyter-repl-initialize-fontification to replace
+  ;; font-lock-fontify-region-function with a cell-aware function
+  ;; that fontifies input cells using the non-tree-sitter mode's
+  ;; regexp keywords and skips output cells.  Language-agnostic --
+  ;; derives the non-TS mode from the lang-mode name
+  ;; (python-ts-mode -> python-mode, etc.) and extracts its
+  ;; font-lock-defaults via a temp buffer.
+  (defun gatsby>>non-ts-font-lock-defaults ()
+    "Return font-lock-defaults for the non-TS counterpart of `jupyter-repl-lang-mode'.
+  Derives the non-TS mode by stripping -ts- from the mode name
+  (e.g. python-ts-mode -> python-mode) and runs it in a temp buffer
+  to extract its `font-lock-defaults'.  Returns nil for non-TS modes
+  or when the non-TS counterpart is not defined."
+    (let* ((ts-name (symbol-name jupyter-repl-lang-mode))
+           (non-ts-name
+            (if (string-suffix-p "-ts-mode" ts-name)
+                (concat (substring ts-name 0 (- (length ts-name) 8)) "-mode")
+              ts-name)))
+      (unless (string= non-ts-name ts-name)
+        (let ((non-ts-mode (intern non-ts-name)))
+          (when (fboundp non-ts-mode)
+            (let ((buf (generate-new-buffer " *jupyter-fl*")))
+              (unwind-protect
+                  (with-current-buffer buf
+                    (condition-case nil
+                        (progn
+                          (funcall non-ts-mode)
+                          (and (consp font-lock-defaults) font-lock-defaults))
+                      (error
+                       nil)))
+                (kill-buffer buf))))))))
+
+  (defun gatsby>>fix-jupyter-font-lock (&rest _)
+    "Replace `font-lock-fontify-region-function' to avoid the (t nil) crash.
+  Runs :after `jupyter-repl-initialize-fontification'.  When the
+  TS-mode produces empty keywords, falls back to the non-TS mode's
+  regexp keywords for input cells only."
+    (when (and font-lock-keywords
+               (eq (car font-lock-keywords) t)
+               (null (cadr font-lock-keywords)))
+      (when-let* ((defaults (gatsby>>non-ts-font-lock-defaults)))
+        (setq-local font-lock-defaults defaults)
+        (setq font-lock-set-defaults nil)
+        (font-lock-set-defaults)
+        (setq-local font-lock-fontify-region-function
+                    (lambda (beg end &optional _verbose)
+                      (jupyter-repl-map-cells
+                       beg end
+                       (lambda ()
+                         (let ((inhibit-read-only t))
+                           (font-lock-unfontify-region (point-min) (point-max))
+                           (font-lock-fontify-keywords-region (point-min) (point-max))))
+                       #'ignore)
+                      nil)))))
+
+  (with-eval-after-load 'jupyter-repl
+    (advice-add
+     'jupyter-repl-initialize-fontification
+     :after #'gatsby>>fix-jupyter-font-lock))
 
   (defvar gatsby>jupyter-managed-mode-map (make-sparse-keymap))
 
@@ -307,6 +370,10 @@
 
    (:maps gatsby>jupyter-managed-mode-map :states (insert normal))
    ("M-RET" . #'gatsby>jupyter-insert-cell-separator)))
+
+(gatsby>use-internal-package jupyter-kitty-graphics
+  :after kitty-graphics
+  :config (jupyter-kitty-graphics-mode))
 
 (provide 'gatsby-repl)
 ;;; gatsby-repl.el ends here
