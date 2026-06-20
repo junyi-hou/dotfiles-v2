@@ -132,38 +132,11 @@ frame's width of the rightmost right edge."
 
   :config
   (defcustom gatsby>agent-shell-configs
-    `(("claude" . (:base gatsby>>agent-shell-claude-config))
-      ("deepseek" .
+    `(("codex" .
        (:base
-        gatsby>>agent-shell-claude-config
-        :env
-        ("ANTHROPIC_BASE_URL"
-         "https://api.deepseek.com/anthropic"
-         "ANTHROPIC_AUTH_TOKEN"
-         ,(sops-get-secret-try-env-variable "env/DEEPSEEK_API_KEY")
-         "ANTHROPIC_MODEL"
-         "deepseek-v4-pro[1m]"
-         "ANTHROPIC_DEFAULT_OPUS_MODEL"
-         "deepseek-v4-pro[1m]"
-         "ANTHROPIC_DEFAULT_SONNET_MODEL"
-         "deepseek-v4-pro[1m]"
-         "ANTHROPIC_DEFAULT_HAIKU_MODEL"
-         "deepseek-v4-flash[1m]"
-         "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"
-         "1"
-         "CLAUDE_CODE_EFFORT_LEVEL"
-         "max")))
-      ("openrouter" .
-       (:base
-        gatsby>>agent-shell-claude-config
-        :env
-        ("ANTHROPIC_BASE_URL"
-         "https://openrouter.ai/api"
-         "ANTHROPIC_AUTH_TOKEN"
-         ,(sops-get-secret-try-env-variable "env/OPENROUTER_API_KEY")
-         "ANTHROPIC_API_KEY"
-         "")
-        :default-model-id (lambda (&rest _) "moonshotai/kimi-k2.7-code"))))
+        gatsby>>agent-shell-codex-config
+        :default-model-id (lambda (&rest _) "gpt-5.4-mini")
+        :default-session-mode-id (lambda (&rest _) "full-access"))))
     "Alist of named agent-shell configuration profiles.
 Each entry is (NAME . PLIST) where NAME is a string identifier and PLIST
 must contain :base (a config-builder function symbol accepting keyword args).
@@ -172,18 +145,17 @@ environment variables."
     :type '(alist :key-type string :value-type sexp)
     :group 'gatsby)
 
-  (defun gatsby>>agent-shell-claude-config (&rest args)
-    "Build an Anthropic/Claude agent-shell config alist applying ENV."
-    (let ((config (agent-shell-anthropic-make-claude-code-config))
+  (defun gatsby>>agent-shell-codex-config (&rest args)
+    (let ((config (agent-shell-openai-make-codex-config))
           (env (plist-get args :env)))
       ;; handle env
       (map-put!
        config
        :client-maker
        (lambda (buffer)
-         (let ((agent-shell-anthropic-claude-environment
+         (let ((agent-shell-openai-codex-environment
                 (apply #'agent-shell-make-environment-variables env)))
-           (agent-shell-anthropic-make-claude-client :buffer buffer))))
+           (agent-shell-openai-make-codex-client :buffer buffer))))
       ;; handle rest of the config keys
       (thread-last
        args
@@ -586,8 +558,7 @@ Must be called from within an agent-shell buffer."
                                        (when (and original-mode-id
                                                   (not
                                                    (string=
-                                                    original-mode-id
-                                                    "bypassPermissions")))
+                                                    original-mode-id "full-access")))
                                          (gatsby>>agent-shell-set-mode-id
                                           original-mode-id)))
                                      (let ((tmpfile (make-temp-file "commit-msg")))
@@ -609,8 +580,7 @@ Must be called from within an agent-shell buffer."
                                        (when (and original-mode-id
                                                   (not
                                                    (string=
-                                                    original-mode-id
-                                                    "bypassPermissions")))
+                                                    original-mode-id "full-access")))
                                          (gatsby>>agent-shell-set-mode-id
                                           original-mode-id))))
                                    (let ((data (map-elt event :data)))
@@ -619,9 +589,9 @@ Must be called from within an agent-shell buffer."
                                                  (map-elt data :code))))))
                           (shell-maker-submit
                            :input "generate a commit message for the currently staged changes"))))))
-                (if (string= original-mode-id "bypassPermissions")
+                (if (string= original-mode-id "full-access")
                     (funcall do-submit)
-                  (gatsby>>agent-shell-set-mode-id "bypassPermissions" do-submit)))))))
+                  (gatsby>>agent-shell-set-mode-id "full-access" do-submit)))))))
       (if existing-client
           (funcall proceed)
         (let ((prompt-sub)
