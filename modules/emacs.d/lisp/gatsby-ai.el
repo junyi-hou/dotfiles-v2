@@ -80,7 +80,9 @@ Shows running agents for the project; selecting one focuses it, selecting \"new\
 
 (use-package agent-shell
   :ensure (:host github :repo "xenodium/agent-shell")
-  :hook ((agent-shell-mode . corfu-mode))
+  :hook
+  ((agent-shell-mode . corfu-mode)
+   (agent-shell-mode . gatsby>>agent-shell-disable-scroll-after-submit))
   :init
   (defun gatsby>>agent-shell-display-in-rightmost-frame (buffer alist)
     "Display BUFFER as a right side window in the rightmost visible frame.
@@ -109,6 +111,11 @@ frame's width of the rightmost right edge."
       (when target
         (with-selected-frame target
           (display-buffer-in-side-window buffer alist)))))
+
+  (defun gatsby>>agent-shell-disable-scroll-after-submit (&rest _)
+    "Sending prompt does not automatically scroll all the way to the bottom."
+    (setq-local comint-scroll-show-maximum-output nil))
+
   :custom
   (agent-shell-display-action
    '(gatsby>>agent-shell-display-in-rightmost-frame
@@ -156,7 +163,7 @@ frame's width of the rightmost right edge."
          ,(sops-get-secret-try-env-variable "env/OPENROUTER_API_KEY")
          "ANTHROPIC_API_KEY"
          "")
-        :default-model-id "google/gemini-3.5-flash")))
+        :default-model-id (lambda (&rest _) "moonshotai/kimi-k2.7-code"))))
     "Alist of named agent-shell configuration profiles.
 Each entry is (NAME . PLIST) where NAME is a string identifier and PLIST
 must contain :base (a config-builder function symbol accepting keyword args).
