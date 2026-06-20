@@ -51,6 +51,11 @@ With additional `-b` flag, we will do `make build` + `make install` in the remot
 deploy -b user@host [-p port]
 ```
 
+Or use `-i` flag to install but do not build emacs:
+```sh
+deploy -i user@host [-p port]
+```
+
 With `--use-local-copy`, the local dotfiles directory is copied to the remote via `rsync` instead of cloning from GitHub:
 ```sh
 deploy --use-local-copy user@host [-p port]
