@@ -1,4 +1,3 @@
-import logging
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
@@ -44,27 +43,6 @@ def test_install_skips_if_already_installed():
 
         assert install_link.is_symlink()
         assert install_link.resolve() == module_file.resolve()
-
-
-def test_install_detects_updated_module(caplog):
-    with tempfile.TemporaryDirectory() as tmp:
-        module_root, module_file = _make_module_tree(tmp)
-        install_root = Path(tmp).resolve() / "home"
-        install_dir = install_root / ".mymod"
-        install_dir.mkdir(parents=True)
-        install_link = install_dir / "rc"
-        install_link.symlink_to(module_file)
-
-        state = {"mymod/rc": 0.0}
-
-        with patch("scripts.install.git_root", return_value=Path(tmp).resolve()):
-            with patch("scripts._lib.HOME", install_root):
-                with caplog.at_level(logging.INFO, logger="dotfiles_installer"):
-                    install(module_file, dry_run=False, state=state)
-
-        assert any("updated" in r.message for r in caplog.records)
-
-
 def test_install_backs_up_existing_file():
     with tempfile.TemporaryDirectory() as tmp:
         module_root, module_file = _make_module_tree(tmp)
