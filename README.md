@@ -105,8 +105,8 @@ Decrypts into a scratch buffer. `C-c C-c` re-encrypts and saves; `C-c C-k` cance
 
 | Keys | Action |
 |---|---|
-| `Ctrl+h/j/k/l` | Focus window/pane left/down/up/right |
-| `Alt+Shift+h/j/k/l` | Move (reposition) the current window |
+| `Control+h/j/k/l` | Focus window/pane left/down/up/right |
+| `Cmd+Shift+h/j/k/l` | Move (reposition) the current window |
 
 ### Layer Stack
 
@@ -139,10 +139,3 @@ Emacs `windmove-*` → if no adjacent pane, Emacs calls `aerospace focus <dir>` 
 ### Why the Frame Title Matters
 
 Emacs sets `frame-title-format` to `"emacs: %b"` so the Kitty kitten can reliably detect when the active pane is running Emacs and route accordingly.
-
-## Planned Features
-
-[ ] devcontainer for agents
-[ ] self-managed plugins (via git submodules) - available if [this issue](https://github.com/anthropics/claude-agent-sdk-typescript/issues/141) and [this PR](https://github.com/anthropics/claude-agent-sdk-python/pull/803) lands.
-[ ] simple side-by-side diff review (ediff is too heavy, and I just want something simpler)
-[ ] remote `run-agent` rebuild
