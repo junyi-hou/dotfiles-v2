@@ -89,40 +89,25 @@ Shows running agents for the project; selecting one focuses it, selecting \"new\
   (agent-shell-to-go-start-agent-function
    (lambda () (gatsby>agent-shell-launch nil t))))
 
+(gatsby>use-internal-package agent-workflows
+  :after agent-shell
+  :custom
+  (agent-workflows-agent-config
+   (gatsby>>agent-shell-build-config (car gatsby>agent-shell-configs)))
+  :config
+  (with-eval-after-load 'magit
+    (transient-append-suffix
+     'magit-commit #'magit-commit-create
+     '("g" "Create commit with claude-generated message" agent-workflows-commit)))
+
+  :evil-bind ((:maps normal) ("SPC a r" . #'agent-workflow-review)))
+
 (use-package agent-shell
   :ensure (:host github :repo "xenodium/agent-shell")
   :hook
   ((agent-shell-mode . corfu-mode)
    (agent-shell-mode . gatsby>>agent-shell-disable-scroll-after-submit))
   :init
-  (defun gatsby>>agent-shell-display-in-rightmost-frame (buffer alist)
-    "Display BUFFER as a right side window in the rightmost visible frame.
-Uses the current frame if its right edge is within half the rightmost
-frame's width of the rightmost right edge."
-    (let* ((frames
-            (seq-filter
-             (lambda (f)
-               (and (frame-visible-p f) (null (frame-parameter f 'parent-frame))))
-             (frame-list)))
-           (right-edge (lambda (f) (+ (car (frame-position f)) (frame-pixel-width f))))
-           (rightmost
-            (seq-reduce
-             (lambda (best f)
-               (if (or (null best) (> (funcall right-edge f) (funcall right-edge best)))
-                   f
-                 best))
-             frames nil))
-           (target
-            (if (and rightmost
-                     (<= (- (funcall right-edge rightmost)
-                            (funcall right-edge (selected-frame)))
-                         (/ (frame-pixel-width rightmost) 2)))
-                (selected-frame)
-              rightmost)))
-      (when target
-        (with-selected-frame target
-          (display-buffer-in-side-window buffer alist)))))
-
   (defun gatsby>>agent-shell-disable-scroll-after-submit (&rest _)
     "Sending prompt does not automatically scroll all the way to the bottom."
     (setq-local comint-scroll-show-maximum-output nil))
@@ -414,160 +399,6 @@ Returns non-nil if a button was found and activated."
             (agent-shell-previous-item))
         (agent-shell-previous-item))))
 
-  (defun gatsby>>agent-shell-last-text-output ()
-    "Return plain text of last agent-shell response, stripping fragment blocks.
-Must be called from within an agent-shell buffer."
-    (save-excursion
-      (goto-char (process-mark (get-buffer-process (current-buffer))))
-      (forward-line -1)
-      (agent-shell-previous-item)
-      (re-search-forward comint-prompt-regexp nil 'noerror)
-      (forward-line -1)
-      (let ((end (point))
-            (start
-             (progn
-               (text-property-search-backward 'agent-shell-ui-state)
-               (point))))
-        (let ((s (string-trim (buffer-substring-no-properties start end))))
-          (cond
-           ((string-match
-             "\\`[ \t\n]*```[a-zA-Z]*\n\\(\\(?:.\\|\n\\)*\\)```[ \t\n]*\\'" s)
-            (string-trim (match-string 1 s)))
-           ((string-match "\\``\\(\\(?:.\\|\n\\)*\\)`\\'" s)
-            (string-trim (match-string 1 s)))
-           (t
-            s))))))
-
-  (defun gatsby>>agent-shell-set-mode-id (mode-id &optional on-success)
-    "Set agent-shell session mode to MODE-ID without prompting.
-Must be called from within an agent-shell buffer."
-    (let ((state (agent-shell--state)))
-      (agent-shell--send-request
-       :state state
-       :client (map-elt state :client)
-       :request
-       (acp-make-session-set-mode-request
-        :session-id (map-nested-elt state '(:session :id))
-        :mode-id mode-id)
-       :buffer (current-buffer)
-       :on-success
-       (lambda (_)
-         (let ((session (map-elt (agent-shell--state) :session)))
-           (map-put! session :mode-id mode-id)
-           (map-put! (agent-shell--state) :session session))
-         (agent-shell--update-header-and-mode-line)
-         (when on-success
-           (funcall on-success)))
-       :on-failure (lambda (err _) (message "Failed to set mode to %s: %s" mode-id err)))))
-
-  (gatsby>defcommand gatsby>agent-shell-commit ()
-    "Automatically generate commit message for currently staged files."
-    (unless (magit-anything-staged-p)
-      (user-error "Nothing staged - can't generate commit message"))
-    (message "Generating commit message...")
-    (let*
-        ((existing-client (car (gatsby>>agent-shell-current-client 'available)))
-         (agent-shell-buffer
-          (or existing-client
-              (cl-letf (((symbol-function #'agent-shell--display-buffer) #'ignore))
-                (agent-shell--start
-                 :no-focus t
-                 :config
-                 (gatsby>>agent-shell-build-config (car gatsby>agent-shell-configs))
-                 :new-session t
-                 :session-strategy 'new))))
-         (proceed
-          (lambda ()
-            (with-current-buffer agent-shell-buffer
-              (let*
-                  ((original-mode-id
-                    (map-nested-elt (agent-shell--state) '(:session :mode-id)))
-                   (do-submit
-                    (lambda ()
-                      (with-current-buffer agent-shell-buffer
-                        (let ((turn-sub)
-                              (error-sub))
-                          (setq turn-sub
-                                (agent-shell-subscribe-to
-                                 :shell-buffer agent-shell-buffer
-                                 :event 'turn-complete
-                                 :on-event
-                                 (lambda (_event)
-                                   (agent-shell-unsubscribe :subscription turn-sub)
-                                   (agent-shell-unsubscribe :subscription error-sub)
-                                   (let ((output
-                                          (with-current-buffer agent-shell-buffer
-                                            (gatsby>>agent-shell-last-text-output))))
-                                     (with-current-buffer agent-shell-buffer
-                                       (when (and original-mode-id
-                                                  (not
-                                                   (string=
-                                                    original-mode-id "full-access")))
-                                         (gatsby>>agent-shell-set-mode-id
-                                          original-mode-id)))
-                                     (let ((tmpfile (make-temp-file "commit-msg")))
-                                       (with-temp-file tmpfile
-                                         (insert output))
-                                       (magit-run-git-with-editor
-                                        "commit" "--edit" "-F" tmpfile))))))
-                          (setq error-sub
-                                (agent-shell-subscribe-to
-                                 :shell-buffer agent-shell-buffer
-                                 :event 'error
-                                 :on-event
-                                 (lambda (event)
-                                   (agent-shell-unsubscribe :subscription turn-sub)
-                                   (agent-shell-unsubscribe :subscription error-sub)
-                                   (if (not existing-client)
-                                       (kill-buffer agent-shell-buffer)
-                                     (with-current-buffer agent-shell-buffer
-                                       (when (and original-mode-id
-                                                  (not
-                                                   (string=
-                                                    original-mode-id "full-access")))
-                                         (gatsby>>agent-shell-set-mode-id
-                                          original-mode-id))))
-                                   (let ((data (map-elt event :data)))
-                                     (user-error "Agent shell error: %s (code: %s)"
-                                                 (map-elt data :message)
-                                                 (map-elt data :code))))))
-                          (shell-maker-submit
-                           :input "generate a commit message for the currently staged changes"))))))
-                (if (string= original-mode-id "full-access")
-                    (funcall do-submit)
-                  (gatsby>>agent-shell-set-mode-id "full-access" do-submit)))))))
-      (if existing-client
-          (funcall proceed)
-        (let ((prompt-sub)
-              (error-sub))
-          (setq prompt-sub
-                (agent-shell-subscribe-to
-                 :shell-buffer agent-shell-buffer
-                 :event 'prompt-ready
-                 :on-event
-                 (lambda (_event)
-                   (agent-shell-unsubscribe :subscription prompt-sub)
-                   (agent-shell-unsubscribe :subscription error-sub)
-                   (funcall proceed))))
-          (setq error-sub
-                (agent-shell-subscribe-to
-                 :shell-buffer agent-shell-buffer
-                 :event 'error
-                 :on-event
-                 (lambda (event)
-                   (agent-shell-unsubscribe :subscription prompt-sub)
-                   (agent-shell-unsubscribe :subscription error-sub)
-                   (kill-buffer agent-shell-buffer)
-                   (let ((data (map-elt event :data)))
-                     (user-error "Agent shell error: %s (code: %s)"
-                                 (map-elt data :message)
-                                 (map-elt data :code))))))))))
-
-  (with-eval-after-load 'magit
-    (transient-append-suffix
-     'magit-commit #'magit-commit-create
-     '("g" "Create commit with claude-generated message" gatsby>agent-shell-commit)))
-
   (gatsby>defcommand gatsby>agent-shell-send-or-queue-prompt ()
     "Send the current prompt if the shell is available. Otherwise put it in the request queue."
     (if (agent-shell--active-requests-p (agent-shell--state))
@@ -575,8 +406,9 @@ Must be called from within an agent-shell buffer."
       (call-interactively #'shell-maker-submit)))
 
   :evil-bind
-  ((:maps normal)
-   ("SPC a r" . #'gatsby>run-agent-on-remote)
+  (
+   ;; (:maps normal)
+   ;; ("SPC a r" . #'gatsby>run-agent-on-remote)
    (:maps (visual normal))
    ("SPC a s" . #'agent-shell-send-file)
    (:maps agent-shell-mode-map :states insert)
