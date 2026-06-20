@@ -305,8 +305,7 @@ source into etc in build dir."
    github
    :repo "dakra/ghostel"
    :build (:after elpaca-build-link gatsby>>ghostel-install-other-files)
-   :files (:defaults (:exclude "etc" "src"))
-   :branch "evil-ghostel-rewrite")
+   :files (:defaults (:exclude "etc" "src")))
   :hook
   (ghostel-mode . gatsby>>ghostel-enable-line-mode)
   (ghostel-mode . corfu-mode)
