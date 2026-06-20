@@ -41,9 +41,10 @@ taplo = "*"
 typos-lsp = "*"
 codebook-lsp = "*"
 
+codex = "*"
+
 [feature.global.tasks]
-install-claude = "npm install -g @anthropic-ai/claude-code@2.1.140"
-install-acp = "npm install -g @agentclientprotocol/claude-agent-acp@0.33.1"
+install-acp = "bash scripts/install-acp.sh"
 
 [feature.global.pypi-dependencies]
 "rassumfrassum" = "*"
