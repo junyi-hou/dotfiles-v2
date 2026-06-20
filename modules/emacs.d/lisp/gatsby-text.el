@@ -7,8 +7,12 @@
 
 (use-package markdown-mode
   :ensure (:host github :repo "jrblevin/markdown-mode")
+  :init
+  (with-eval-after-load 'eglot
+    (add-to-list 'eglot-server-programs '(markdown-mode "harper" "-s")))
   :hook
   (markdown-mode . corfu-mode)
+  (markdown-mode . eglot-ensure)
   (markdown-mode . display-line-numbers-mode))
 
 (use-package typst-ts-mode
