@@ -14,6 +14,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/bzip2-1.0.8-hda65f42_9.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/c-ares-1.34.6-hb03c661_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/codebook-lsp-0.3.41-h56cd548_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/codex-0.141.0-hd9d1bb5_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/eza-0.23.4-hb17b654_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/fd-find-10.4.2-hdab8a38_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/gh-2.93.0-hfc2019e_0.conda
@@ -26,6 +27,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libbrotlicommon-1.2.0-hb03c661_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libbrotlidec-1.2.0-hb03c661_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libbrotlienc-1.2.0-hb03c661_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/libcap-2.78-hd0affe5_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libev-4.33-hd590300_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libexpat-2.8.1-hecca717_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libffi-3.5.2-h3435931_0.conda
@@ -70,6 +72,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/bzip2-1.0.8-hd037594_9.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/c-ares-1.34.6-hc919400_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/codebook-lsp-0.3.31-h2f8c113_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/codex-0.118.0-h855ebe5_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/eza-0.23.4-h8d80559_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/fd-find-10.3.0-h0ca00b2_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/gh-2.88.1-h01237fd_0.conda
@@ -516,6 +519,23 @@ packages:
   purls: []
   size: 7062157
   timestamp: 1779860468587
+- conda: https://conda.anaconda.org/conda-forge/linux-64/codex-0.141.0-hd9d1bb5_0.conda
+  sha256: c71d040b7a8573bc0ac393a74d485c30ef166646f6a744d1b7e5f88362eeaa55
+  md5: ed6522cbffc4f6cf0f85876a5ce25f29
+  depends:
+  - libgcc >=14
+  - libstdcxx >=14
+  - __glibc >=2.28,<3.0.a0
+  - libcap >=2.78,<2.79.0a0
+  - openssl >=3.5.7,<4.0a0
+  constrains:
+  - __glibc >=2.17
+  license: Apache-2.0
+  license_family: APACHE
+  purls: []
+  run_exports: {}
+  size: 240049136
+  timestamp: 1781783639672
 - conda: https://conda.anaconda.org/conda-forge/linux-64/debugpy-1.8.21-py314h42812f9_0.conda
   sha256: c16696b23e1d75b6eea7d0c8b9c31c03d1987eeb61852f09b6d4042ca015acd3
   md5: a7eb8029c4fe320c0179085707017c2d
@@ -701,6 +721,20 @@ packages:
   purls: []
   size: 298378
   timestamp: 1764017210931
+- conda: https://conda.anaconda.org/conda-forge/linux-64/libcap-2.78-hd0affe5_0.conda
+  sha256: cc8c9fc6ddf0fbd3d1275b558ae9abad6cda23bced268732e2da21a87bb358cd
+  md5: f9f17eab7f3df1c6fd4b1a548a2f683a
+  depends:
+  - __glibc >=2.17,<3.0.a0
+  - libgcc >=14
+  license: BSD-3-Clause
+  license_family: BSD
+  purls: []
+  run_exports:
+    weak:
+    - libcap >=2.78,<2.79.0a0
+  size: 124335
+  timestamp: 1775488792584
 - conda: https://conda.anaconda.org/conda-forge/linux-64/libedit-3.1.20250104-pl5321h7949ede_0.conda
   sha256: d789471216e7aba3c184cd054ed61ce3f6dac6f87a50ec69291b9297f8c18724
   md5: c277e0a4d549b03ac1e9d6cbbe3d017b
@@ -3511,6 +3545,21 @@ packages:
   purls: []
   size: 6281161
   timestamp: 1772147323575
+- conda: https://conda.anaconda.org/conda-forge/osx-arm64/codex-0.118.0-h855ebe5_0.conda
+  sha256: c6e1e5a815d84258d3729ab8b2b91dd742e6cc52e21ed501262013acabd7eb7e
+  md5: 577ba22486084f4d65db5f18a16ee47d
+  depends:
+  - libcxx >=19
+  - __osx >=11.0
+  - openssl >=3.5.5,<4.0a0
+  constrains:
+  - __osx >=11.0
+  license: Apache-2.0
+  license_family: APACHE
+  purls: []
+  run_exports: {}
+  size: 42199227
+  timestamp: 1774993000401
 - conda: https://conda.anaconda.org/conda-forge/osx-arm64/debugpy-1.8.17-py312h56d30c9_1.conda
   sha256: 3431eeb55a0cdebe5c474e37f6139fe5cc61e11198896ce1bb5f031d8e05d43f
   md5: 3f2f3b54819c308c3dc043539de044c2
