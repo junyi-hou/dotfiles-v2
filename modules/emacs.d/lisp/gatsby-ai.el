@@ -37,12 +37,23 @@ Shows running agents for the project; selecting one focuses it, selecting \"new\
                (gatsby>>agent-shell-current-client)))
              (picked
               (completing-read
-               "Current Agents: " `("new" ,@ (mapcar #'car collections)))))
-        (if (equal picked "new")
-            (gatsby>agent-shell-launch arg)
+               "Current Agents: "
+               `("new" "new (in a new worktree)" ,@ (mapcar #'car collections)))))
+
+        (cond
+         ((equal picked "new")
+          (gatsby>agent-shell-launch arg))
+         ((equal picked "new (in a new worktree)")
+          (cl-flet ((agent-shell
+                     (&rest _)
+                     (when (and (featurep 'envrc)
+                                (locate-dominating-file default-directory ".envrc"))
+                       (envrc-allow))
+                     (gatsby>agent-shell-launch arg)))))
+         (t
           (let ((shell (map-elt collections picked)))
             (select-window (display-buffer shell agent-shell-display-action))
-            (evil-insert-state))))
+            (evil-insert-state)))))
       (gatsby>agent-shell-launch arg)))
 
   :evil-bind
@@ -179,72 +190,6 @@ Returns the matching cons cell (NAME . PLIST)."
             (cl-find name gatsby>agent-shell-configs :test #'equal :key #'car))
         (cl-find (car names) gatsby>agent-shell-configs :test #'equal :key #'car))))
 
-  (defmacro gatsby>>agent-shell-maybe-worktree (&rest body)
-    "Execute BODY inside a fresh git worktree of if it has uncommitted changes.
-Falls through to run BODY directly when worktree isolation is not needed."
-    `(if (and
-          (agent-shell-worktree--git-repo-root)
-          (gatsby>>agent-shell-current-client)
-          (not
-           (string-empty-p
-            (string-trim
-             (shell-command-to-string "git status --porcelain | grep -v '^??'"))))
-          (y-or-n-p
-           "Uncommitted change detected in the current repo, create new worktree (C-g to cancel)? "))
-         (let* ((worktrees-dir (agent-shell--dot-subdir "worktrees"))
-                (worktree-path
-                 (expand-file-name (agent-shell-worktree--generate-name) worktrees-dir))
-                (base-sha (string-trim (shell-command-to-string "git rev-parse HEAD"))))
-           (when (file-exists-p worktree-path)
-             (user-error "Directory already exists: %s" worktree-path))
-           (make-directory (file-name-directory worktree-path) t)
-           (let ((output
-                  (shell-command-to-string
-                   (format "git worktree add %s 2>&1"
-                           (shell-quote-argument worktree-path)))))
-             (unless (file-exists-p worktree-path)
-               (user-error "Failed to create worktree: %s" output))
-             (let ((default-directory worktree-path))
-               (when (featurep 'envrc)
-                 (ignore-errors
-                   (envrc-allow)))
-               (let ((shell
-                      (progn
-                        ,@body)))
-                 (with-current-buffer shell
-                   (add-hook
-                    'kill-buffer-hook
-                    (lambda ()
-                      (let* ((default-directory worktree-path)
-                             (uncommitted
-                              (not
-                               (string-empty-p
-                                (string-trim
-                                 (shell-command-to-string "git status --porcelain")))))
-                             (unmerged
-                              (not
-                               (string-empty-p
-                                (string-trim
-                                 (shell-command-to-string
-                                  (format "git log %s..HEAD --oneline"
-                                          (shell-quote-argument base-sha))))))))
-                        (if (or (not (or uncommitted unmerged))
-                                (yes-or-no-p
-                                 (format "Worktree %s has %s. Remove anyway? "
-                                         worktree-path
-                                         (cond
-                                          ((and uncommitted unmerged)
-                                           "uncommitted and unmerged changes")
-                                          (unmerged
-                                           "unmerged commits")
-                                          (t
-                                           "uncommitted changes")))))
-                            (shell-command
-                             (format "git worktree remove --force %s"
-                                     (shell-quote-argument worktree-path)))
-                          (magit-status))))))))))
-       ,@body))
-
   (defun gatsby>>agent-shell-current-client (&optional available)
     "Return a list of agent-shell buffers belonging to the current project.
 If AVAILABLE is non-nil, exclude buffers that have active requests in flight."
@@ -277,12 +222,11 @@ without prompting."
             (if resume
                 'prompt
               'new)))
-      (gatsby>>agent-shell-maybe-worktree
-       (agent-shell--start
-        :no-focus nil
-        :config config
-        :new-session t
-        :session-strategy strategy))))
+      (agent-shell--start
+       :no-focus nil
+       :config config
+       :new-session t
+       :session-strategy strategy)))
 
   (defconst gatsby>run-agent-remote-hosts-cache-file
     (no-littering-expand-var-file-name "run-agent-remote-hosts.el")
