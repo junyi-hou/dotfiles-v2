@@ -20,12 +20,14 @@ install_build_deps() {
         echo "Using dnf..."
         sudo dnf install -y gcc make autoconf automake pkgconfig \
             gnutls-devel ncurses-devel libxml2-devel zlib-devel gmp-devel texinfo \
-            libtree-sitter-devel libgccjit-devel
+            libgccjit-devel
+        sudo dnf install -y tree-sitter-devel 2>/dev/null || echo "tree-sitter-devel not available, building without tree-sitter"
     elif command -v yum >/dev/null 2>&1; then
         echo "Using yum..."
         sudo yum install -y gcc make autoconf automake pkgconfig \
             gnutls-devel ncurses-devel libxml2-devel zlib-devel gmp-devel texinfo \
-            libtree-sitter-devel libgccjit-devel
+            libgccjit-devel
+        sudo yum install -y tree-sitter-devel 2>/dev/null || echo "tree-sitter-devel not available, building without tree-sitter"
     elif command -v pacman >/dev/null 2>&1; then
         echo "Using pacman..."
         sudo pacman -S --noconfirm gcc make autoconf automake pkgconfig \
@@ -67,6 +69,14 @@ rm -rf "$INSTALL_DIR"
 mkdir -p "$INSTALL_DIR"
 
 cd "$BUILD_TMPDIR/emacs-${EMACS_VERSION}"
+
+TREE_SITTER_FLAG=""
+if pkg-config --exists tree-sitter 2>/dev/null; then
+    TREE_SITTER_FLAG="--with-tree-sitter"
+else
+    echo "tree-sitter not found via pkg-config, building without tree-sitter support"
+fi
+
 ./configure \
     --prefix="$INSTALL_DIR" \
     --without-x \
@@ -84,7 +94,7 @@ cd "$BUILD_TMPDIR/emacs-${EMACS_VERSION}"
     --with-gnutls \
     --with-xml2 \
     --with-zlib \
-    --with-tree-sitter \
+    ${TREE_SITTER_FLAG} \
     --with-modules \
     --with-native-compilation=aot \
     LDFLAGS="-Wl,-rpath,${INSTALL_DIR}/lib"
