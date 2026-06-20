@@ -15,6 +15,7 @@ def parse_args():
     parser.add_argument("target", help="user@host")
     parser.add_argument("-p", "--port", type=int, default=22)
     parser.add_argument("-b", "--build", action="store_true")
+    parser.add_argument("-i", "--install", action="store_true")
     parser.add_argument("--use-local-copy", action="store_true")
     return parser.parse_args()
 
@@ -70,7 +71,19 @@ def remote_build(target: str, port: int):
             "-p",
             str(port),
             target,
-            f"cd {REMOTE_DOTFILES} && direnv allow && direnv exec {REMOTE_DOTFILES} make install && direnv exec {REMOTE_DOTFILES} make build",
+            f"cd {REMOTE_DOTFILES} && direnv allow && direnv exec {REMOTE_DOTFILES} make build",
+        ]
+    )
+
+
+def remote_install(target: str, port: int):
+    run(
+        [
+            "ssh",
+            "-p",
+            str(port),
+            target,
+            f"cd {REMOTE_DOTFILES} && direnv allow && direnv exec {REMOTE_DOTFILES} make install",
         ]
     )
 
@@ -84,8 +97,16 @@ def main():
     remote_clone(args.target, args.port, args.use_local_copy)
 
     if args.build:
+        # build implies install
+        print(f"Installing dotfiles on {args.target}...")
+        remote_install(args.target, args.port)
+
         print(f"Building dotfiles on {args.target}...")
         remote_build(args.target, args.port)
+
+    if args.install:
+        print(f"Installing dotfiles on {args.target}...")
+        remote_install(args.target, args.port)
 
     print("Done.")
 
