@@ -148,5 +148,5 @@ jobs:
 
       - name: Verify Claude installation
         run: |
-          claude --version
-          claude-agent-acp --version
+          codex --version
+          codex-acp --version
