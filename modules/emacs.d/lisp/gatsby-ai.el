@@ -114,8 +114,7 @@ Shows running agents for the project; selecting one focuses it, selecting \"new\
 
   :custom
   (agent-shell-display-action
-   '(gatsby>>agent-shell-display-in-rightmost-frame
-     (side . right) (window-width . 0.33) (slot . 0)))
+   '(display-buffer-in-side-window (side . right) (window-width . 0.33) (slot . 0)))
   (agent-shell-file-completion-enabled t)
   (agent-shell-session-strategy 'new)
   (agent-shell-mcp-servers
