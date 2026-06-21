@@ -63,6 +63,7 @@
 
 (declare-function magit-anything-staged-p "magit")
 (declare-function magit-run-git-with-editor "magit")
+(declare-function markdown-mode "markdown-mode")
 
 (defvar comint-prompt-regexp)
 (defvar-local agent-workflows-review--shell-buffer nil)
