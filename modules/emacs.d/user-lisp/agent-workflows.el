@@ -504,7 +504,7 @@ Must be called from within an agent-shell buffer."
         review-file
         "\n\nAfter writing the file, respond with a short confirmation only.")))))
 
-;;;autoload
+;;;###autoload
 (defun agent-workflows-commit ()
   "Generate a commit message for the currently staged files."
   (interactive)
@@ -515,7 +515,7 @@ Must be called from within an agent-shell buffer."
    (lambda (agent-shell-buffer)
      (agent-workflows--submit-commit-message agent-shell-buffer))))
 
-;;;autoload
+;;;###autoload
 (defun agent-workflows-review ()
   "Start a fresh agent shell for reviewing the current work."
   (interactive)
