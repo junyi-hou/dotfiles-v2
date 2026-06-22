@@ -433,11 +433,14 @@ Must be called from within an agent-shell buffer."
              (lambda (_event)
                (agent-shell-unsubscribe :subscription turn-sub)
                (agent-shell-unsubscribe :subscription error-sub)
-               (let ((output (agent-workflow--last-text-output)))
-                 (let ((tmpfile (make-temp-file "commit-msg")))
-                   (with-temp-file tmpfile
-                     (insert output))
-                   (magit-run-git-with-editor "commit" "--edit" "-F" tmpfile))))))
+               (unwind-protect
+                   (let ((output (agent-workflow--last-text-output)))
+                     (let ((tmpfile (make-temp-file "commit-msg")))
+                       (with-temp-file tmpfile
+                         (insert output))
+                       (magit-run-git-with-editor "commit" "--edit" "-F" tmpfile)))
+                 (when (buffer-live-p agent-shell-buffer)
+                   (kill-buffer agent-shell-buffer))))))
       (setq error-sub
             (agent-shell-subscribe-to
              :shell-buffer agent-shell-buffer
@@ -446,6 +449,8 @@ Must be called from within an agent-shell buffer."
              (lambda (event)
                (agent-shell-unsubscribe :subscription turn-sub)
                (agent-shell-unsubscribe :subscription error-sub)
+               (when (buffer-live-p agent-shell-buffer)
+                 (kill-buffer agent-shell-buffer))
                (let ((data (map-elt event :data)))
                  (user-error "Agent shell error: %s (code: %s)"
                              (map-elt data :message)
