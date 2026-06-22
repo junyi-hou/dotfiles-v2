@@ -143,7 +143,18 @@
 
 (defun agent-workflows--review-current-index ()
   "Return the zero-based finding index at point."
-  (or (get-text-property (point) 'agent-workflows-review-finding-index)
+  (or (cl-loop
+       for start in agent-workflows-review--positions
+       for next on (cdr agent-workflows-review--positions)
+       for index from 0
+       for end = (or (car next) (point-max))
+       when (and start (>= (point) start) (< (point) end))
+       return index)
+      (get-text-property (point) 'agent-workflows-review-finding-index)
+      (and (not (eobp))
+           (get-text-property (1+ (point)) 'agent-workflows-review-finding-index))
+      (and (> (point) (point-min))
+           (get-text-property (1- (point)) 'agent-workflows-review-finding-index))
       (user-error "No finding at point")))
 
 (defun agent-workflows--review-findings ()
@@ -396,7 +407,7 @@
              from
              0
              do
-             (push (copy-marker (point) t) agent-workflows-review--positions)
+             (push (copy-marker (point)) agent-workflows-review--positions)
              (agent-workflows--review-insert-finding finding index))
          (insert "No actionable findings.\n"))
         (setq-local agent-workflows-review--positions
