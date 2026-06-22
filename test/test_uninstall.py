@@ -130,6 +130,49 @@ def test_uninstall_removes_empty_dir():
         assert not install_dir.exists()
 
 
+def test_uninstall_removes_legacy_gitignore_symlink():
+    with tempfile.TemporaryDirectory() as tmp:
+        module_root = Path(tmp).resolve() / "modules"
+        module_dir = module_root / "mymod"
+        module_dir.mkdir(parents=True)
+        gitignore = module_dir / ".gitignore"
+        gitignore.write_text("ignored\n")
+        install_root = Path(tmp).resolve() / "home"
+        install_dir = install_root / ".mymod"
+        install_dir.mkdir(parents=True)
+        install_link = install_dir / ".gitignore"
+        install_link.symlink_to(gitignore)
+
+        with patch("scripts.uninstall.git_root", return_value=Path(tmp).resolve()):
+            with patch("scripts._lib.HOME", install_root):
+                uninstall(module_dir, dry_run=False)
+
+        assert not install_link.exists()
+        assert not install_dir.exists()
+
+
+def test_uninstall_removes_legacy_agent_shell_transcript_symlink():
+    with tempfile.TemporaryDirectory() as tmp:
+        module_root = Path(tmp).resolve() / "modules"
+        module_dir = module_root / "mymod"
+        module_dir.mkdir(parents=True)
+        transcript = module_dir / ".agent-shell" / "transcripts" / "session.md"
+        transcript.parent.mkdir(parents=True)
+        transcript.write_text("generated transcript\n")
+        install_root = Path(tmp).resolve() / "home"
+        install_dir = install_root / ".mymod" / ".agent-shell" / "transcripts"
+        install_dir.mkdir(parents=True)
+        install_link = install_dir / "session.md"
+        install_link.symlink_to(transcript)
+
+        with patch("scripts.uninstall.git_root", return_value=Path(tmp).resolve()):
+            with patch("scripts._lib.HOME", install_root):
+                uninstall(module_dir, dry_run=False)
+
+        assert not install_link.exists()
+        assert not install_dir.exists()
+
+
 def test_uninstall_folder_marker_removes_directory_symlink():
     with tempfile.TemporaryDirectory() as tmp:
         module_root = Path(tmp).resolve() / "modules"
