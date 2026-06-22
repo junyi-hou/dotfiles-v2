@@ -1,4 +1,5 @@
 import tempfile
+import subprocess
 from pathlib import Path
 from unittest.mock import patch
 from scripts.install import install
@@ -81,6 +82,61 @@ def test_install_directory_module():
         install_link = install_root / ".mymod" / "rc"
         assert install_link.is_symlink()
         assert install_link.resolve() == child_file.resolve()
+
+
+def test_install_directory_module_skips_gitignore():
+    with tempfile.TemporaryDirectory() as tmp:
+        module_root = Path(tmp).resolve() / "modules"
+        module_dir = module_root / "mymod"
+        module_dir.mkdir(parents=True)
+        child_file = module_dir / "rc"
+        child_file.touch()
+        gitignore = module_dir / ".gitignore"
+        gitignore.write_text("ignored\n")
+        install_root = Path(tmp).resolve() / "home"
+        install_root.mkdir()
+
+        with patch("scripts.install.git_root", return_value=Path(tmp).resolve()):
+            with patch("scripts._lib.HOME", install_root):
+                install(module_dir, dry_run=False)
+
+        install_link = install_root / ".mymod" / "rc"
+        skipped_link = install_root / ".mymod" / ".gitignore"
+        assert install_link.is_symlink()
+        assert install_link.resolve() == child_file.resolve()
+        assert not skipped_link.exists()
+
+
+def test_install_directory_module_skips_gitignored_paths():
+    with tempfile.TemporaryDirectory() as tmp:
+        repo_root = Path(tmp).resolve()
+        subprocess.run(["git", "init"], cwd=repo_root, check=True, capture_output=True)
+        (repo_root / ".gitignore").write_text("**/.agent-shell/\n*.elc\n")
+        module_root = repo_root / "modules"
+        module_dir = module_root / "mymod"
+        module_dir.mkdir(parents=True)
+        config_file = module_dir / "config.el"
+        config_file.touch()
+        transcript = module_dir / ".agent-shell" / "transcripts" / "session.md"
+        transcript.parent.mkdir(parents=True)
+        transcript.write_text("generated transcript\n")
+        compiled_file = module_dir / "generated.elc"
+        compiled_file.touch()
+        install_root = Path(tmp).resolve() / "home"
+        install_root.mkdir()
+
+        with patch("scripts.install.git_root", return_value=repo_root):
+            with patch("scripts._lib.HOME", install_root):
+                install(module_dir, dry_run=False)
+
+        install_link = install_root / ".mymod" / "config.el"
+        skipped_link = install_root / ".mymod" / ".agent-shell" / "transcripts" / "session.md"
+        skipped_compiled_link = install_root / ".mymod" / "generated.elc"
+        assert install_link.is_symlink()
+        assert install_link.resolve() == config_file.resolve()
+        assert not skipped_link.exists()
+        assert not skipped_link.parent.exists()
+        assert not skipped_compiled_link.exists()
 
 
 def test_install_folder_marker_symlinks_directory():
