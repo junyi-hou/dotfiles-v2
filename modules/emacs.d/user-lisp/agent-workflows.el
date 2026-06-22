@@ -154,6 +154,11 @@
   "Return the finding object at point."
   (nth (agent-workflows--review-current-index) (agent-workflows--review-findings)))
 
+(defun agent-workflows--review-index-for-finding (finding)
+  "Return the zero-based index for FINDING."
+  (or (cl-position finding (agent-workflows--review-findings) :test #'equal)
+      (user-error "Finding is not loaded in the current review buffer")))
+
 (defun agent-workflows--review-goto-index (index)
   "Jump to finding INDEX in the review buffer."
   (let ((pos (nth index agent-workflows-review--positions)))
@@ -163,6 +168,38 @@
     (beginning-of-line)
     (when (get-buffer-window (current-buffer))
       (recenter 0))))
+
+(defun agent-workflows--review-finding-end (index)
+  "Return the buffer position where finding INDEX ends."
+  (or (nth (1+ index) agent-workflows-review--positions)
+      (point-max)))
+
+(defun agent-workflows--review-delete-fix-output (index)
+  "Delete existing fix output for finding INDEX, if present."
+  (save-excursion
+    (let ((end (agent-workflows--review-finding-end index))
+          (marker (format "<!-- agent-workflows-fix-output:%s -->" index)))
+      (goto-char (nth index agent-workflows-review--positions))
+      (when (search-forward marker end t)
+        (let ((start (line-beginning-position)))
+          (goto-char end)
+          (delete-region start (point)))))))
+
+(defun agent-workflows--review-set-fix-output (review-buffer index output)
+  "Set fixing OUTPUT for finding INDEX in REVIEW-BUFFER."
+  (when (buffer-live-p review-buffer)
+    (with-current-buffer review-buffer
+      (let ((inhibit-read-only t))
+        (save-excursion
+          (agent-workflows--review-delete-fix-output index)
+          (goto-char (agent-workflows--review-finding-end index))
+          (unless (bolp)
+            (insert "\n"))
+          (insert
+           (format
+            "\n<!-- agent-workflows-fix-output:%s -->\n#### Fix output\n\n%s\n"
+            index
+            (string-trim output))))))))
 
 (defun agent-workflows-review-next ()
   "Jump to the next finding."
@@ -194,20 +231,54 @@
 
 (defun agent-workflows--review-fix-finding (finding)
   "Submit a fix request for FINDING using the stored shell buffer."
-  (let ((shell-buffer agent-workflows-review--shell-buffer))
+  (let ((review-buffer (current-buffer))
+        (finding-index (agent-workflows--review-index-for-finding finding))
+        (shell-buffer agent-workflows-review--shell-buffer))
     (unless (and shell-buffer (buffer-live-p shell-buffer))
       (user-error "Review shell buffer is no longer available"))
+    (agent-workflows--review-set-fix-output
+     review-buffer finding-index "Fix request submitted; waiting for agent output...")
     (with-current-buffer shell-buffer
-      (shell-maker-submit
-       :input
-       (concat
-        "Fix this review finding in the current worktree.\n\n"
-        "Finding:\n"
-        (alist-get 'heading finding)
-        "\n"
-        (or (alist-get 'body finding) "")
-        "\n\n"
-        "Make the smallest correct change. Return a short summary of the change."))))
+      (let ((turn-sub nil)
+            (error-sub nil))
+        (setq turn-sub
+              (agent-shell-subscribe-to
+               :shell-buffer shell-buffer
+               :event 'turn-complete
+               :on-event
+               (lambda (_event)
+                 (agent-shell-unsubscribe :subscription turn-sub)
+                 (agent-shell-unsubscribe :subscription error-sub)
+                 (agent-workflows--review-set-fix-output
+                  review-buffer
+                  finding-index
+                  (agent-workflow--last-text-output)))))
+        (setq error-sub
+              (agent-shell-subscribe-to
+               :shell-buffer shell-buffer
+               :event 'error
+               :on-event
+               (lambda (event)
+                 (agent-shell-unsubscribe :subscription turn-sub)
+                 (agent-shell-unsubscribe :subscription error-sub)
+                 (let ((data (map-elt event :data)))
+                   (agent-workflows--review-set-fix-output
+                    review-buffer
+                    finding-index
+                    (format
+                     "Agent shell error: %s (code: %s)"
+                     (map-elt data :message)
+                     (map-elt data :code)))))))
+        (shell-maker-submit
+         :input
+         (concat
+          "Fix this review finding in the current worktree.\n\n"
+          "Finding:\n"
+          (alist-get 'heading finding)
+          "\n"
+          (or (alist-get 'body finding) "")
+          "\n\n"
+          "Make the smallest correct change. Return a short summary of the change.")))))
   (message "Submitted fix request"))
 
 (defun agent-workflows-review-fix ()
@@ -234,8 +305,8 @@
   header-line-format "n/p: next/prev finding  RET/o: open source  f: fix  q: quit"))
 
 (let ((map agent-workflows-review-mode-map))
-  (define-key map [remap next-line] #'agent-workflows-review-next)
-  (define-key map [remap previous-line] #'agent-workflows-review-prev)
+  (define-key map (kbd "n") #'agent-workflows-review-next)
+  (define-key map (kbd "p") #'agent-workflows-review-prev)
   (define-key map (kbd "f") #'agent-workflows-review-fix)
   (define-key map (kbd "RET") #'agent-workflows-review-open-source)
   (define-key map (kbd "o") #'agent-workflows-review-open-source)
@@ -325,7 +396,7 @@
              from
              0
              do
-             (push (point) agent-workflows-review--positions)
+             (push (copy-marker (point) t) agent-workflows-review--positions)
              (agent-workflows--review-insert-finding finding index))
          (insert "No actionable findings.\n"))
         (setq-local agent-workflows-review--positions
