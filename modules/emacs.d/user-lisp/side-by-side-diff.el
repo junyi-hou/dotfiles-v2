@@ -19,6 +19,12 @@
 
 (declare-function magit-current-section "magit-section")
 (declare-function magit-section-lineage "magit-section")
+(declare-function agent-shell-diff-accept-all "agent-shell-diff")
+(declare-function agent-shell-diff-reject-all "agent-shell-diff")
+(declare-function agent-shell-diff-open-file "agent-shell-diff")
+
+(defvar agent-shell-diff-mode-map)
+(defvar ssdf-agent-shell-mode)
 
 ;;;; Customization
 
@@ -128,6 +134,12 @@ Nil when the diff cannot be regenerated (e.g. static diff-mode buffer).")
 
 (defvar-local ssdf--dim-overlays nil
   "Overlays covering non-current hunk lines.")
+
+(defvar-local ssdf--agent-shell-diff-buffer nil
+  "Agent-shell diff buffer backing this side-by-side display.")
+
+(defvar-local ssdf--agent-shell-raw-diff nil
+  "Raw unified diff generated for an agent-shell diff buffer.")
 
 
 ;;;; Data structure
@@ -567,6 +579,159 @@ context adjustment via `ssdf-increase-context' / `ssdf-decrease-context'."
   (unless (derived-mode-p 'diff-mode)
     (user-error "Not in a diff-mode buffer"))
   (ssdf-display-diff (buffer-substring-no-properties (point-min) (point-max))))
+
+;;;; Agent-shell integration
+
+(defun ssdf--agent-shell-diff-label (file prefix)
+  "Return a diff label for FILE with PREFIX."
+  (concat prefix (or file "file")))
+
+(defun ssdf--agent-shell-diff-text (old new file)
+  "Return a git-shaped unified diff between OLD and NEW for FILE."
+  (let* ((suffix (when-let* ((ext (and file (file-name-extension file))))
+                   (concat "." ext)))
+         (old-file (make-temp-file "ssdf-old" nil suffix))
+         (new-file (make-temp-file "ssdf-new" nil suffix))
+         (display-file (or file "file")))
+    (unwind-protect
+        (progn
+          (with-temp-file old-file (insert old))
+          (with-temp-file new-file (insert new))
+          (with-temp-buffer
+            (let ((status (process-file
+                           "diff" nil t nil
+                           "-u"
+                           "-L" (ssdf--agent-shell-diff-label display-file "a/")
+                           "-L" (ssdf--agent-shell-diff-label display-file "b/")
+                           old-file new-file)))
+              (unless (memq status '(0 1))
+                (user-error "diff failed with status %s" status)))
+            (concat "diff --git "
+                    (ssdf--agent-shell-diff-label display-file "a/")
+                    " "
+                    (ssdf--agent-shell-diff-label display-file "b/")
+                    "\n"
+                    (buffer-string))))
+      (ignore-errors (delete-file old-file))
+      (ignore-errors (delete-file new-file)))))
+
+(defun ssdf--agent-shell-insert-diff (old new file buf)
+  "Insert an agent-shell diff into BUF and cache its SSDF input.
+This replaces `agent-shell-diff--insert-diff' while
+`ssdf-agent-shell-mode' is enabled."
+  (let ((diff-text (ssdf--agent-shell-diff-text old new file)))
+    (with-current-buffer buf
+      (setq-local ssdf--agent-shell-raw-diff diff-text)
+      ;; `agent-shell-diff' removes the first and last lines after insertion,
+      ;; matching the command/status lines inserted by `diff-no-select'.
+      (insert (format "Diff command: diff -u %s\n" (or file "file")))
+      (insert (replace-regexp-in-string "\\`diff --git [^\n]*\n" "" diff-text))
+      (insert "Diff finished.\n"))))
+
+(defun ssdf--agent-shell-run (command)
+  "Run agent-shell diff COMMAND in the backing diff buffer."
+  (let ((buf ssdf--agent-shell-diff-buffer))
+    (unless (buffer-live-p buf)
+      (user-error "Agent-shell diff buffer is no longer live"))
+    (with-current-buffer buf
+      (call-interactively command))
+    (unless (buffer-live-p buf)
+      (ssdf-quit))))
+
+(defun ssdf-agent-shell-accept-all ()
+  "Accept the backing agent-shell diff and close the side-by-side view."
+  (interactive)
+  (ssdf--agent-shell-run #'agent-shell-diff-accept-all))
+
+(defun ssdf-agent-shell-reject-all ()
+  "Reject the backing agent-shell diff and close the side-by-side view."
+  (interactive)
+  (ssdf--agent-shell-run #'agent-shell-diff-reject-all))
+
+(defun ssdf-agent-shell-open-file ()
+  "Open the file associated with the backing agent-shell diff."
+  (interactive)
+  (ssdf--agent-shell-run #'agent-shell-diff-open-file))
+
+(defun ssdf--agent-shell-mode-map ()
+  "Return a local SSDF keymap derived from `agent-shell-diff-mode-map'."
+  (let ((map (copy-keymap agent-shell-diff-mode-map)))
+    (substitute-key-definition
+     #'agent-shell-diff-accept-all #'ssdf-agent-shell-accept-all map)
+    (substitute-key-definition
+     #'agent-shell-diff-reject-all #'ssdf-agent-shell-reject-all map)
+    (substitute-key-definition
+     #'agent-shell-diff-open-file #'ssdf-agent-shell-open-file map)
+    (substitute-key-definition 'diff-hunk-next #'ssdf-next-hunk map)
+    (substitute-key-definition 'diff-hunk-prev #'ssdf-prev-hunk map)
+    (substitute-key-definition #'kill-current-buffer #'ssdf-quit map)
+    (substitute-key-definition #'kill-buffer-and-window #'ssdf-quit map)
+    (set-keymap-parent map ssdf-mode-map)
+    map))
+
+(defun ssdf--agent-shell-setup-buffer (buf diff-buffer)
+  "Configure SSDF BUF to proxy commands to DIFF-BUFFER."
+  (when (buffer-live-p buf)
+    (with-current-buffer buf
+      (setq-local ssdf--agent-shell-diff-buffer diff-buffer
+                  header-line-format
+                  (and (buffer-live-p diff-buffer)
+                       (buffer-local-value 'header-line-format diff-buffer)))
+      (use-local-map (ssdf--agent-shell-mode-map)))))
+
+(defun ssdf--agent-shell-display (diff-buffer)
+  "Display DIFF-BUFFER with SSDF when it has cached agent-shell diff text."
+  (when (buffer-live-p diff-buffer)
+    (when-let* ((diff-text (buffer-local-value 'ssdf--agent-shell-raw-diff
+                                               diff-buffer)))
+      (ssdf-display-diff diff-text)
+      (ssdf--agent-shell-setup-buffer (get-buffer ssdf--left-name) diff-buffer)
+      (ssdf--agent-shell-setup-buffer (get-buffer ssdf--right-name) diff-buffer))))
+
+(defun ssdf--agent-shell-diff-around (orig &rest args)
+  "Display `agent-shell-diff' results with SSDF after ORIG handles setup."
+  (let ((window-config (current-window-configuration))
+        (diff-buffer (apply orig args)))
+    (when (and ssdf-agent-shell-mode
+               (buffer-live-p diff-buffer)
+               (buffer-local-value 'ssdf--agent-shell-raw-diff diff-buffer))
+      (condition-case err
+          (progn
+            (set-window-configuration window-config)
+            (ssdf--agent-shell-display diff-buffer))
+        (error
+         (message "ssdf-agent-shell: %s" (error-message-string err))
+         (pop-to-buffer diff-buffer))))
+    diff-buffer))
+
+(defun ssdf--agent-shell-enable ()
+  "Enable SSDF advice for agent-shell diffs."
+  (unless (advice-member-p
+           #'ssdf--agent-shell-insert-diff 'agent-shell-diff--insert-diff)
+    (advice-add
+     'agent-shell-diff--insert-diff
+     :override #'ssdf--agent-shell-insert-diff))
+  (unless (advice-member-p #'ssdf--agent-shell-diff-around 'agent-shell-diff)
+    (advice-add
+     'agent-shell-diff
+     :around #'ssdf--agent-shell-diff-around)))
+
+(defun ssdf--agent-shell-disable ()
+  "Disable SSDF advice for agent-shell diffs."
+  (advice-remove 'agent-shell-diff--insert-diff #'ssdf--agent-shell-insert-diff)
+  (advice-remove 'agent-shell-diff #'ssdf--agent-shell-diff-around))
+
+;;;###autoload
+(define-minor-mode ssdf-agent-shell-mode
+  "Display `agent-shell-diff' buffers as side-by-side SSDF views."
+  :global t
+  :group 'side-by-side-diff
+  (if ssdf-agent-shell-mode
+      (with-eval-after-load 'agent-shell-diff
+        (when ssdf-agent-shell-mode
+          (ssdf--agent-shell-enable)))
+    (when (featurep 'agent-shell-diff)
+      (ssdf--agent-shell-disable))))
 
 (defun ssdf--magit-staged-p ()
   "Return non-nil if the current magit context refers to staged changes.
