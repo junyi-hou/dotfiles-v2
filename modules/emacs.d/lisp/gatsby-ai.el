@@ -90,17 +90,19 @@ Shows running agents for the project; selecting one focuses it, selecting \"new\
    (lambda () (gatsby>agent-shell-launch nil t))))
 
 (gatsby>use-internal-package agent-workflows
-  :after agent-shell
-  :custom
-  (agent-workflows-agent-config
-   (gatsby>>agent-shell-build-config (car gatsby>agent-shell-configs)))
-  :config
+  :commands (agent-workflows-commit agent-workflows-review)
+  :init
   (with-eval-after-load 'magit
     (transient-append-suffix
      'magit-commit #'magit-commit-create
      '("g" "Create commit with claude-generated message" agent-workflows-commit)))
 
-  :evil-bind ((:maps normal) ("SPC a r" . #'agent-workflow-review)))
+  :config
+  (require 'agent-shell)
+  (setq agent-workflows-agent-config
+        (gatsby>>agent-shell-build-config (car gatsby>agent-shell-configs)))
+
+  :evil-bind ((:maps normal) ("SPC a r" . #'agent-workflows-review)))
 
 (use-package agent-shell
   :ensure (:host github :repo "xenodium/agent-shell")
