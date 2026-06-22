@@ -295,85 +295,11 @@ Returns non-nil if a button was found and activated."
     (when (gatsby>>agent-shell-pending-permission-p)
       (gatsby>>agent-shell-activate-permission-button "!")))
 
-  (defvar-local gatsby>>agent-shell-diff-file nil
-    "Original file name for the current agent-shell diff buffer.")
-
-  (defun gatsby>>agent-shell-diff-store-file (_old _new file buf)
-    (when (featurep 'side-by-side-diff)
-      (with-current-buffer buf
-        (setq-local gatsby>>agent-shell-diff-file file))))
-
-  (advice-add
-   'agent-shell-diff--insert-diff
-   :after #'gatsby>>agent-shell-diff-store-file)
-
-  (defun gatsby>>agent-shell-diff-buf-p (buf)
-    "Return non-nil if BUF is an agent-shell-generated diff buffer."
-    (with-current-buffer buf
-      (and (derived-mode-p 'diff-mode)
-           (not (string-prefix-p "*ssdf-" (buffer-name buf)))
-           (not (derived-mode-p 'magit-diff-mode)))))
-
-  (defun gatsby>>ssdf-agent-shell-do (action)
-    "Run ACTION on the background agent-shell diff buffer, then quit ssdf."
-    (when-let* ((buf (seq-find #'gatsby>>agent-shell-diff-buf-p (buffer-list))))
-      (with-current-buffer buf
-        (funcall action)))
-    (ssdf-quit))
-
-  (gatsby>defcommand gatsby>>ssdf-agent-shell-accept ()
-    "Accept the pending agent-shell diff and quit ssdf."
-    (gatsby>>ssdf-agent-shell-do #'agent-shell-diff-accept-all))
-
-  (gatsby>defcommand gatsby>>ssdf-agent-shell-reject ()
-    "Reject the pending agent-shell diff and quit ssdf."
-    (gatsby>>ssdf-agent-shell-do #'agent-shell-diff-reject-all))
-
-  (defun gatsby>>ssdf-setup-agent-shell-keybindings (&rest _)
-    "Wire accept/reject keys in ssdf buffers after opening from a diff buffer."
-    (dolist (ssdf-buf (list (get-buffer ssdf--left-name) (get-buffer ssdf--right-name)))
-      (when ssdf-buf
-        (with-current-buffer ssdf-buf
-          (evil-local-set-key 'motion (kbd "y") #'gatsby>>ssdf-agent-shell-accept)
-          (evil-local-set-key
-           'motion (kbd "C-c C-c") #'gatsby>>ssdf-agent-shell-reject)))))
-
-  (with-eval-after-load 'side-by-side-diff
-    (advice-add
-     'ssdf-from-diff-buffer
-     :after #'gatsby>>ssdf-setup-agent-shell-keybindings))
-
   (gatsby>defcommand gatsby>agent-shell-permission-view-diff ()
     "View diff (v) if pending permission with diff, else enter visual mode."
     (if (and (gatsby>>agent-shell-pending-permission-p)
              (gatsby>>agent-shell-activate-permission-button "v"))
-        (when (featurep 'side-by-side-diff)
-          (let ((pre-config (current-window-configuration)))
-            (when-let* ((buf (seq-find #'gatsby>>agent-shell-diff-buf-p (buffer-list))))
-              (let* ((file
-                      (or (buffer-local-value 'gatsby>>agent-shell-diff-file buf)
-                          "file"))
-                     (diff-text
-                      (with-current-buffer buf
-                        (buffer-substring-no-properties (point-min) (point-max)))))
-                (set-window-configuration pre-config)
-                (when-let* ((main-win
-                             (seq-find
-                              (lambda (w)
-                                (not (window-parameter w 'window-side)))
-                              (window-list))))
-                  (select-window main-win))
-                (ssdf-display-diff
-                 (concat "diff --git a/" file " b/" file "\n" diff-text))
-                (dolist (ssdf-buf
-                         (list
-                          (get-buffer ssdf--left-name) (get-buffer ssdf--right-name)))
-                  (when ssdf-buf
-                    (with-current-buffer ssdf-buf
-                      (evil-local-set-key
-                       'motion (kbd "y") #'gatsby>>ssdf-agent-shell-accept)
-                      (evil-local-set-key
-                       'motion (kbd "C-c C-c") #'gatsby>>ssdf-agent-shell-reject))))))))
+        nil
       (call-interactively #'evil-visual-char)))
 
   (gatsby>defcommand gatsby>agent-shell-next-prompt-or-permission ()
