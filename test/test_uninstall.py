@@ -128,3 +128,21 @@ def test_uninstall_removes_empty_dir():
                 uninstall(module_dir, dry_run=False)
 
         assert not install_dir.exists()
+
+
+def test_uninstall_folder_marker_removes_directory_symlink():
+    with tempfile.TemporaryDirectory() as tmp:
+        module_root = Path(tmp).resolve() / "modules"
+        module_dir = module_root / "mymod"
+        module_dir.mkdir(parents=True)
+        (module_dir / ".install-folder").touch()
+        install_root = Path(tmp).resolve() / "home"
+        install_root.mkdir()
+        install_link = install_root / ".mymod"
+        install_link.symlink_to(module_dir)
+
+        with patch("scripts.uninstall.git_root", return_value=Path(tmp).resolve()):
+            with patch("scripts._lib.HOME", install_root):
+                uninstall(module_dir, dry_run=False)
+
+        assert not install_link.exists()
