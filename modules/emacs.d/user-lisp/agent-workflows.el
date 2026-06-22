@@ -30,7 +30,7 @@
   :group 'agent-workflows)
 
 (defcustom agent-workflows-commit-message-prompt
-  "generate a commit message for the currently staged changes"
+  "use commit-message skill to generate a commit message for the currently staged changes"
   "Prompt used to generate a commit message."
   :type 'string
   :group 'agent-workflows)
