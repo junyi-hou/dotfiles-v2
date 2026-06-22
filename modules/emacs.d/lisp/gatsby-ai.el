@@ -132,7 +132,7 @@ Shows running agents for the project; selecting one focuses it, selecting \"new\
     `(("codex" .
        (:base
         gatsby>>agent-shell-codex-config
-        :default-model-id (lambda (&rest _) "gpt-5.4-mini")
+        :default-model-id (lambda (&rest _) "gpt-5.5")
         :default-session-mode-id (lambda (&rest _) "full-access"))))
     "Alist of named agent-shell configuration profiles.
 Each entry is (NAME . PLIST) where NAME is a string identifier and PLIST
