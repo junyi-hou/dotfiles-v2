@@ -39,7 +39,8 @@ jobs:
       - name: Verify Emacs installation
         run: |
           $HOME/.local/bin/emacs --version
-          test -L "$HOME/.local/bin/emacsclient"
+          test -x "$HOME/.local/bin/emacsclient"
+          $HOME/.local/bin/emacsclient --version
 
       - name: Run Emacs tests
         run: make test-emacs
