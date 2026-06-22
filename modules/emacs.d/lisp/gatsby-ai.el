@@ -91,6 +91,9 @@ Shows running agents for the project; selecting one focuses it, selecting \"new\
 
 (gatsby>use-internal-package agent-workflows
   :commands (agent-workflows-commit agent-workflows-review)
+  :hook
+  (agent-workflows-review-mode
+   . (lambda () (gatsby>>put-mode-to-evil-state 'agent-workflows-review-mode 'motion)))
   :init
   (with-eval-after-load 'magit
     (transient-append-suffix
@@ -102,7 +105,16 @@ Shows running agents for the project; selecting one focuses it, selecting \"new\
   (setq agent-workflows-agent-config
         (gatsby>>agent-shell-build-config (car gatsby>agent-shell-configs)))
 
-  :evil-bind ((:maps normal) ("SPC a r" . #'agent-workflows-review)))
+  :evil-bind
+  ((:maps normal)
+   ("SPC a r" . #'agent-workflows-review)
+   (:maps agent-workflows-review-mode-map :states (normal motion))
+   ("n" . #'agent-workflows-review-next)
+   ("p" . #'agent-workflows-review-prev)
+   ("f" . #'agent-workflows-review-fix)
+   ("RET" . #'agent-workflows-review-open-source)
+   ("o" . #'agent-workflows-review-open-source)
+   ("q" . #'quit-window)))
 
 (use-package agent-shell
   :ensure (:host github :repo "xenodium/agent-shell")
