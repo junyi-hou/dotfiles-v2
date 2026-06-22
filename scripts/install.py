@@ -4,6 +4,7 @@ import argparse
 import atexit
 import json
 import logging
+import subprocess
 from pathlib import Path
 from typing import cast
 from dataclasses import dataclass, field
@@ -16,10 +17,28 @@ AVAILABLE_MODULES: list[str] = [
 ]
 
 INSTALL_FOLDER_MARKER = ".install-folder"
+SKIPPED_INSTALL_FILES = {".gitignore"}
 
 
 def should_install_folder(module: Path) -> bool:
     return module.is_dir() and (module / INSTALL_FOLDER_MARKER).exists()
+
+
+def is_git_ignored(path: Path, repo_root: Path) -> bool:
+    result = subprocess.run(
+        ["git", "check-ignore", "--no-index", "--quiet", str(path.relative_to(repo_root))],
+        cwd=repo_root,
+        check=False,
+        stderr=subprocess.DEVNULL,
+    )
+    return result.returncode == 0
+
+
+def should_skip_install(module: Path, repo_root: Path) -> bool:
+    if module.name in SKIPPED_INSTALL_FILES:
+        return True
+
+    return is_git_ignored(module, repo_root)
 
 
 def install(module: str | Path, *, dry_run: bool = True, state: dict[str, float] | None = None) -> None:
@@ -27,10 +46,15 @@ def install(module: str | Path, *, dry_run: bool = True, state: dict[str, float]
     Install MODULE by symlinking it to the corresponding position in the current user's $HOME directory.
     If MODULE is an immediate child of the repo root, symlink it to its target location.
     """
-    module_root = git_root(__file__) / "modules"
+    repo_root = git_root(__file__)
+    module_root = repo_root / "modules"
 
     if isinstance(module, str):
         module = module_root / module
+
+    if should_skip_install(module, repo_root):
+        logger.debug(f"Skipping {module.relative_to(module_root)}")
+        return
 
     # deal with symlinks
     if module.is_symlink():
