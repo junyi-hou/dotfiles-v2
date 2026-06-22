@@ -125,7 +125,16 @@ Shows running agents for the project; selecting one focuses it, selecting \"new\
       (headers
        .
        (((name . "CONTEXT7_API_KEY")
-         (value . ,(sops-get-secret-try-env-variable "env/CONTEXT7_API_KEY"))))))))
+         (value . ,(sops-get-secret-try-env-variable "env/CONTEXT7_API_KEY"))))))
+     ((name . "github")
+      (type . "http") (url . "https://api.githubcopilot.com/mcp/")
+      (headers
+       .
+       (((name . "Authorization")
+         (value
+          .
+          ,(format "Bearer %s"
+                   (sops-get-secret-try-env-variable "env/GITHUB_PAT_KEY")))))))))
 
   :config
   (defcustom gatsby>agent-shell-configs
