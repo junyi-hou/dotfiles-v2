@@ -343,7 +343,7 @@ interactively select a single test to run instead."
 (gatsby>use-internal-package side-by-side-diff
   :hook
   (ssdf-mode . (lambda () (gatsby>>put-mode-to-evil-state 'ssdf-mode 'motion)))
-  (agent-shell-mode . ssdf-agent-shell-mode)
+  (agent-shell-mode . (lambda () (ssdf-agent-shell-mode 1)))
   :evil-bind
   ((:maps ssdf-mode-map :states motion)
    (">" . #'ssdf-next-hunk)

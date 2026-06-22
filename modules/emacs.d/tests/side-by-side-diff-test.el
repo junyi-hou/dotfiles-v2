@@ -166,6 +166,17 @@ Prints the ANSI-stripped fixture content so test output shows what is being test
    (ssdf-prev-file)
    (should (looking-at "=== b.el ==="))))
 
+;;; ssdf-agent-shell-mode
+
+(ert-deftest ssdf-agent-shell-mode--explicit-enable-is-idempotent ()
+  (unwind-protect
+      (progn
+        (ssdf-agent-shell-mode -1)
+        (ssdf-agent-shell-mode 1)
+        (ssdf-agent-shell-mode 1)
+        (should ssdf-agent-shell-mode))
+    (ssdf-agent-shell-mode -1)))
+
 ;;; ssdf--hunk-bounds
 
 (ert-deftest ssdf--hunk-bounds--at-hunk-header ()
