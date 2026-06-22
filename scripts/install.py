@@ -15,6 +15,12 @@ AVAILABLE_MODULES: list[str] = [
     m.name for m in (git_root(__file__) / "modules").iterdir()
 ]
 
+INSTALL_FOLDER_MARKER = ".install-folder"
+
+
+def should_install_folder(module: Path) -> bool:
+    return module.is_dir() and (module / INSTALL_FOLDER_MARKER).exists()
+
 
 def install(module: str | Path, *, dry_run: bool = True, state: dict[str, float] | None = None) -> None:
     """
@@ -37,6 +43,7 @@ def install(module: str | Path, *, dry_run: bool = True, state: dict[str, float]
     relative_path = module.relative_to(module_root)
     install_path = get_target_path(relative_path)
     backup_path = get_backup_path(install_path)
+    install_folder = should_install_folder(module)
 
     logger.debug(f"Installing {relative_path} ...")
 
@@ -45,11 +52,11 @@ def install(module: str | Path, *, dry_run: bool = True, state: dict[str, float]
             logger.debug(f"{relative_path} already installed, skipping")
             return
 
-        if not install_path.is_dir():
+        if install_folder or not install_path.is_dir():
             logger.debug(f"{install_path} exists, moving...")
             move(install_path, backup_path, dry_run)
 
-    if module.is_file():
+    if module.is_file() or install_folder:
         symlink(module, install_path, dry_run)
         if state is not None and str(relative_path) in state:
             logger.debug(f"{relative_path} reinstalled, no changes")

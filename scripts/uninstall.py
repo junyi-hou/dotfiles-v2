@@ -13,6 +13,12 @@ from ._lib import logger, git_root, move, get_backup_path, get_target_path, remo
 
 AVAILABLE_MODULES: list[str] = [m.name for m in (git_root(__file__) / "modules").iterdir()]
 
+INSTALL_FOLDER_MARKER = ".install-folder"
+
+
+def should_install_folder(module: Path) -> bool:
+    return module.is_dir() and (module / INSTALL_FOLDER_MARKER).exists()
+
 
 def uninstall(module: str | Path, *, dry_run: bool = True, state: dict[str, float] | None = None) -> None:
     """
@@ -37,11 +43,13 @@ def uninstall(module: str | Path, *, dry_run: bool = True, state: dict[str, floa
     relative_path = module.relative_to(module_root)
     install_path = get_target_path(relative_path)
     backup_path = get_backup_path(install_path)
+    install_folder = should_install_folder(module)
 
     logger.debug(f"Uninstalling {relative_path} ...")
 
-    if module.is_file():
-        # if module is file, install_path must be symlink
+    if module.is_file() or install_folder:
+        # If this module installs as one filesystem entry, the target must be
+        # the symlink we created.
         # make sure that install_path is what we have installed!
         if install_path.is_symlink() and install_path.resolve() == module:
             if state is not None:
