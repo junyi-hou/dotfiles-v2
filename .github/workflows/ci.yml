@@ -78,13 +78,23 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+      - name: Install direnv
+        run: |
+          if command -v apt-get &>/dev/null; then
+            sudo apt-get install -y direnv
+          else
+            brew install direnv
+          fi
+
+      - name: Load environment variables
+        run: |
+          direnv allow .
+          direnv export gha > "$GITHUB_ENV"
+          # .envrc only activates 'dev'; also add 'all' for Node.js
+          echo "$PWD/.pixi/envs/all/bin" >> "$GITHUB_PATH"
 
       - name: Run dotfiles install script
-        run: python -m scripts.install
+        run: make install
 
       - name: Verify dotfiles installation
         run: |
@@ -121,7 +131,7 @@ jobs:
       - name: Verify Java installation
         run: .tools/java/bin/java --version
 
-  install-claude-integration-test:
+  install-agent-integration-test:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -147,7 +157,7 @@ jobs:
           # .envrc only activates 'dev'; also add 'all' for Node.js
           echo "$PWD/.pixi/envs/all/bin" >> "$GITHUB_PATH"
 
-      - name: Verify Claude installation
+      - name: Verify agent installation
         run: |
           command -v codex
           command -v codex-acp
