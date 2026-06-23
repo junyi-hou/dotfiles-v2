@@ -189,3 +189,26 @@ def test_uninstall_folder_marker_removes_directory_symlink():
                 uninstall(module_dir, dry_run=False)
 
         assert not install_link.exists()
+
+
+def test_uninstall_removes_symlinked_module_entry():
+    with tempfile.TemporaryDirectory() as tmp:
+        repo_root = Path(tmp).resolve()
+        module_dir = repo_root / "modules" / "mymod"
+        module_dir.mkdir(parents=True)
+        external_skill = repo_root / "external" / "skill"
+        external_skill.mkdir(parents=True)
+        (external_skill / "SKILL.md").write_text("skill\n")
+        module_link = module_dir / "skill"
+        module_link.symlink_to(external_skill)
+        install_root = repo_root / "home"
+        install_dir = install_root / ".mymod"
+        install_dir.mkdir(parents=True)
+        install_link = install_dir / "skill"
+        install_link.symlink_to(module_link)
+
+        with patch("scripts.uninstall.git_root", return_value=repo_root):
+            with patch("scripts._lib.HOME", install_root):
+                uninstall(module_link, dry_run=False)
+
+        assert not install_link.exists()
