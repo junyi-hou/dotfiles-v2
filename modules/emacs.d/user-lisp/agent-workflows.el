@@ -51,13 +51,17 @@
   :group 'agent-workflows)
 
 (defvar gatsby>agent-shell-configs)
+(defvar agent-shell-transcript-file-path-function)
 
 (declare-function agent-shell-permission-allow-always "agent-shell" (permission))
 (declare-function agent-shell-previous-item "agent-shell")
 (declare-function agent-shell-subscribe-to "agent-shell")
 (declare-function agent-shell-unsubscribe "agent-shell")
+(declare-function agent-shell--send-request "agent-shell" (&rest args))
+(declare-function agent-shell--state "agent-shell")
 (declare-function agent-shell--display-buffer "agent-shell" (buffer alist))
 (declare-function agent-shell--start "agent-shell" (&rest args))
+(declare-function acp-make-session-delete-request "acp" (&rest args))
 
 (declare-function shell-maker-submit "shell-maker")
 
@@ -441,15 +445,19 @@
     (when (member kind agent-workflows-auto-approve-kinds)
       (agent-shell-permission-allow-always permission))))
 
-(defun agent-workflows--start-session (on-ready)
-  "Start or reuse an agent shell and call ON-READY with the shell buffer."
+(defun agent-workflows--start-session (on-ready &optional disable-transcript)
+  "Start or reuse an agent shell and call ON-READY with the shell buffer.
+When DISABLE-TRANSCRIPT is non-nil, do not save an agent-shell transcript."
   (let* ((agent-shell-buffer
           (cl-letf (((symbol-function #'agent-shell--display-buffer) #'ignore))
-            (agent-shell--start
-             :no-focus t
-             :config agent-workflows-agent-config
-             :new-session t
-             :session-strategy 'new))))
+            (let ((agent-shell-transcript-file-path-function
+                   (unless disable-transcript
+                     agent-shell-transcript-file-path-function)))
+              (agent-shell--start
+               :no-focus t
+               :config agent-workflows-agent-config
+               :new-session t
+               :session-strategy 'new)))))
     (with-current-buffer agent-shell-buffer
       (setq-local agent-shell-permission-responder-function
                   #'agent-workflows--permission-responder))
@@ -502,6 +510,36 @@ Must be called from within an agent-shell buffer."
          (t
           s))))))
 
+(defun agent-workflows--kill-throwaway-session (agent-shell-buffer)
+  "Delete AGENT-SHELL-BUFFER's backend session, then kill the buffer."
+  (if (not (buffer-live-p agent-shell-buffer))
+      nil
+    (with-current-buffer agent-shell-buffer
+      (let ((session-id (map-nested-elt (agent-shell--state) '(:session :id)))
+            (state (agent-shell--state))
+            (client (map-elt (agent-shell--state) :client)))
+        (if (not (and session-id client))
+            (kill-buffer agent-shell-buffer)
+          (condition-case err
+              (agent-shell--send-request
+               :state state
+               :client client
+               :request (acp-make-session-delete-request :session-id session-id)
+               :buffer agent-shell-buffer
+               :on-success (lambda (_response)
+                             (when (buffer-live-p agent-shell-buffer)
+                               (kill-buffer agent-shell-buffer)))
+               :on-failure (lambda (_acp-error _raw-message)
+                             (message "Could not delete throwaway agent session %s"
+                                      session-id)
+                             (when (buffer-live-p agent-shell-buffer)
+                               (kill-buffer agent-shell-buffer))))
+            (error
+             (message "Could not delete throwaway agent session %s: %S"
+                      session-id err)
+             (when (buffer-live-p agent-shell-buffer)
+               (kill-buffer agent-shell-buffer)))))))))
+
 (defun agent-workflows--submit-commit-message (agent-shell-buffer)
   "Submit the commit-message request from AGENT-SHELL-BUFFER."
   (with-current-buffer agent-shell-buffer
@@ -512,17 +550,15 @@ Must be called from within an agent-shell buffer."
              :shell-buffer agent-shell-buffer
              :event 'turn-complete
              :on-event
-             (lambda (_event)
-               (agent-shell-unsubscribe :subscription turn-sub)
-               (agent-shell-unsubscribe :subscription error-sub)
-               (unwind-protect
-                   (let ((output (agent-workflow--last-text-output)))
-                     (let ((tmpfile (make-temp-file "commit-msg")))
-                       (with-temp-file tmpfile
-                         (insert output))
-                       (magit-run-git-with-editor "commit" "--edit" "-F" tmpfile)))
-                 (when (buffer-live-p agent-shell-buffer)
-                   (kill-buffer agent-shell-buffer))))))
+               (lambda (_event)
+                 (agent-shell-unsubscribe :subscription turn-sub)
+                 (agent-shell-unsubscribe :subscription error-sub)
+                 (let ((output (agent-workflow--last-text-output)))
+                   (let ((tmpfile (make-temp-file "commit-msg")))
+                     (with-temp-file tmpfile
+                       (insert output))
+                     (magit-run-git-with-editor "commit" "--edit" "-F" tmpfile)))
+                 (agent-workflows--kill-throwaway-session agent-shell-buffer))))
       (setq error-sub
             (agent-shell-subscribe-to
              :shell-buffer agent-shell-buffer
@@ -600,7 +636,8 @@ Must be called from within an agent-shell buffer."
   (message "Generating commit message...")
   (agent-workflows--start-session
    (lambda (agent-shell-buffer)
-     (agent-workflows--submit-commit-message agent-shell-buffer))))
+     (agent-workflows--submit-commit-message agent-shell-buffer))
+   t))
 
 ;;;###autoload
 (defun agent-workflows-review ()
