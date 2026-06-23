@@ -20,6 +20,50 @@
     (let ((agent-shell-display-action nil))
       (call-interactively #'agent-shell-manager-goto)))
 
+  (defun gatsby>>agent-shell-git-root ()
+    "Return the enclosing Git repository root for `default-directory'."
+    (when-let* ((root (locate-dominating-file default-directory ".git")))
+      (file-name-as-directory (expand-file-name root))))
+
+  (defun gatsby>>agent-shell-new-worktree-shell (arg)
+    "Create an agent shell in a new worktree for the enclosing Git repository.
+ARG is forwarded to `gatsby>agent-shell-launch'."
+    (let* ((git-root (gatsby>>agent-shell-git-root))
+           (project-root
+            (file-name-as-directory
+             (expand-file-name
+              (or (when-let* ((project (project-current)))
+                    (project-root project))
+                  default-directory))))
+           (project-relative-directory
+            (when (and git-root
+                       (file-in-directory-p project-root git-root))
+              (file-relative-name (file-truename project-root)
+                                  (file-truename git-root))))
+           (agent-shell-cwd (symbol-function #'agent-shell-cwd)))
+      (unless git-root
+        (user-error "Not in a git repository"))
+      (let ((default-directory git-root))
+        (cl-letf* (((symbol-function #'agent-shell-cwd)
+                    (lambda () git-root))
+                   ((symbol-function #'agent-shell)
+                    (lambda (&rest _)
+                      (let ((default-directory
+                             (if project-relative-directory
+                                 (expand-file-name project-relative-directory
+                                                   default-directory)
+                               default-directory)))
+                        (unless (file-directory-p default-directory)
+                          (user-error "Project directory does not exist in worktree: %s"
+                                      default-directory))
+                        (when (and (featurep 'envrc)
+                                   (locate-dominating-file default-directory ".envrc"))
+                          (envrc-allow))
+                        (cl-letf (((symbol-function #'agent-shell-cwd)
+                                   agent-shell-cwd))
+                          (gatsby>agent-shell-launch arg))))))
+          (agent-shell-new-worktree-shell)))))
+
   (gatsby>defcommand gatsby>>agent-shell-manager-launch (arg)
     "Switch to an existing agent shell for the current project, or launch a new one.
 Shows running agents for the project; selecting one focuses it, selecting \"new\" calls
@@ -44,12 +88,7 @@ Shows running agents for the project; selecting one focuses it, selecting \"new\
          ((equal picked "new")
           (gatsby>agent-shell-launch arg))
          ((equal picked "new (in a new worktree)")
-          (cl-flet ((agent-shell
-                     (&rest _)
-                     (when (and (featurep 'envrc)
-                                (locate-dominating-file default-directory ".envrc"))
-                       (envrc-allow))
-                     (gatsby>agent-shell-launch arg)))))
+          (gatsby>>agent-shell-new-worktree-shell arg))
          (t
           (let ((shell (map-elt collections picked)))
             (select-window (display-buffer shell agent-shell-display-action))
