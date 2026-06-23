@@ -28,10 +28,6 @@ def uninstall(module: str | Path, *, dry_run: bool = True, state: dict[str, floa
     if isinstance(module, str):
         module = module_root / module
 
-    # deal with symlinks
-    if module.is_symlink():
-        module = module.resolve()
-
     if not module.exists():
         logger.debug(f"{module} does not exist, skipping.")
         return
@@ -47,11 +43,11 @@ def uninstall(module: str | Path, *, dry_run: bool = True, state: dict[str, floa
 
     logger.debug(f"Uninstalling {relative_path} ...")
 
-    if module.is_file() or install_folder:
+    if module.is_symlink() or module.is_file() or install_folder:
         # If this module installs as one filesystem entry, the target must be
         # the symlink we created.
         # make sure that install_path is what we have installed!
-        if install_path.is_symlink() and install_path.resolve() == module:
+        if install_path.is_symlink() and install_path.resolve() == module.resolve():
             if state is not None:
                 state[str(relative_path)] = install_path.lstat().st_mtime
             remove_file(install_path, dry_run)

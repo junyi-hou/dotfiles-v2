@@ -184,6 +184,56 @@ def test_install_folder_marker_backs_up_existing_directory():
         assert (backup_path / "rc").read_text() == "original content"
 
 
+def test_install_symlinked_module_entry_preserves_logical_target_path():
+    with tempfile.TemporaryDirectory() as tmp:
+        repo_root = Path(tmp).resolve()
+        module_dir = repo_root / "modules" / "mymod"
+        module_dir.mkdir(parents=True)
+        external_skill = repo_root / "external" / "skill"
+        external_skill.mkdir(parents=True)
+        (external_skill / "SKILL.md").write_text("skill\n")
+        module_link = module_dir / "skill"
+        module_link.symlink_to(external_skill)
+        install_root = repo_root / "home"
+        install_root.mkdir()
+
+        with patch("scripts.install.git_root", return_value=repo_root):
+            with patch("scripts._lib.HOME", install_root):
+                install(module_link, dry_run=False)
+
+        install_link = install_root / ".mymod" / "skill"
+        assert install_link.is_symlink()
+        assert install_link.resolve() == external_skill.resolve()
+        assert (install_link / "SKILL.md").read_text() == "skill\n"
+
+
+def test_install_symlinked_module_entry_backs_up_existing_directory():
+    with tempfile.TemporaryDirectory() as tmp:
+        repo_root = Path(tmp).resolve()
+        module_dir = repo_root / "modules" / "mymod"
+        module_dir.mkdir(parents=True)
+        external_skill = repo_root / "external" / "skill"
+        external_skill.mkdir(parents=True)
+        (external_skill / "SKILL.md").write_text("skill\n")
+        module_link = module_dir / "skill"
+        module_link.symlink_to(external_skill)
+        install_root = repo_root / "home"
+        install_dir = install_root / ".mymod" / "skill"
+        install_dir.mkdir(parents=True)
+        (install_dir / "old.txt").write_text("old\n")
+
+        with patch("scripts.install.git_root", return_value=repo_root):
+            with patch("scripts._lib.HOME", install_root):
+                install(module_link, dry_run=False)
+
+        install_link = install_root / ".mymod" / "skill"
+        backup_path = install_root / ".mymod" / ".skill.backup"
+        assert install_link.is_symlink()
+        assert install_link.resolve() == external_skill.resolve()
+        assert backup_path.is_dir()
+        assert (backup_path / "old.txt").read_text() == "old\n"
+
+
 def test_install_dry_run_no_changes():
     with tempfile.TemporaryDirectory() as tmp:
         module_root, module_file = _make_module_tree(tmp)

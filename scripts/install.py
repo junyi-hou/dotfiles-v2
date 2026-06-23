@@ -56,10 +56,6 @@ def install(module: str | Path, *, dry_run: bool = True, state: dict[str, float]
         logger.debug(f"Skipping {module.relative_to(module_root)}")
         return
 
-    # deal with symlinks
-    if module.is_symlink():
-        module = module.resolve()
-
     # catch unexpected
     if not (module.is_dir() or module.is_file()):
         raise ValueError(f"{module} is neither file nor directory.")
@@ -76,11 +72,11 @@ def install(module: str | Path, *, dry_run: bool = True, state: dict[str, float]
             logger.debug(f"{relative_path} already installed, skipping")
             return
 
-        if install_folder or not install_path.is_dir():
+        if module.is_symlink() or install_folder or not install_path.is_dir():
             logger.debug(f"{install_path} exists, moving...")
             move(install_path, backup_path, dry_run)
 
-    if module.is_file() or install_folder:
+    if module.is_symlink() or module.is_file() or install_folder:
         symlink(module, install_path, dry_run)
         if state is not None and str(relative_path) in state:
             logger.debug(f"{relative_path} reinstalled, no changes")
