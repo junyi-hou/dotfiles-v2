@@ -167,14 +167,8 @@
 
 ;; display flymake information in a childframe
 (use-package flymake-childframe
-  :if (display-graphic-p)
   :ensure (:host github :repo "junyi-hou/flymake-childframe")
   :hook (flymake-mode . flymake-childframe-mode))
-
-(use-package flymake-popon
-  :unless (display-graphic-p)
-  :ensure (:host nil :repo "https://codeberg.org/akib/emacs-flymake-popon")
-  :hook (flymake-mode . flymake-popon-mode))
 
 (provide 'gatsby-lsp)
 ;;; gatsby-lsp.el ends here

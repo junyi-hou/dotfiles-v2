@@ -217,12 +217,6 @@
                          "LICENSE" "README*" "*-pkg.el"))
               :source "elpaca-menu-lock-file" :protocol https :inherit t :depth treeless
               :ref "931b6d0667fe03e7bf1c6c282d6d8d7006143c52" :id f :type git))
- (flymake-childframe :source "elpaca-menu-lock-file" :recipe
-                     (:source "elpaca-menu-lock-file" :protocol https :inherit t :depth
-                              treeless :host github :repo "junyi-hou/flymake-childframe"
-                              :package "flymake-childframe" :ref
-                              "8f46751a25a130be7138ce7d6f4c53d7d5cf9989" :id
-                              flymake-childframe :type git))
  (gcmh :source "elpaca-menu-lock-file" :recipe
        (:package "gcmh" :repo "emacsmirror/gcmh" :fetcher gitlab :files
                  ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"
@@ -570,23 +564,6 @@
                      :source "MELPA" :id clipetty :host github :type git :protocol https
                      :inherit t :depth treeless :ref
                      "01b39044b9b65fa4ea7d3166f8b1ffab6f740362"))
- (popon :source "elpaca-menu-lock-file" :recipe
-        (:package "popon" :repo ("https://codeberg.org/akib/emacs-popon" . "popon") :tar
-                  "0.13" :host nongnu :files ("*" (:exclude ".git")) :source
-                  "NonGNU ELPA" :id popon :type git :protocol https :inherit t :depth
-                  treeless :ref "bf8174cb7e6e8fe0fe91afe6b01b6562c4dc39da"))
- (corfu-terminal :source "elpaca-menu-lock-file" :recipe
-                 (:package "corfu-terminal" :repo "akib/emacs-corfu-terminal" :tar "0.7"
-                           :host codeberg :files ("*" (:exclude ".git")) :source
-                           "NonGNU ELPA" :id corfu-terminal :type git :protocol https
-                           :inherit t :depth treeless :ref
-                           "501548c3d51f926c687e8cd838c5865ec45d03cc"))
- (flymake-popon :source "elpaca-menu-lock-file" :recipe
-                (:package "flymake-popon" :repo "akib/emacs-flymake-popon" :tar "0.5.1"
-                          :host codeberg :files ("*" (:exclude ".git")) :source
-                          "NonGNU ELPA" :id flymake-popon :type git :protocol https
-                          :inherit t :depth treeless :ref
-                          "99ea813346f3edef7220d8f4faeed2ec69af6060"))
  (scrollview :source "elpaca-menu-lock-file" :recipe
              (:source nil :package "scrollview" :id scrollview :host github :repo
                       "roife/scrollview.el" :type git :protocol https :inherit t :depth
@@ -619,4 +596,10 @@
                     github :build
                     (:after elpaca-build-link gatsby>>ghostel-install-other-files) :type
                     git :protocol https :inherit t :depth treeless :ref
-                    "adb010b7fec943405006fcd1fac280e74ffa9e30")))
+                    "adb010b7fec943405006fcd1fac280e74ffa9e30"))
+ (flymake-childframe :source "elpaca-menu-lock-file" :recipe
+                     (:source "elpaca-menu-lock-file" :protocol https :inherit t :depth
+                              treeless :host github :repo "junyi-hou/flymake-childframe"
+                              :package "flymake-childframe" :ref
+                              "3c18373afa97a5c6431e971a36aee7949e0d2725" :id
+                              flymake-childframe :type git)))
