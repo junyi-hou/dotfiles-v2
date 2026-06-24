@@ -9,7 +9,7 @@
   :ensure (:host github :repo "jrblevin/markdown-mode")
   :init
   (with-eval-after-load 'eglot
-    (add-to-list 'eglot-server-programs '(markdown-mode "harper" "-s")))
+    (add-to-list 'eglot-server-programs '(markdown-mode "harper-ls" "-s")))
   :hook
   (markdown-mode . corfu-mode)
   (markdown-mode . eglot-ensure)
