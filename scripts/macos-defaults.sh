@@ -61,3 +61,12 @@ defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad USBMouseStopsT
 defaults write NSGlobalDomain AppleEnableSwipeNavigateWithScrolls -bool false
 defaults write NSGlobalDomain AppleMiniaturizeOnDoubleClick -bool false
 defaults write NSGlobalDomain com.apple.trackpad.forceClick -bool false
+
+# Screenshots
+# Modifier masks: shift=131072, option=524288, command=1048576.
+defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add 30 "<dict><key>enabled</key><true/><key>value</key><dict><key>parameters</key><array><integer>52</integer><integer>21</integer><integer>655360</integer></array><key>type</key><string>standard</string></dict></dict>"
+defaults read com.apple.symbolichotkeys >/dev/null
+killall "System Settings" >/dev/null 2>&1 || true
+/System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u
+killall cfprefsd >/dev/null 2>&1 || true
+killall SystemUIServer >/dev/null 2>&1 || true
