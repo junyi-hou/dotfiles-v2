@@ -1,0 +1,7 @@
+interface:
+  display_name: "Style Editor"
+  short_description: "Polish analytical prose without changing claims"
+  default_prompt: "Use $style-editor to revise this analytical file for clarity, concision, and structure."
+
+policy:
+  allow_implicit_invocation: true
