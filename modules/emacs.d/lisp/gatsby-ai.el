@@ -36,16 +36,14 @@ ARG is forwarded to `gatsby>agent-shell-launch'."
                     (project-root project))
                   default-directory))))
            (project-relative-directory
-            (when (and git-root
-                       (file-in-directory-p project-root git-root))
+            (when (and git-root (file-in-directory-p project-root git-root))
               (file-relative-name (file-truename project-root)
                                   (file-truename git-root))))
            (agent-shell-cwd (symbol-function #'agent-shell-cwd)))
       (unless git-root
         (user-error "Not in a git repository"))
       (let ((default-directory git-root))
-        (cl-letf* (((symbol-function #'agent-shell-cwd)
-                    (lambda () git-root))
+        (cl-letf* (((symbol-function #'agent-shell-cwd) (lambda () git-root))
                    ((symbol-function #'agent-shell)
                     (lambda (&rest _)
                       (let ((default-directory
@@ -59,8 +57,7 @@ ARG is forwarded to `gatsby>agent-shell-launch'."
                         (when (and (featurep 'envrc)
                                    (locate-dominating-file default-directory ".envrc"))
                           (envrc-allow))
-                        (cl-letf (((symbol-function #'agent-shell-cwd)
-                                   agent-shell-cwd))
+                        (cl-letf (((symbol-function #'agent-shell-cwd) agent-shell-cwd))
                           (gatsby>agent-shell-launch arg))))))
           (agent-shell-new-worktree-shell)))))
 
@@ -189,11 +186,11 @@ Shows running agents for the project; selecting one focuses it, selecting \"new\
 
   :config
   (defcustom gatsby>agent-shell-configs
-    `(("codex" .
+    `(("opencode" .
        (:base
-        gatsby>>agent-shell-codex-config
-        :default-model-id (lambda (&rest _) "gpt-5.5")
-        :default-session-mode-id (lambda (&rest _) "full-access"))))
+        gatsby>>agent-shell-opencode-config
+        :default-model-id (lambda (&rest _) "opencode-go/kimi-k2.7-code")
+        :default-session-mode-id (lambda (&rest _) "build"))))
     "Alist of named agent-shell configuration profiles.
 Each entry is (NAME . PLIST) where NAME is a string identifier and PLIST
 must contain :base (a config-builder function symbol accepting keyword args).
@@ -202,17 +199,17 @@ environment variables."
     :type '(alist :key-type string :value-type sexp)
     :group 'gatsby)
 
-  (defun gatsby>>agent-shell-codex-config (&rest args)
-    (let ((config (agent-shell-openai-make-codex-config))
+  (defun gatsby>>agent-shell-opencode-config (&rest args)
+    (let ((config (agent-shell-opencode-make-agent-config))
           (env (plist-get args :env)))
       ;; handle env
       (map-put!
        config
        :client-maker
        (lambda (buffer)
-         (let ((agent-shell-openai-codex-environment
+         (let ((agent-shell-opencode-environment
                 (apply #'agent-shell-make-environment-variables env)))
-           (agent-shell-openai-make-codex-client :buffer buffer))))
+           (agent-shell-opencode-make-client :buffer buffer))))
       ;; handle rest of the config keys
       (thread-last
        args

@@ -41,10 +41,8 @@ taplo = "*"
 typos-lsp = "*"
 codebook-lsp = "*"
 
-codex = "*"
-
 [feature.global.tasks]
-install-acp = "bash scripts/install-acp.sh"
+install-acp = "curl -fsSL https://opencode.ai/install | bash -s -- --no-modify-path && ln -sf $HOME/.opencode/bin/opencode $HOME/.local/bin/opencode"
 
 [feature.global.pypi-dependencies]
 "rassumfrassum" = "*"
