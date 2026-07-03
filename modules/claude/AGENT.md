@@ -1,6 +1,6 @@
-# Claude Guide
+# AGENT Guide
 
-This file contains instructions that Claude should read at the start of each conversation and maintain in memory throughout the entire interaction. **IMPORTANT:** Once this file has been read or updated, it MUST be loaded at the beginning of any new conversation to ensure awareness of communication requirements.
+This file contains instructions that every agent should read at the start of each conversation and maintain in memory throughout the entire interaction. **IMPORTANT:** Once this file has been read or updated, it MUST be loaded at the beginning of any new conversation to ensure awareness of communication requirements.
 
 ## Be Critical
 
@@ -29,8 +29,12 @@ This file contains instructions that Claude should read at the start of each con
 
 ## Skill Usages
 
-- Whenever planning new features, use the `grill-with-doc` skills to write down ARD as much as possible.
-- Whenever implementing new features, use the `/tdd` skills for test-driven development as much as possible.
+- Whenever planning new features, use the `grill-with-docs` skill to write down ADRs as much as possible.
+- Whenever implementing new features, use the `tdd` skill for test-driven development as much as possible.
+- Whenever debugging a hard bug or perf regression, use the `diagnosing-bugs` skill before editing.
+- Whenever designing or improving a module's interface, use the `codebase-design` skill.
 
 ## Writing Style
+
 - Do not use em dashes (—) in responses. Use commas, semicolons, or plain hyphens instead.
+- Use the `style-editor` skill for academic, analytical, or business documents.
