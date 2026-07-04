@@ -444,9 +444,11 @@
     (when (member kind agent-workflows-auto-approve-kinds)
       (agent-shell-permission-allow-always permission))))
 
-(defun agent-workflows--start-session (on-ready &optional disable-transcript)
+(defun agent-workflows--start-session (on-ready &optional disable-transcript permission-responder)
   "Start a temporary agent shell and call ON-READY with the shell buffer.
-When DISABLE-TRANSCRIPT is non-nil, do not save an agent-shell transcript."
+When DISABLE-TRANSCRIPT is non-nil, do not save an agent-shell transcript.
+PERMISSION-RESPONDER is an optional function for handling permission requests;
+defaults to `agent-workflows--permission-responder'."
   (let* ((cwd default-directory)
          (agent-shell-buffer
           (let ((agent-shell-transcript-file-path-function
@@ -458,7 +460,7 @@ When DISABLE-TRANSCRIPT is non-nil, do not save an agent-shell transcript."
     (with-current-buffer agent-shell-buffer
       (setq-local agent-workflows--session-cwd cwd)
       (setq-local agent-shell-permission-responder-function
-                  #'agent-workflows--permission-responder))
+                  (or permission-responder #'agent-workflows--permission-responder)))
     (let ((prompt-sub nil)
           (error-sub nil))
       (setq prompt-sub
@@ -531,7 +533,9 @@ Must be called from within an agent-shell buffer."
                    (let ((tmpfile (make-temp-file "commit-msg")))
                      (with-temp-file tmpfile
                        (insert output))
-                     (magit-run-git-with-editor "commit" "--edit" "-F" tmpfile)))
+                     (let ((default-directory (or agent-workflows--session-cwd
+                                                  default-directory)))
+                       (magit-run-git-with-editor "commit" "--edit" "-F" tmpfile))))
                  (agent-workflows--kill-throwaway-session agent-shell-buffer))))
       (setq error-sub
             (agent-shell-subscribe-to
@@ -616,7 +620,8 @@ Must be called from within an agent-shell buffer."
   (agent-workflows--start-session
    (lambda (agent-shell-buffer)
      (agent-workflows--submit-commit-message agent-shell-buffer))
-   t))
+   t
+   #'agent-shell-permission-allow-always))
 
 ;;;###autoload
 (defun agent-workflows-review ()
