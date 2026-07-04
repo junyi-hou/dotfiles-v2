@@ -48,7 +48,7 @@
                  ns))
              (directory-files-recursively "test" ".+_test\\.clj")))
            (ns (completing-read "Run test: " list-of-ns)))
-      `("clj" "-M:test" "-m" "cognitech.test-runner" "-n" ,ns))))
+      `("clj" "-M:test" "-m" "cognitect.test-runner" "-n" ,ns))))
 
 ;; TODO: use this or cider for better completion, etc to have better completion/doc supports
 ;; (use-package inf-clojure
