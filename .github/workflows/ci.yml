@@ -6,14 +6,14 @@ on:
   pull_request:
 
 jobs:
-  emacs-integration-test:
+  setup:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os:
           - ubuntu-latest
-          - macos-26
+          - macos-latest
     steps:
       - uses: actions/checkout@v6
 
@@ -25,10 +25,69 @@ jobs:
             brew install direnv
           fi
 
+      - name: Cache environment
+        uses: actions/cache@v4
+        id: env-cache
+        with:
+          path: |
+            .pixi
+            .tools
+            ~/.opencode
+            ~/.local/bin/opencode
+          key: dotfiles-env-${{ matrix.os }}-${{ hashFiles('pixi.toml', 'pixi.lock', '.envrc') }}
+          restore-keys: |
+            dotfiles-env-${{ matrix.os }}-
+
       - name: Load environment variables
         run: |
           direnv allow .
-          direnv export gha > "$GITHUB_ENV"
+          direnv export gha > setup.env
+          # .envrc only activates 'dev'; also add 'all' for Node.js
+          echo "PATH=$PWD/.pixi/envs/all/bin:$PATH" >> setup.env
+          echo "$PWD/.pixi/envs/all/bin" > setup.path
+
+      - name: Save environment artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: setup-env-${{ matrix.os }}
+          path: |
+            setup.env
+            setup.path
+
+  emacs-integration-test:
+    needs: setup
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Restore environment
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            .pixi
+            .tools
+            ~/.opencode
+            ~/.local/bin/opencode
+          key: dotfiles-env-${{ matrix.os }}-${{ hashFiles('pixi.toml', 'pixi.lock', '.envrc') }}
+          restore-keys: |
+            dotfiles-env-${{ matrix.os }}-
+
+      - name: Download environment artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: setup-env-${{ matrix.os }}
+          path: setup-env
+
+      - name: Load environment variables
+        run: |
+          cat setup-env/setup.env >> "$GITHUB_ENV"
+          cat setup-env/setup.path >> "$GITHUB_PATH"
 
       - name: Run install script
         run: make install
@@ -52,7 +111,7 @@ jobs:
       matrix:
         os:
           - ubuntu-latest
-          - macos-26
+          - macos-latest
     steps:
       - uses: actions/checkout@v6
 
@@ -68,30 +127,39 @@ jobs:
         run: make test
 
   install-dotfiles-integration-test:
+    needs: setup
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os:
           - ubuntu-latest
-          - macos-26
+          - macos-latest
     steps:
       - uses: actions/checkout@v6
 
-      - name: Install direnv
-        run: |
-          if command -v apt-get &>/dev/null; then
-            sudo apt-get install -y direnv
-          else
-            brew install direnv
-          fi
+      - name: Restore environment
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            .pixi
+            .tools
+            ~/.opencode
+            ~/.local/bin/opencode
+          key: dotfiles-env-${{ matrix.os }}-${{ hashFiles('pixi.toml', 'pixi.lock', '.envrc') }}
+          restore-keys: |
+            dotfiles-env-${{ matrix.os }}-
+
+      - name: Download environment artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: setup-env-${{ matrix.os }}
+          path: setup-env
 
       - name: Load environment variables
         run: |
-          direnv allow .
-          direnv export gha > "$GITHUB_ENV"
-          # .envrc only activates 'dev'; also add 'all' for Node.js
-          echo "$PWD/.pixi/envs/all/bin" >> "$GITHUB_PATH"
+          cat setup-env/setup.env >> "$GITHUB_ENV"
+          cat setup-env/setup.path >> "$GITHUB_PATH"
 
       - name: Run dotfiles install script
         run: make install
@@ -102,28 +170,39 @@ jobs:
           test -L "$HOME/.gitconfig"
 
   install-java-integration-test:
+    needs: setup
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os:
           - ubuntu-latest
-          - macos-26
+          - macos-latest
     steps:
       - uses: actions/checkout@v6
 
-      - name: Install direnv
-        run: |
-          if command -v apt-get &>/dev/null; then
-            sudo apt-get install -y direnv
-          else
-            brew install direnv
-          fi
+      - name: Restore environment
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            .pixi
+            .tools
+            ~/.opencode
+            ~/.local/bin/opencode
+          key: dotfiles-env-${{ matrix.os }}-${{ hashFiles('pixi.toml', 'pixi.lock', '.envrc') }}
+          restore-keys: |
+            dotfiles-env-${{ matrix.os }}-
+
+      - name: Download environment artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: setup-env-${{ matrix.os }}
+          path: setup-env
 
       - name: Load environment variables
         run: |
-          direnv allow .
-          direnv export gha > "$GITHUB_ENV"
+          cat setup-env/setup.env >> "$GITHUB_ENV"
+          cat setup-env/setup.path >> "$GITHUB_PATH"
 
       - name: Run Java install script
         run: make java
@@ -132,30 +211,39 @@ jobs:
         run: .tools/java/bin/java --version
 
   install-agent-integration-test:
+    needs: setup
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os:
           - ubuntu-latest
-          - macos-26
+          - macos-latest
     steps:
       - uses: actions/checkout@v6
 
-      - name: Install direnv
-        run: |
-          if command -v apt-get &>/dev/null; then
-            sudo apt-get install -y direnv
-          else
-            brew install direnv
-          fi
+      - name: Restore environment
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            .pixi
+            .tools
+            ~/.opencode
+            ~/.local/bin/opencode
+          key: dotfiles-env-${{ matrix.os }}-${{ hashFiles('pixi.toml', 'pixi.lock', '.envrc') }}
+          restore-keys: |
+            dotfiles-env-${{ matrix.os }}-
+
+      - name: Download environment artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: setup-env-${{ matrix.os }}
+          path: setup-env
 
       - name: Load environment variables
         run: |
-          direnv allow .
-          direnv export gha > "$GITHUB_ENV"
-          # .envrc only activates 'dev'; also add 'all' for Node.js
-          echo "$PWD/.pixi/envs/all/bin" >> "$GITHUB_PATH"
+          cat setup-env/setup.env >> "$GITHUB_ENV"
+          cat setup-env/setup.path >> "$GITHUB_PATH"
 
       - name: Verify agent installation
         run: |
