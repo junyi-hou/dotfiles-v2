@@ -598,8 +598,7 @@
                     git :protocol https :inherit t :depth treeless :ref
                     "adb010b7fec943405006fcd1fac280e74ffa9e30"))
  (flymake-childframe :source "elpaca-menu-lock-file" :recipe
-                     (:source "elpaca-menu-lock-file" :protocol https :inherit t :depth
-                              treeless :host github :repo "junyi-hou/flymake-childframe"
-                              :package "flymake-childframe" :ref
-                              "3c18373afa97a5c6431e971a36aee7949e0d2725" :id
-                              flymake-childframe :type git)))
+                     (:source nil :package "flymake-childframe" :id flymake-childframe
+                              :host github :repo "junyi-hou/flymake-childframe" :type
+                              git :protocol https :inherit t :depth treeless :ref
+                              "4fab17ff3ec3da4f08f0bd99cc5e99a01a7bb744")))
