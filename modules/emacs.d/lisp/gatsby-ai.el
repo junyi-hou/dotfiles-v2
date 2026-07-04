@@ -6,10 +6,6 @@
 
 (require 'gatsby--utility)
 
-(use-package agent-shell-tramp
-  :ensure (:host github :repo "junyi-hou/agent-shell-tramp")
-  :config (agent-shell-tramp-mode 1))
-
 ;; managing agents
 (use-package agent-shell-manager
   :ensure (:host github :repo "jethrokuan/agent-shell-manager")
@@ -167,6 +163,10 @@ Shows running agents for the project; selecting one focuses it, selecting \"new\
    '(display-buffer-in-side-window (side . right) (window-width . 0.33) (slot . 0)))
   (agent-shell-file-completion-enabled t)
   (agent-shell-session-strategy 'new)
+  ;; opencode stores sessions under truenames but matches session/list cwd
+  ;; literally, so symlinked project roots (like ~/dotfiles-v2 -> ~/Projects/dotfiles)
+  ;; would otherwise find no past sessions.
+  (agent-shell-path-resolver-function #'file-truename)
   (agent-shell-mcp-servers
    `(((name . "context7")
       (type . "http") (url . "https://mcp.context7.com/mcp")
@@ -425,6 +425,11 @@ Returns non-nil if a button was found and activated."
    ("q" . #'kill-buffer-and-window)
    ("y" . #'agent-shell-diff-accept-all)
    ("C-c C-c" . #'agent-shell-diff-reject-all)))
+
+(use-package agent-shell-tramp
+  :after agent-shell
+  :ensure (:host github :repo "junyi-hou/agent-shell-tramp")
+  :config (agent-shell-tramp-mode 1))
 
 (provide 'gatsby-ai)
 ;;; gatsby-ai.el ends here
