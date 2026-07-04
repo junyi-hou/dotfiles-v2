@@ -528,12 +528,14 @@ Must be called from within an agent-shell buffer."
                :buffer agent-shell-buffer
                :on-success (lambda (_response)
                              (when (buffer-live-p agent-shell-buffer)
-                               (kill-buffer agent-shell-buffer)))
+                               (let ((kill-buffer-query-functions nil))
+                                (kill-buffer agent-shell-buffer))))
                :on-failure (lambda (_acp-error _raw-message)
                              (message "Could not delete throwaway agent session %s"
                                       session-id)
                              (when (buffer-live-p agent-shell-buffer)
-                               (kill-buffer agent-shell-buffer))))
+                               (let ((kill-buffer-query-functions nil))
+                                (kill-buffer agent-shell-buffer)))))
             (error
              (message "Could not delete throwaway agent session %s: %S"
                       session-id err)
