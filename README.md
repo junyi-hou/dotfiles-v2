@@ -32,7 +32,6 @@ cd /path/to/repo/dotfiles-v2
 make build    # this builds & installs emacs-mac
 make install  # places dotfiles to appropriate locations
 
-make claude  # install claude-code and acp integration
 make java    # install java (for clojure/scala development)
 ```
 
@@ -87,7 +86,7 @@ A CLI tools are available on any machine with secrets deployed:
 
 - `passage [key/path]` — print a secret value (or full JSON if no path given)
 
-### Updating secrets
+### Updating Secrets
 
 Secrets can only be edited on the local machine. This is intentional: each remote machine holds its own re-encrypted copy of the secrets, so edits on a remote would diverge and never propagate back. The local machine is the single source of truth.
 
