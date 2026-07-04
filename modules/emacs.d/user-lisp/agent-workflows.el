@@ -57,11 +57,9 @@
 (declare-function agent-shell-previous-item "agent-shell")
 (declare-function agent-shell-subscribe-to "agent-shell")
 (declare-function agent-shell-unsubscribe "agent-shell")
-(declare-function agent-shell--send-request "agent-shell" (&rest args))
-(declare-function agent-shell--state "agent-shell")
 (declare-function agent-shell--display-buffer "agent-shell" (buffer alist))
 (declare-function agent-shell--start "agent-shell" (&rest args))
-(declare-function acp-make-session-delete-request "acp" (&rest args))
+(declare-function agent-shell-new-temp-shell "agent-shell" (&key config no-display))
 
 (declare-function shell-maker-submit "shell-maker")
 
@@ -70,6 +68,7 @@
 (declare-function markdown-mode "markdown-mode")
 
 (defvar comint-prompt-regexp)
+(defvar-local agent-workflows--session-cwd nil)
 (defvar-local agent-workflows-review--shell-buffer nil)
 (defvar-local agent-workflows-review--tmpfile nil)
 (defvar-local agent-workflows-review--findings nil)
@@ -446,19 +445,18 @@
       (agent-shell-permission-allow-always permission))))
 
 (defun agent-workflows--start-session (on-ready &optional disable-transcript)
-  "Start or reuse an agent shell and call ON-READY with the shell buffer.
+  "Start a temporary agent shell and call ON-READY with the shell buffer.
 When DISABLE-TRANSCRIPT is non-nil, do not save an agent-shell transcript."
-  (let* ((agent-shell-buffer
-          (cl-letf (((symbol-function #'agent-shell--display-buffer) #'ignore))
-            (let ((agent-shell-transcript-file-path-function
-                   (unless disable-transcript
-                     agent-shell-transcript-file-path-function)))
-              (agent-shell--start
-               :no-focus t
-               :config agent-workflows-agent-config
-               :new-session t
-               :session-strategy 'new)))))
+  (let* ((cwd default-directory)
+         (agent-shell-buffer
+          (let ((agent-shell-transcript-file-path-function
+                 (unless disable-transcript
+                   agent-shell-transcript-file-path-function)))
+            (agent-shell-new-temp-shell
+             :config agent-workflows-agent-config
+             :no-display t))))
     (with-current-buffer agent-shell-buffer
+      (setq-local agent-workflows--session-cwd cwd)
       (setq-local agent-shell-permission-responder-function
                   #'agent-workflows--permission-responder))
     (let ((prompt-sub nil)
@@ -511,36 +509,10 @@ Must be called from within an agent-shell buffer."
           s))))))
 
 (defun agent-workflows--kill-throwaway-session (agent-shell-buffer)
-  "Delete AGENT-SHELL-BUFFER's backend session, then kill the buffer."
-  (if (not (buffer-live-p agent-shell-buffer))
-      nil
-    (with-current-buffer agent-shell-buffer
-      (let ((session-id (map-nested-elt (agent-shell--state) '(:session :id)))
-            (state (agent-shell--state))
-            (client (map-elt (agent-shell--state) :client)))
-        (if (not (and session-id client))
-            (kill-buffer agent-shell-buffer)
-          (condition-case err
-              (agent-shell--send-request
-               :state state
-               :client client
-               :request (acp-make-session-delete-request :session-id session-id)
-               :buffer agent-shell-buffer
-               :on-success (lambda (_response)
-                             (when (buffer-live-p agent-shell-buffer)
-                               (let ((kill-buffer-query-functions nil))
-                                (kill-buffer agent-shell-buffer))))
-               :on-failure (lambda (_acp-error _raw-message)
-                             (message "Could not delete throwaway agent session %s"
-                                      session-id)
-                             (when (buffer-live-p agent-shell-buffer)
-                               (let ((kill-buffer-query-functions nil))
-                                (kill-buffer agent-shell-buffer)))))
-            (error
-             (message "Could not delete throwaway agent session %s: %S"
-                      session-id err)
-             (when (buffer-live-p agent-shell-buffer)
-               (kill-buffer agent-shell-buffer)))))))))
+  "Kill AGENT-SHELL-BUFFER; its temp directory is cleaned up automatically."
+  (when (buffer-live-p agent-shell-buffer)
+    (let ((kill-buffer-query-functions nil))
+      (kill-buffer agent-shell-buffer))))
 
 (defun agent-workflows--submit-commit-message (agent-shell-buffer)
   "Submit the commit-message request from AGENT-SHELL-BUFFER."
@@ -575,7 +547,10 @@ Must be called from within an agent-shell buffer."
                  (user-error "Agent shell error: %s (code: %s)"
                              (map-elt data :message)
                              (map-elt data :code)))))))
-    (shell-maker-submit :input agent-workflows-commit-message-prompt)))
+    (shell-maker-submit
+     :input (concat agent-workflows-commit-message-prompt
+                    "\n\nWorking directory: "
+                    agent-workflows--session-cwd))))
 
 (defun agent-workflows--submit-review (agent-shell-buffer)
   "Submit the review request from AGENT-SHELL-BUFFER."
@@ -625,6 +600,8 @@ Must be called from within an agent-shell buffer."
        :input
        (concat
         agent-workflows-review-prompt
+        "\n\nWorking directory: "
+        agent-workflows--session-cwd
         "\n\nWrite the review to this file as Markdown, using the exact heading format above:\n"
         review-file
         "\n\nAfter writing the file, respond with a short confirmation only.")))))
