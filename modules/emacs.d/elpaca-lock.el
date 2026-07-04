@@ -95,7 +95,7 @@
                         git))
  (eglot :source "elpaca-menu-lock-file" :recipe
         (:source "elpaca-menu-lock-file" :host github :repo "joaotavora/eglot" :inherit
-                 t :package "eglot" :ref "ad7e201bb6d892895b07048f809fe336f6935109"
+                 t :package "eglot" :ref "7084a59906bc7796cc369af4010500998140ab1c"
                  :protocol https :depth treeless :id eglot :type git))
  (eglot-tempel :source "elpaca-menu-lock-file" :recipe
                (:package "eglot-tempel" :fetcher github :repo "fejfighter/eglot-tempel"
