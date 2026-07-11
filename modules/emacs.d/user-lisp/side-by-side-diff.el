@@ -22,6 +22,7 @@
 (declare-function agent-shell-diff-accept-all "agent-shell-diff")
 (declare-function agent-shell-diff-reject-all "agent-shell-diff")
 (declare-function agent-shell-diff-open-file "agent-shell-diff")
+(declare-function evil-visual-line "evil")
 
 (defvar agent-shell-diff-mode-map)
 (defvar ssdf-agent-shell-mode)
@@ -134,6 +135,9 @@ Nil when the diff cannot be regenerated (e.g. static diff-mode buffer).")
 
 (defvar-local ssdf--dim-overlays nil
   "Overlays covering non-current hunk lines.")
+
+(defvar-local ssdf--mirror-overlay nil
+  "Overlay in the peer buffer mirroring this buffer's selection.")
 
 (defvar-local ssdf--agent-shell-diff-buffer nil
   "Agent-shell diff buffer backing this side-by-side display.")
@@ -394,6 +398,60 @@ side is padded so context lines stay vertically aligned."
                          (point))))
             (set-window-start win start t)))))))
 
+;;;; Visual-line selection
+
+(defvar ssdf-visual-line-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map [remap evil-visual-char] #'evil-visual-line)
+    map)
+  "Remap evil's char-wise visual selection to line-wise selection.")
+
+;;;###autoload
+(define-minor-mode ssdf-visual-line-mode
+  "Use line-wise visual selection in `ssdf-mode' buffers.
+Remaps `evil-visual-char' to `evil-visual-line' so that starting a
+visual selection covers whole diff lines, which mirrors cleanly to
+the peer buffer."
+  :keymap ssdf-visual-line-mode-map)
+
+;;;; Selection mirroring
+
+(defun ssdf--mirror-selection ()
+  "Mirror this buffer's active region to the peer buffer via an overlay.
+When a region is active (e.g. under evil visual selection), a `region'
+overlay covering the same line range is placed in the peer.  The
+overlay is moved on every cursor line change so the peer tracks the
+selection live.  When no region is active, the peer overlay is removed."
+  (when (and ssdf--peer
+             (buffer-live-p ssdf--peer)
+             (not ssdf--syncing))
+    (let ((mp (mark t)))
+      (if (and mark-active mp)
+          (let* ((ml (line-number-at-pos mp))
+                 (pl (line-number-at-pos (point)))
+                 (lo (min ml pl))
+                 (hi (max ml pl)))
+            (with-current-buffer ssdf--peer
+              (let ((start (save-excursion
+                             (goto-char (point-min))
+                             (forward-line (1- lo))
+                             (point)))
+                    (end (save-excursion
+                           (goto-char (point-min))
+                           (forward-line hi)
+                           (point))))
+                (if (and ssdf--mirror-overlay
+                         (overlay-buffer ssdf--mirror-overlay))
+                    (move-overlay ssdf--mirror-overlay start end)
+                  (setq ssdf--mirror-overlay (make-overlay start end))
+                  (overlay-put ssdf--mirror-overlay 'face 'region)
+                  (overlay-put ssdf--mirror-overlay 'priority 2)))))
+        (with-current-buffer ssdf--peer
+          (when (and ssdf--mirror-overlay
+                     (overlay-buffer ssdf--mirror-overlay))
+            (delete-overlay ssdf--mirror-overlay)
+            (setq ssdf--mirror-overlay nil)))))))
+
 ;;;; Mode
 
 (defvar ssdf-mode-map
@@ -421,8 +479,10 @@ side is padded so context lines stay vertically aligned."
               outline-level (lambda () 1))
   (visual-line-mode -1)
   (outline-minor-mode 1)
+  (ssdf-visual-line-mode 1)
   (add-hook 'post-command-hook        #'ssdf--sync           nil t)
   (add-hook 'post-command-hook        #'ssdf--update-dimming t   t)
+  (add-hook 'post-command-hook        #'ssdf--mirror-selection t   t)
   (when (featurep 'consult)
     (add-hook 'consult-after-jump-hook #'ssdf--sync nil t)))
 
@@ -544,6 +604,8 @@ context adjustment via `ssdf-increase-context' / `ssdf-decrease-context'."
       (dolist (buf (list left-buf right-buf))
         (with-current-buffer buf
           (let ((inhibit-read-only t)) (erase-buffer))
+          (setq ssdf--mirror-overlay nil
+                ssdf--dim-overlays nil)
           (ssdf-mode)))
       (ssdf--render hunks left-buf right-buf)
       (with-current-buffer left-buf

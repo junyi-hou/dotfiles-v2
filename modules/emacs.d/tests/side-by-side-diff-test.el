@@ -354,5 +354,63 @@ Prints the ANSI-stripped fixture content so test output shows what is being test
     (should (equal (ssdf--hunk-file (nth 0 hunks)) "x.py"))
     (should (equal (ssdf--hunk-file (nth 1 hunks)) "y.py"))))
 
+;;; ssdf-visual-line-mode
+
+(ert-deftest ssdf-visual-line-mode-map--remaps-visual-char ()
+  "The minor mode keymap remaps `evil-visual-char' to `evil-visual-line'."
+  (should (eq (lookup-key ssdf-visual-line-mode-map [remap evil-visual-char])
+              #'evil-visual-line)))
+
+;;; ssdf--mirror-selection
+
+(ert-deftest ssdf--mirror-selection--active-marks-peer ()
+  "An active region in one buffer places a `region' overlay on the peer."
+  (let ((a (get-buffer-create "*ssdf-mirror-a*"))
+        (b (get-buffer-create "*ssdf-mirror-b*")))
+    (unwind-protect
+        (progn
+          (dolist (buf (list a b))
+            (with-current-buffer buf
+              (insert "l1\nl2\nl3\nl4\nl5\n")
+              (setq ssdf--peer (if (eq buf a) b a))))
+          (with-current-buffer a
+            (push-mark (save-excursion
+                         (goto-char (point-min))
+                         (forward-line 1)
+                         (point)))
+            (setq mark-active t)
+            (goto-char (save-excursion
+                         (goto-char (point-min))
+                         (forward-line 3)
+                         (end-of-line)
+                         (point)))
+            (ssdf--mirror-selection))
+          (with-current-buffer b
+            (should ssdf--mirror-overlay)
+            (should (eq (overlay-get ssdf--mirror-overlay 'face) 'region))
+            (should (= (line-number-at-pos (overlay-start ssdf--mirror-overlay)) 2))
+            (should (= (line-number-at-pos (overlay-end   ssdf--mirror-overlay)) 5))))
+      (mapc #'kill-buffer (list a b)))))
+
+(ert-deftest ssdf--mirror-selection--inactive-clears-peer ()
+  "When the current buffer has no active region, the peer overlay is removed."
+  (let ((a (get-buffer-create "*ssdf-mirror-c*"))
+        (b (get-buffer-create "*ssdf-mirror-d*")))
+    (unwind-protect
+        (progn
+          (dolist (buf (list a b))
+            (with-current-buffer buf
+              (insert "l1\nl2\nl3\n")
+              (setq ssdf--peer (if (eq buf a) b a))))
+          (with-current-buffer b
+            (setq ssdf--mirror-overlay (make-overlay 1 5))
+            (overlay-put ssdf--mirror-overlay 'face 'region))
+          (with-current-buffer a
+            (setq mark-active nil)
+            (ssdf--mirror-selection))
+          (with-current-buffer b
+            (should-not ssdf--mirror-overlay)))
+      (mapc #'kill-buffer (list a b)))))
+
 (provide 'side-by-side-diff-test)
 ;;; side-by-side-diff-test.el ends here
