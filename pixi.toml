@@ -40,6 +40,7 @@ yaml-language-server = "*"
 taplo = "*"
 typos-lsp = "*"
 codebook-lsp = "*"
+jsonnet-language-server = "*"
 
 [feature.global.tasks]
 install-acp = "curl -fsSL https://opencode.ai/install | bash -s -- --no-modify-path --version 1.17.13 && mkdir -p $HOME/.local/bin && ln -sf $HOME/.opencode/bin/opencode $HOME/.local/bin/opencode"

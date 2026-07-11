@@ -21,6 +21,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/go-sops-3.13.1-hfc2019e_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/harper-2.0.0-he16cf4b_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/icu-78.3-h33c6efd_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/jsonnet-language-server-0.17.0-hfc2019e_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/ld_impl_linux-64-2.45.1-default_hbd61a6d_102.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libabseil-20260107.1-cxx17_h7b12aa8_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libbrotlicommon-1.2.0-hb03c661_1.conda
@@ -78,6 +79,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/go-sops-3.12.2-hce30654_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/harper-1.2.0-h8efe6ca_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/icu-75.1-hfee45f7_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/jsonnet-language-server-0.17.0-h820172f_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/libbrotlicommon-1.2.0-hc919400_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/libbrotlidec-1.2.0-hc919400_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/libbrotlienc-1.2.0-hc919400_1.conda
@@ -610,6 +612,15 @@ packages:
   purls: []
   size: 12723451
   timestamp: 1773822285671
+- conda: https://conda.anaconda.org/conda-forge/linux-64/jsonnet-language-server-0.17.0-hfc2019e_0.conda
+  sha256: 3fb3b8e00da5a11894ac29c8b7bfc16a56befaf38b22ff57668f55a80733091c
+  md5: 100055e6fcb3cfc0764afc151389fedb
+  license: AGPL-3.0-or-later
+  license_family: AGPL
+  purls: []
+  run_exports: {}
+  size: 4471260
+  timestamp: 1770857974641
 - conda: https://conda.anaconda.org/conda-forge/linux-64/keyutils-1.6.3-hb9d3cd8_0.conda
   sha256: 0960d06048a7185d3542d850986d807c6e37ca2e644342dd0c72feefcf26c2a4
   md5: b38117a3c920364aff79f870c984b4a3
@@ -3610,6 +3621,15 @@ packages:
   purls: []
   size: 11857802
   timestamp: 1720853997952
+- conda: https://conda.anaconda.org/conda-forge/osx-arm64/jsonnet-language-server-0.17.0-h820172f_0.conda
+  sha256: 4a38cf216fd44b4e9adde8891410b4e1c6587316317092b3112ceb28627c56d9
+  md5: a10e755a29479e83cf5613bde4952609
+  license: AGPL-3.0-or-later
+  license_family: AGPL
+  purls: []
+  run_exports: {}
+  size: 4035826
+  timestamp: 1770858020881
 - conda: https://conda.anaconda.org/conda-forge/osx-arm64/krb5-1.21.3-h237132a_0.conda
   sha256: 4442f957c3c77d69d9da3521268cad5d54c9033f1a73f99cde0a3658937b159b
   md5: c6dc8a0fdec13a0565936655c33069a1

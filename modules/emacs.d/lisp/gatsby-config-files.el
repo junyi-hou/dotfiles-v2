@@ -66,5 +66,12 @@
   (toml-ts-mode . eglot-ensure)
   (toml-ts-mode . display-line-numbers-mode))
 
+(use-package jsonnet-mode
+  :ensure (:host github :repo "tminor/jsonnet-mode")
+  :init
+  ;; lsp
+  (with-eval-after-load 'eglot
+    (add-to-list 'eglot-server-programs '(jsonnet-mode "jsonnet-language-server"))))
+
 (provide 'gatsby-config-files)
 ;;; gatsby-config-files.el ends here
