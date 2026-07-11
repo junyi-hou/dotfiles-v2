@@ -2,6 +2,7 @@
 
 (require 'ert)
 (require 'gatsby-repl)
+(require 'jupyter-repl)
 
 (ert-deftest gatsby>jupyter-insert-cell-separator--basic ()
   "Insert newline, trimmed comment-start, cell marker, newline."
@@ -350,6 +351,19 @@
         (funcall captured-filter fake-proc "is running")
         (funcall captured-filter fake-proc "is running again")
         (should (= timer-count 1))))))
+
+(ert-deftest gatsby>>jupyter-repl-disable-history-isearch--in-mode-hook ()
+  "The isearch reset is registered on `jupyter-repl-mode-hook'."
+  (should (memq #'gatsby>>jupyter-repl-disable-history-isearch jupyter-repl-mode-hook)))
+
+(ert-deftest gatsby>>jupyter-repl-disable-history-isearch--resets-search-functions ()
+  "After the reset, isearch uses the default buffer-wide search."
+  (with-temp-buffer
+    (jupyter-repl-isearch-setup)
+    (gatsby>>jupyter-repl-disable-history-isearch)
+    (should (null isearch-search-fun-function))
+    (should (null isearch-wrap-function))
+    (should (null isearch-push-state-function))))
 
 (provide 'gatsby-repl-test)
 ;;; gatsby-repl-test.el ends here

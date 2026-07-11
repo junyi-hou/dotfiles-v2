@@ -19,7 +19,9 @@
   (jupyter-repl-maximum-size 12000)
   (jupyter-repl-history-maximum-length 5000)
   (jupyter-use-zmq nil)
-  :hook (jupyter-repl-mode . corfu-mode)
+  :hook
+  (jupyter-repl-mode . corfu-mode)
+  (jupyter-repl-mode . gatsby>>jupyter-repl-disable-history-isearch)
   :init
   ;; jupyter-repl-mode inherits font-lock settings from
   ;; jupyter-repl-lang-mode (e.g. python-ts-mode).  In Emacs 31,
@@ -87,6 +89,14 @@
     (advice-add
      'jupyter-repl-initialize-fontification
      :after #'gatsby>>fix-jupyter-font-lock))
+
+  ;; Jupyter's REPL overrides `isearch' to search input history, which
+  ;; breaks Evil's `/` search in the buffer.  Restore buffer-wide
+  ;; isearch after the mode sets up its history search.
+  (defun gatsby>>jupyter-repl-disable-history-isearch ()
+    (setq-local isearch-search-fun-function nil)
+    (setq-local isearch-wrap-function nil)
+    (setq-local isearch-push-state-function nil))
 
   (defvar gatsby>jupyter-managed-mode-map (make-sparse-keymap))
 
