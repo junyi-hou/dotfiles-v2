@@ -51,6 +51,7 @@
   (inhibit-startup-screen t)
   (fill-column 88)
   (split-window-preferred-function #'gatsby>split-window-sensibly)
+  :hook (elpaca-after-init . gatsby>>maybe-auto-sync-packages-to-lock-file)
   :config (defalias #'yes-or-no-p #'y-or-n-p)
 
   (defun gatsby>split-window-sensibly (&optional window)
@@ -117,9 +118,12 @@ Otherwise call `newline' as default."
            (cond
             ;; Local (GUI or terminal with aerospace in PATH): call directly.
             ((executable-find "aerospace")
-             (start-process "aerospace" nil
-                            "sh" "-c"
-                            (format "aerospace focus --boundaries all-monitors-outer-frame %s && aerospace move-mouse window-lazy-center" dir-str)))
+             (start-process
+              "aerospace" nil "sh"
+              "-c"
+              (format
+               "aerospace focus --boundaries all-monitors-outer-frame %s && aerospace move-mouse window-lazy-center"
+               dir-str)))
             ;; SSH terminal: aerospace not on remote machine, tell kitty via DCS.
             ;; Kitty (local) receives and executes; other terminals ignore unknown DCS.
             ((getenv "SSH_CLIENT")

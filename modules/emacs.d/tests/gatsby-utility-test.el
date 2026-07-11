@@ -181,6 +181,31 @@
             (should (equal result '("b")))))
       (delete-file cache-file))))
 
+;; gatsby>>read-lock-refs tests
+
+(ert-deftest gatsby>>read-lock-refs--reads-refs ()
+  "Test that `gatsby>>read-lock-refs' extracts package refs from the lock file."
+  (let ((elpaca-lock-file (make-temp-file "lock" nil ".el")))
+    (unwind-protect
+        (progn
+          (with-temp-file elpaca-lock-file
+            (insert "((foo :source \"test\" :recipe (:package \"foo\" :ref \"abc123\" :type git))\n")
+            (insert " (bar :source \"test\" :recipe (:package \"bar\" :ref \"def456\" :type git)))\n"))
+          (let ((table (let ((elpaca-lock-file elpaca-lock-file))
+                         (gatsby>>read-lock-refs)))
+                (alist nil))
+            (maphash (lambda (k v) (push (cons k v) alist)) table)
+            (should (= (length alist) 2))
+            (should (equal (cdr (assq 'foo alist)) "abc123"))
+            (should (equal (cdr (assq 'bar alist)) "def456"))))
+      (delete-file elpaca-lock-file))))
+
+(ert-deftest gatsby>>read-lock-refs--missing-file ()
+  "Test that `gatsby>>read-lock-refs' returns an empty table when file is missing."
+  (let ((elpaca-lock-file "/nonexistent/elpaca-lock.el"))
+    (let ((table (gatsby>>read-lock-refs)))
+      (should (= (hash-table-count table) 0)))))
+
 ;; gatsby>switch-to-buffer-new-window tests
 
 (ert-deftest gatsby>switch-to-buffer-new-window--switches-to-visible-buffer ()

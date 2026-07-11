@@ -19,6 +19,16 @@
 
 (defvar gatsby>dotfiles-repo-location)
 
+(defgroup gatsby nil
+  "Gatsby Emacs configuration options."
+  :group 'emacs)
+
+(defcustom gatsby>auto-sync-packages-to-lock-file t
+  "If non-nil, automatically sync installed packages to `elpaca-lock-file'.
+The sync happens asynchronously after `elpaca-after-init-hook' fires."
+  :type 'boolean
+  :group 'gatsby)
+
 (defmacro gatsby>use-internal-package (name &rest args)
   "So I don't need to type `:ensure nil' every time."
   (declare (indent 1))
@@ -227,9 +237,126 @@ Return the final process ran."
                  (kill-buffer log-buffer))))))
       (error "Repository for %s not found" package))))
 
+(defun gatsby>>read-lock-refs ()
+  "Return a hash table mapping package ids to their locked refs."
+  (let ((table (make-hash-table :test #'eq)))
+    (when (file-readable-p elpaca-lock-file)
+      (pcase-dolist (`(,pkg . ,props)
+                     (with-temp-buffer
+                       (insert-file-contents elpaca-lock-file)
+                       (read (current-buffer))))
+        (when-let* ((ref (map-nested-elt props '(:recipe :ref))))
+          (puthash pkg ref table))))
+    table))
+
+(defun gatsby>>package-current-ref (pkg callback)
+  "Asynchronously get PKG's current git HEAD ref.
+CALLBACK is called with (PKG REF) where REF is nil if unavailable."
+  (if-let* ((e (elpaca-get pkg))
+            (repo (elpaca-source-dir e))
+            ((file-directory-p repo)))
+    (let ((default-directory repo)
+          (buf (generate-new-buffer " *elpaca-ref-check*")))
+      (make-process
+       :name (format "elpaca-ref-%s" pkg)
+       :buffer buf
+       :command '("git" "rev-parse" "HEAD")
+       :sentinel
+       (lambda (proc _event)
+         (when (memq (process-status proc) '(exit signal))
+           (let ((ref
+                  (when (and (= (process-exit-status proc) 0)
+                             (buffer-live-p (process-buffer proc)))
+                    (string-trim
+                     (with-current-buffer (process-buffer proc)
+                       (buffer-string))))))
+             (when (buffer-live-p (process-buffer proc))
+               (kill-buffer (process-buffer proc)))
+             (funcall callback pkg ref))))))
+    (funcall callback pkg nil)))
+
+(defun gatsby>>check-packages-against-lock (&optional callback)
+  "Asynchronously compare installed packages against `elpaca-lock-file'.
+CALLBACK receives a list of (PKG LOCKED-REF CURRENT-REF) mismatches."
+  (let* ((lock-refs (gatsby>>read-lock-refs))
+         (pending (hash-table-keys lock-refs))
+         (mismatches nil))
+    (cl-labels ((check-one
+                 ()
+                 (if pending
+                     (let ((pkg (pop pending)))
+                       (gatsby>>package-current-ref
+                        pkg
+                        (lambda (pkg current)
+                          (let ((locked (gethash pkg lock-refs)))
+                            (unless (and current locked (string= current locked))
+                              (push (list pkg locked current) mismatches)))
+                          (check-one))))
+                   (when callback
+                     (funcall callback (nreverse mismatches))))))
+      (check-one))))
+
+(defun gatsby>>sync-package-to-ref (pkg ref)
+  "Checkout PKG to REF and rebuild it asynchronously."
+  (when-let* ((e (elpaca-get pkg))
+              (repo (elpaca-source-dir e))
+              ((file-directory-p repo)))
+    (let ((default-directory repo))
+      (message "Syncing %s to locked ref %s..." pkg ref)
+      (gatsby>>run-process-with-callback `(("git" "fetch") ("git" "checkout" ,ref))
+                                         nil
+                                         (lambda (_proc event)
+                                           (if (string-match-p "finished" event)
+                                               (progn
+                                                 (message
+                                                  "Synced %s to %s, rebuilding..."
+                                                  pkg ref)
+                                                 (elpaca-rebuild pkg))
+                                             (message "Failed to sync %s: %s"
+                                                      pkg
+                                                      event)))))))
+
+(defun gatsby>>maybe-auto-sync-packages-to-lock-file ()
+  "If enabled, asynchronously sync packages to their locked refs after init."
+  (when gatsby>auto-sync-packages-to-lock-file
+    (message "Checking installed packages against lock file...")
+    (gatsby>>check-packages-against-lock
+     (lambda (mismatches)
+       (if mismatches
+           (progn
+             (message "Found %d package(s) out of sync with lock file"
+                      (length mismatches))
+             (pcase-dolist (`(,pkg ,ref ,_) mismatches)
+               (gatsby>>sync-package-to-ref pkg ref)))
+         (message "All installed packages match lock file"))))))
+
+(gatsby>defcommand gatsby>check-packages-against-lock ()
+  "Asynchronously check installed packages against `elpaca-lock-file'.
+Display mismatches in a temporary buffer."
+  (message "Checking installed packages against lock file...")
+  (gatsby>>check-packages-against-lock
+   (lambda (mismatches)
+     (if mismatches
+         (let ((buf (get-buffer-create "*elpaca-lock-mismatches*")))
+           (with-current-buffer buf
+             (let ((inhibit-read-only t))
+               (erase-buffer)
+               (insert "Packages out of sync with lock file:\n\n")
+               (pcase-dolist (`(,pkg ,locked ,current) mismatches)
+                 (insert
+                  (format "%s\n  locked:   %s\n  current:  %s\n\n"
+                          pkg
+                          (or locked "nil")
+                          (or current "nil"))))
+               (special-mode))
+             (pop-to-buffer buf))
+           (message "Found %d package(s) out of sync with lock file"
+                    (length mismatches)))
+       (message "All installed packages match lock file")))))
+
 (gatsby>defcommand gatsby>sync-packages-to-lock-file (all)
-  "Update ALL installed packages (from `elpaca--queued') to their locked ref.
-If the prefix arg ALL is not given, query the user for a package to update."
+  "Update installed packages to their locked refs.
+If the prefix arg ALL is not given, query the user for a single package."
   (let* ((lock-entries
           (with-temp-buffer
             (insert-file-contents elpaca-lock-file)
@@ -248,24 +375,7 @@ If the prefix arg ALL is not given, query the user for a package to update."
       (when-let* ((ref (map-nested-elt props '(:recipe :ref))))
         (puthash pkg ref ref-table)))
     (dolist (pkg (hash-table-keys ref-table))
-      (when-let* ((e (elpaca-get pkg))
-                  (repo (elpaca-source-dir e))
-                  ((file-directory-p repo))
-                  (ref (gethash pkg ref-table)))
-        (let ((default-directory repo))
-          (gatsby>>run-process-with-callback `(("git" "fetch") ("git" "checkout" ,ref))
-                                             nil
-                                             (lambda (_proc event)
-                                               (if (string-match-p "finished" event)
-                                                   (progn
-                                                     (message
-                                                      "Synced %s to %s, rebuilding..."
-                                                      pkg ref)
-                                                     (elpaca-rebuild pkg)
-                                                     (elpaca-wait))
-                                                 (message "Failed to sync %s: %s"
-                                                          pkg
-                                                          event)))))))))
+      (gatsby>>sync-package-to-ref pkg (gethash pkg ref-table)))))
 
 (provide 'gatsby--utility)
 ;;; gatsby--utility.el ends here
