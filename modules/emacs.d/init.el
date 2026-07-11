@@ -36,7 +36,6 @@
 (require 'gatsby-elisp)
 (require 'gatsby-sh-scripts)
 (require 'gatsby-config-files)
-(require 'gatsby-bazel)
 (require 'gatsby-text)
 
 (require 'gatsby-ai)
