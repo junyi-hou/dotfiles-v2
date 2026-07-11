@@ -603,3 +603,13 @@
                               git :protocol https :inherit t :depth treeless :ref
                               "4fab17ff3ec3da4f08f0bd99cc5e99a01a7bb744"))
  (jsonnet-mode :source "elpaca-menu-lock-file" :recipe
+               (:package "jsonnet-mode" :fetcher github :repo "tminor/jsonnet-mode"
+                         :files
+                         ("*.el" "*.el.in" "dir" "*.info" "*.texi" "*.texinfo" "doc/dir"
+                          "doc/*.info" "doc/*.texi" "doc/*.texinfo" "lisp/*.el"
+                          "docs/dir" "docs/*.info" "docs/*.texi" "docs/*.texinfo"
+                          (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el"
+                                    "*-tests.el" "LICENSE" "README*" "*-pkg.el"))
+                         :source "MELPA" :id jsonnet-mode :host github :type git
+                         :protocol https :inherit t :depth treeless :ref
+                         "00229c2f04bb4be26686eb325303865dac3cabf8")))
