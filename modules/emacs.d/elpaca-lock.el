@@ -601,4 +601,8 @@
                      (:source nil :package "flymake-childframe" :id flymake-childframe
                               :host github :repo "junyi-hou/flymake-childframe" :type
                               git :protocol https :inherit t :depth treeless :ref
-                              "4fab17ff3ec3da4f08f0bd99cc5e99a01a7bb744")))
+                              "4fab17ff3ec3da4f08f0bd99cc5e99a01a7bb744"))
+ (bazel.el :source "elpaca-menu-lock-file" :recipe
+           (:source nil :package "bazel.el" :id bazel.el :host github :repo
+                    "bazel-contrib/bazel.el" :type git :protocol https :inherit t :depth
+                    treeless :ref "619a6300d1082bdeb64f4a1cacb6c79bd880bc21")))
