@@ -56,13 +56,17 @@
 
   (defun gatsby>split-window-sensibly (&optional window)
     "Split WINDOW sensibly, preferring horizontal split if wide enough.  Splits
-horizontally if window width > 2 times of `fill-column', returning right window.
-Otherwise splits vertically, returning bottom window."
+  horizontally if window width > 2 times of `fill-column', returning right window.
+  Otherwise splits vertically, returning bottom window."
     (let ((window (or window (selected-window))))
       (with-selected-window window
-        (if (> (window-width window) (* 2 fill-column))
-            (split-window-right)
-          (split-window-below)))))
+        (cond
+         ((> (window-height window) (* 2 (window-width window)))
+          (split-window-below))
+         ((> (window-width window) (* 2 fill-column))
+          (split-window-right))
+         (t
+          (split-window-below))))))
 
   (defconst gatsby>>unkillable-buffers '("*scratch*" "*Messages*")
     "List of buffers that should not be killed")
