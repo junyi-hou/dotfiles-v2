@@ -354,7 +354,162 @@ Prints the ANSI-stripped fixture content so test output shows what is being test
     (should (equal (ssdf--hunk-file (nth 0 hunks)) "x.py"))
     (should (equal (ssdf--hunk-file (nth 1 hunks)) "y.py"))))
 
-;;; ssdf-visual-line-mode
+;;; ssdf--row-patch-lines / ssdf--row-line-offset
+
+(defun ssdf-test--make-annotated-line (type content)
+  "Return CONTENT with `'ssdf-type' TYPE applied as a text property over the line."
+  (let ((line (concat content "\n")))
+    (put-text-property 0 (length line) 'ssdf-type type line)
+    line))
+
+(defun ssdf-test--setup-aligned-pair (left-lines right-lines)
+  "Return (LEFT . RIGHT) buffers filled and annotated with pair content."
+  (let ((left  (get-buffer-create "*ssdf-row-left*"))
+        (right (get-buffer-create "*ssdf-row-right*")))
+    (dolist (buf (list left right))
+      (with-current-buffer buf
+        (let ((inhibit-read-only t)) (erase-buffer))))
+    (with-current-buffer left
+      (dolist (line left-lines)
+        (insert (ssdf-test--make-annotated-line (car line) (cdr line)))))
+    (with-current-buffer right
+      (dolist (line right-lines)
+        (insert (ssdf-test--make-annotated-line (car line) (cdr line)))))
+    (cons left right)))
+
+(defmacro ssdf-test--with-rows (left right &rest body)
+  "Execute BODY with LEFT and RIGHT buffers pre-filled and torn down."
+  (declare (indent 2))
+  `(let ((pair (ssdf-test--setup-aligned-pair ,left ,right)))
+     (unwind-protect
+         (let ((left (car pair))
+               (right (cdr pair)))
+           ,@body)
+       (mapc #'kill-buffer (list (car pair) (cdr pair))))))
+
+(ert-deftest ssdf--row-patch-lines--context ()
+  "A context row emits a single prefixed context line."
+  (ssdf-test--with-rows
+   (list (cons 'context "foo"))
+   (list (cons 'context "foo"))
+   (should (equal (ssdf--row-patch-lines left right 1)
+                  (list " foo")))))
+
+(ert-deftest ssdf--row-patch-lines--removed-added-pair ()
+  "A removed/added pair emits both `-old' and `+new' lines."
+  (ssdf-test--with-rows
+   (list (cons 'removed "old"))
+   (list (cons 'added   "new"))
+   (should (equal (ssdf--row-patch-lines left right 1)
+                  (list "-old" "+new")))))
+
+(ert-deftest ssdf--row-patch-lines--removed-only ()
+  "A removed-only row (peer padding) emits just `-old'."
+  (ssdf-test--with-rows
+   (list (cons 'removed "old"))
+   (list (cons 'padding ""))
+   (should (equal (ssdf--row-patch-lines left right 1)
+                  (list "-old")))))
+
+(ert-deftest ssdf--row-patch-lines--added-only ()
+  "An added-only row (peer padding) emits just `+new'."
+  (ssdf-test--with-rows
+   (list (cons 'padding ""))
+   (list (cons 'added "new"))
+   (should (equal (ssdf--row-patch-lines left right 1)
+                  (list "+new")))))
+
+(ert-deftest ssdf--row-line-offset--context ()
+  (ssdf-test--with-rows
+   (list (cons 'context "x"))
+   (list (cons 'context "x"))
+   (should (equal (ssdf--row-line-offset left right 1) (cons 1 1)))))
+
+(ert-deftest ssdf--row-line-offset--removed-added-pair ()
+  (ssdf-test--with-rows
+   (list (cons 'removed "x"))
+   (list (cons 'added "y"))
+   (should (equal (ssdf--row-line-offset left right 1) (cons 1 1)))))
+
+(ert-deftest ssdf--row-line-offset--removed-only ()
+  (ssdf-test--with-rows
+   (list (cons 'removed "x"))
+   (list (cons 'padding ""))
+   (should (equal (ssdf--row-line-offset left right 1) (cons 1 0)))))
+
+(ert-deftest ssdf--row-line-offset--added-only ()
+  (ssdf-test--with-rows
+   (list (cons 'padding ""))
+   (list (cons 'added "y"))
+   (should (equal (ssdf--row-line-offset left right 1) (cons 0 1)))))
+
+(provide 'side-by-side-diff-test)
+;;; side-by-side-diff-test.el ends here
+
+;;; ssdf--hunk-row-range
+
+(ert-deftest ssdf--hunk-row-range--single-hunk ()
+  "Range covers all content rows of the only hunk."
+  (with-temp-buffer
+    (insert "@@ -1,3 +1,3 @@\n ctx\n-old\n+new\n")
+    (goto-char (point-min))
+    (let ((range (ssdf--hunk-row-range (point))))
+      (should (equal range (cons 2 4))))))
+
+(ert-deftest ssdf--hunk-row-range--stops-at-next-hunk ()
+  "Range ends just before the next `@@' header."
+  (with-temp-buffer
+    (insert "@@ -1 +1 @@\n a\n@@ -10 +10 @@\n b\n")
+    (goto-char (point-min))
+    (let ((range (ssdf--hunk-row-range (point))))
+      (should (equal range (cons 2 2))))))
+
+(ert-deftest ssdf--hunk-row-range--stops-at-file-heading ()
+  "Range ends just before a following `=== file ===' heading."
+  (with-temp-buffer
+    (insert "@@ -1 +1 @@\n a\n=== next.el ===\n@@ -2 +2 @@\n b\n")
+    (goto-char (point-min))
+    (let ((range (ssdf--hunk-row-range (point))))
+      (should (equal range (cons 2 2))))))
+
+;;; ssdf--hunk-index-in-file / ssdf--goto-file-hunk
+
+(ert-deftest ssdf--hunk-index-in-file--single-hunk ()
+  (with-temp-buffer
+    (insert "=== a.el ===\n@@ -1 +1 @@\n x\n")
+    (goto-char (point-min))
+    (re-search-forward "^@@ ")
+    (should (= (ssdf--hunk-index-in-file (match-beginning 0)) 1))))
+
+(ert-deftest ssdf--hunk-index-in-file--second-of-three ()
+  (with-temp-buffer
+    (insert "=== a.el ===\n@@ -1 +1 @@\n x\n@@ -10 +10 @@\n y\n@@ -20 +20 @@\n z\n")
+    (goto-char (point-min))
+    (re-search-forward "^@@ -10")
+    (should (= (ssdf--hunk-index-in-file (match-beginning 0)) 2))))
+
+(ert-deftest ssdf--hunk-index-in-file--resets-per-file ()
+  "Index counts hunks within the current file, not across the whole buffer."
+  (with-temp-buffer
+    (insert "=== a.el ===\n@@ -1 +1 @@\n x\n=== b.el ===\n@@ -2 +2 @@\n y\n")
+    (goto-char (point-min))
+    (re-search-forward "^@@ -2")
+    (should (= (ssdf--hunk-index-in-file (match-beginning 0)) 1))))
+
+(ert-deftest ssdf--goto-file-hunk--lands-on-hunk ()
+  (with-temp-buffer
+    (insert "=== a.el ===\n@@ -1 +1 @@\n x\n@@ -10 +10 @@\n y\n@@ -20 +20 @@\n z\n")
+    (goto-char (point-min))
+    (ssdf--goto-file-hunk "a.el" 2)
+    (should (looking-at "@@ -10"))))
+
+(ert-deftest ssdf--goto-file-hunk--index-too-high-lands-on-next ()
+  "If the requested index no longer exists (staged hunk gone), land on the next."
+  (with-temp-buffer
+    (insert "=== a.el ===\n@@ -1 +1 @@\n x\n@@ -20 +20 @@\n z\n")
+    (goto-char (point-min))
+    (ssdf--goto-file-hunk "a.el" 2)
+    (should (looking-at "@@ -20"))))
 
 (ert-deftest ssdf-visual-line-mode-map--remaps-visual-char ()
   "The minor mode keymap remaps `evil-visual-char' to `evil-visual-line'."

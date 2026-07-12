@@ -284,11 +284,15 @@ side is padded so context lines stay vertically aligned."
    'face 'ssdf-hunk-heading))
 
 (defun ssdf--insert-line (buf type text)
-  "Insert TEXT plus a newline into BUF; apply padding face when TYPE is padding."
+  "Insert TEXT plus a newline into BUF; apply padding face when TYPE is padding.
+The TYPE (context/removed/added/padding) is recorded as the `'ssdf-type'
+text property on the inserted line so that patch construction can
+recover it later."
   (with-current-buffer buf
     (let ((inhibit-read-only t)
           (start (point)))
       (insert text "\n")
+      (put-text-property start (point) 'ssdf-type type)
       (when (eq type 'padding)
         (add-face-text-property start (point) 'ssdf-padding nil)))))
 
@@ -303,10 +307,18 @@ side is padded so context lines stay vertically aligned."
             (with-current-buffer buf
               (let ((inhibit-read-only t)) (insert heading))))))
       (let* ((aligned     (ssdf--align (ssdf--hunk-lines hunk)))
-             (hunk-header (ssdf--propertize-hunk-header (ssdf--hunk-header hunk))))
+             (hunk-header (ssdf--propertize-hunk-header (ssdf--hunk-header hunk)))
+             (old-start   (ssdf--hunk-old-start hunk))
+             (new-start   (ssdf--hunk-new-start hunk))
+             (h-file      cur-file))
         (dolist (buf (list left-buf right-buf))
           (with-current-buffer buf
-            (let ((inhibit-read-only t)) (insert hunk-header))))
+            (let ((inhibit-read-only t)
+                  (start (point)))
+              (insert hunk-header)
+              (put-text-property start (point) 'ssdf-old-start old-start)
+              (put-text-property start (point) 'ssdf-new-start new-start)
+              (put-text-property start (point) 'ssdf-file      h-file))))
         (cl-loop for (ltype . ltext) in (car aligned)
                  for (rtype . rtext) in (cdr aligned)
                  do (ssdf--insert-line left-buf  ltype ltext)
@@ -452,6 +464,173 @@ selection live.  When no region is active, the peer overlay is removed."
             (delete-overlay ssdf--mirror-overlay)
             (setq ssdf--mirror-overlay nil)))))))
 
+;;;; Staging
+
+(defun ssdf--linetype-content (buf row)
+  "Return (TYPE . CONTENT) for line ROW (1-indexed) in BUF."
+  (with-current-buffer buf
+    (save-excursion
+      (goto-char (point-min))
+      (forward-line (1- row))
+      (let ((pos (point)))
+        (cons (or (get-text-property pos 'ssdf-type) 'padding)
+              (buffer-substring-no-properties pos (line-end-position)))))))
+
+(defun ssdf--row-patch-lines (left-buf right-buf row)
+  "Return list of patch lines for the row at buffer ROW (1-indexed).
+Walks LEFT-BUF and RIGHT-BUF in parallel since they are aligned."
+  (let* ((l (ssdf--linetype-content left-buf  row))
+         (r (ssdf--linetype-content right-buf row))
+         (ltype    (car l))
+         (lcontent (cdr l))
+         (rtype    (car r))
+         (rcontent (cdr r)))
+    (cond
+     ((and (eq ltype 'context) (eq rtype 'context))
+      (list (concat " "  lcontent)))
+     ((and (eq ltype 'removed)  (eq rtype 'added))
+      (list (concat "-" lcontent) (concat "+" rcontent)))
+     ((and (eq ltype 'removed)  (eq rtype 'padding))
+      (list (concat "-" lcontent)))
+     ((and (eq ltype 'padding)  (eq rtype 'added))
+      (list (concat "+" rcontent)))
+     (t nil))))
+
+(defun ssdf--row-line-offset (left-buf right-buf row)
+  "Return (OLD-DELTA . NEW-DELTA) for ROW.
+Indicates how many old/new file lines this row contributes to offsets."
+  (let ((ltype (car (ssdf--linetype-content left-buf  row)))
+        (rtype (car (ssdf--linetype-content right-buf row))))
+    (cons (if (memq ltype '(context removed)) 1 0)
+          (if (memq rtype '(context added))   1 0))))
+
+(defun ssdf--hunk-row-range (header-pos)
+  "Return (FIRST-CONTENT-ROW . LAST-CONTENT-ROW) for the hunk whose
+header (the `@@ ...' line) starts at HEADER-POS."
+  (save-excursion
+    (goto-char header-pos)
+    (forward-line 1)
+    (let ((first (line-number-at-pos)))
+      (if (re-search-forward "^\\(@@ \\|=== \\)" nil t)
+          (cons first (1- (line-number-at-pos (match-beginning 0))))
+        (save-excursion
+          (goto-char (point-max))
+          (when (bolp) (forward-line -1))
+          (cons first (line-number-at-pos)))))))
+
+(defun ssdf--current-hunk-header-pos ()
+  "Return the position of the `@@ ' hunk header containing point, or nil."
+  (save-excursion
+    (beginning-of-line)
+    (or (and (looking-at "^@@ ") (point))
+        (and (re-search-backward "^@@ " nil t) (point)))))
+
+(defun ssdf--refresh-diff ()
+  "Re-render the diff using the saved source function.
+If the refreshed diff is empty (all changes staged), close the view."
+  (let* ((left-buf (get-buffer ssdf--left-name))
+         (source-fn (and (buffer-live-p left-buf)
+                         (buffer-local-value 'ssdf--source-fn left-buf)))
+         (ctx (and (buffer-live-p left-buf)
+                   (buffer-local-value 'ssdf--context left-buf))))
+    (unless source-fn
+      (user-error "Cannot refresh: diff source unavailable"))
+    (let ((diff-text (funcall source-fn (or ctx ssdf-default-context))))
+      (if (or (null diff-text)
+              (string-empty-p (string-trim diff-text)))
+          (ssdf-quit)
+        (ssdf-display-diff diff-text
+                           :context (or ctx ssdf-default-context)
+                           :source-fn source-fn)))))
+
+(defun ssdf--hunk-index-in-file (header-pos)
+  "Return the 1-based index of HEADER-POS among the `@@' headers of its file."
+  (save-excursion
+    (goto-char header-pos)
+    (let* ((file-start (save-excursion
+                         (if (re-search-backward "^=== " nil t)
+                             (line-end-position)
+                           (point-min))))
+           (bound (save-excursion
+                    (goto-char header-pos)
+                    (line-end-position)))
+           (count 0))
+      (save-excursion
+        (goto-char file-start)
+        (while (re-search-forward "^@@ " bound t)
+          (cl-incf count)))
+      count)))
+
+(defun ssdf--goto-file-hunk (file-name hunk-index)
+  "Move point to the HUNK-INDEX (1-based) `@@' header within FILE-NAME."
+  (ssdf--goto-file-heading file-name)
+  (let ((remaining hunk-index)
+        (found nil))
+    (while (and (> remaining 0)
+                (re-search-forward "^@@ " nil t))
+      (setq found (match-beginning 0))
+      (cl-decf remaining))
+    (when found (goto-char found))))
+
+(defun ssdf-stage ()
+  "Stage the hunk at point, or the active region, then refresh the diff.
+Uses `git apply --cached --recount' so partial hunks stage correctly.
+After staging, repositions to the same hunk index within the file;
+if the staged hunk was the last one, the next remaining hunk is
+landed on instead."
+  (interactive)
+  (unless ssdf--peer
+    (user-error "Not in a ssdf buffer"))
+  (let* ((left-buf    (get-buffer ssdf--left-name))
+         (right-buf   (get-buffer ssdf--right-name))
+         (header-pos  (ssdf--current-hunk-header-pos))
+         (file-name   (and header-pos (ssdf--current-file-name))))
+    (unless (and header-pos file-name)
+      (user-error "No hunk at point"))
+    (let ((saved-hunk-index (ssdf--hunk-index-in-file header-pos)))
+      (let* ((base-old   (or (get-text-property header-pos 'ssdf-old-start) 1))
+             (base-new   (or (get-text-property header-pos 'ssdf-new-start) 1))
+             (hunk-range (ssdf--hunk-row-range header-pos))
+             (region-rows
+              (if mark-active
+                  (let ((beg (line-number-at-pos (region-beginning)))
+                        (end (line-number-at-pos (region-end))))
+                    (cons (max beg (car hunk-range))
+                          (min end (cdr hunk-range))))
+                hunk-range))
+             (start-row  (car region-rows))
+             (hunk-start (car hunk-range))
+             (offsets    (cl-loop for row from hunk-start to (1- start-row)
+                                  for off = (ssdf--row-line-offset left-buf right-buf row)
+                                  sum (car off) into od
+                                  sum (cdr off) into nd
+                                  finally return (cons od nd)))
+             (patch-old  (+ base-old (car offsets)))
+             (patch-new  (+ base-new (cdr offsets)))
+             (patch-lines (cl-loop for row from start-row to (cdr region-rows)
+                                   append (ssdf--row-patch-lines left-buf right-buf row))))
+        (unless patch-lines
+          (user-error "Nothing to stage in the selected range"))
+        (let ((patch (concat "diff --git a/" file-name " b/" file-name "\n"
+                             "--- a/" file-name "\n"
+                             "+++ b/" file-name "\n"
+                             "@@ -" (number-to-string patch-old) " +"
+                             (number-to-string patch-new) " @@\n"
+                             (mapconcat #'identity patch-lines "\n")
+                             "\n")))
+          (let ((status
+                 (with-temp-buffer
+                   (insert patch)
+                   (call-process-region (point-min) (point-max)
+                                        "git" nil t nil
+                                        "apply" "--cached" "--recount" "-"))))
+            (unless (eq status 0)
+              (user-error "git apply --cached failed")))))
+      (ssdf--refresh-diff)
+      (when (get-buffer ssdf--left-name)
+        (with-current-buffer (get-buffer ssdf--left-name)
+          (ssdf--goto-file-hunk file-name saved-hunk-index))))))
+
 ;;;; Mode
 
 (defvar ssdf-mode-map
@@ -466,6 +645,7 @@ selection live.  When no region is active, the peer overlay is removed."
     (define-key map (kbd "{")   #'ssdf-prev-file)
     (define-key map (kbd "+")   #'ssdf-increase-context)
     (define-key map (kbd "-")   #'ssdf-decrease-context)
+    (define-key map (kbd "s")   #'ssdf-stage)
     (define-key map (kbd "q")   #'ssdf-quit)
     map)
   "Keymap for `ssdf-mode'.")
@@ -545,7 +725,7 @@ selection live.  When no region is active, the peer overlay is removed."
   (when (re-search-forward
          (concat "^=== " (regexp-quote file-name) " ===") nil t)
     (goto-char (line-beginning-position))
-    (recenter 0)))
+    (when (get-buffer-window (current-buffer)) (recenter 0))))
 
 (defun ssdf--adjust-context (delta)
   "Change context lines by DELTA and refresh."
