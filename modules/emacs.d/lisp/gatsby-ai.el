@@ -9,7 +9,6 @@
 ;; managing agents
 (use-package agent-shell-manager
   :ensure (:host github :repo "jethrokuan/agent-shell-manager")
-  :after agent-shell
   :config
   (gatsby>defcommand gatsby>>agent-shell-manager-goto ()
     "Go to the agent shell at point using the default display action."
@@ -317,6 +316,31 @@ without prompting."
                                  ssh-host
                                  localname)))
                     nil t)))))
+
+  ;; Emacs's built-in `system-sleep' needs NS, W32, or D-Bus support.  This
+  ;; build has none, so provide a minimal macOS backend via `caffeinate' so
+  ;; agent-shell can still keep the system awake during long turns.
+  (unless (or (featurep 'ns) (featurep 'w32) (featurep 'dbusbind))
+    (if-let* ((caffeinate (executable-find "caffeinate")))
+        (progn
+          (defun system-sleep-block-sleep (_why &optional allow-display-sleep)
+            "Block system idle sleep using `caffeinate'.
+_WHY is ignored.  When ALLOW-DISPLAY-SLEEP is non-nil, allow the display to
+sleep; otherwise keep it awake.  Return a process object to pass to
+`system-sleep-unblock-sleep'."
+            (let ((args (if allow-display-sleep '("-i") '("-i" "-d"))))
+              (apply #'start-process "caffeinate-agent-shell" nil caffeinate args)))
+
+          (defun system-sleep-unblock-sleep (token)
+            "Release the `caffeinate' sleep block TOKEN."
+            (when (processp token)
+              (delete-process token)
+              t)))
+      ;; No backend and no caffeinate: disable inhibition and install no-op
+      ;; stubs so agent-shell's `require' guard does not load the broken library.
+      (setq agent-shell-inhibit-system-sleep nil)
+      (defun system-sleep-block-sleep (&rest _) nil)
+      (defun system-sleep-unblock-sleep (&rest _) t)))
 
   (defun gatsby>>agent-shell-pending-permission-p ()
     (map-some
