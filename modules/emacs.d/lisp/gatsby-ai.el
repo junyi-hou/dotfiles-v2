@@ -158,8 +158,7 @@ Shows running agents for the project; selecting one focuses it, selecting \"new\
     (setq-local comint-scroll-show-maximum-output nil))
 
   :custom
-  (agent-shell-display-action
-   '(display-buffer-in-side-window (side . right) (window-width . 0.33) (slot . 0)))
+  (agent-shell-display-action nil)
   (agent-shell-file-completion-enabled t)
   (agent-shell-session-strategy 'new)
   ;; opencode stores sessions under truenames but matches session/list cwd
@@ -322,25 +321,30 @@ without prompting."
   ;; agent-shell can still keep the system awake during long turns.
   (unless (or (featurep 'ns) (featurep 'w32) (featurep 'dbusbind))
     (if-let* ((caffeinate (executable-find "caffeinate")))
-        (progn
-          (defun system-sleep-block-sleep (_why &optional allow-display-sleep)
-            "Block system idle sleep using `caffeinate'.
+      (progn
+        (defun system-sleep-block-sleep (_why &optional allow-display-sleep)
+          "Block system idle sleep using `caffeinate'.
 _WHY is ignored.  When ALLOW-DISPLAY-SLEEP is non-nil, allow the display to
 sleep; otherwise keep it awake.  Return a process object to pass to
 `system-sleep-unblock-sleep'."
-            (let ((args (if allow-display-sleep '("-i") '("-i" "-d"))))
-              (apply #'start-process "caffeinate-agent-shell" nil caffeinate args)))
+          (let ((args
+                 (if allow-display-sleep
+                     '("-i")
+                   '("-i" "-d"))))
+            (apply #'start-process "caffeinate-agent-shell" nil caffeinate args)))
 
-          (defun system-sleep-unblock-sleep (token)
-            "Release the `caffeinate' sleep block TOKEN."
-            (when (processp token)
-              (delete-process token)
-              t)))
+        (defun system-sleep-unblock-sleep (token)
+          "Release the `caffeinate' sleep block TOKEN."
+          (when (processp token)
+            (delete-process token)
+            t)))
       ;; No backend and no caffeinate: disable inhibition and install no-op
       ;; stubs so agent-shell's `require' guard does not load the broken library.
       (setq agent-shell-inhibit-system-sleep nil)
-      (defun system-sleep-block-sleep (&rest _) nil)
-      (defun system-sleep-unblock-sleep (&rest _) t)))
+      (defun system-sleep-block-sleep (&rest _)
+        nil)
+      (defun system-sleep-unblock-sleep (&rest _)
+        t)))
 
   (defun gatsby>>agent-shell-pending-permission-p ()
     (map-some
