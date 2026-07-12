@@ -77,8 +77,7 @@
   :ensure (:host github :repo "bazel-contrib/bazel.el")
   :init
   (with-eval-after-load 'eglot
-    (add-to-list 'eglot-server-programs '(bazel-mode "starpls" "server")))
-  (add-to-list 'project-vc-extra-root-markers "BUILD.bazel"))
+    (add-to-list 'eglot-server-programs '(bazel-mode "starpls" "server"))))
 
 (provide 'gatsby-config-files)
 ;;; gatsby-config-files.el ends here

@@ -9,7 +9,7 @@
 (gatsby>use-internal-package project
   :custom
   (vc-follow-symlinks t)
-  (project-vc-extra-root-markers '(".envrc" ".dir-locals.el"))
+  (project-vc-extra-root-markers '(".envrc" ".dir-locals.el" "BUILD.bazel"))
   :config
 
   ;; Create a new project type whose roots are defined in `gatsby>project-list'.
