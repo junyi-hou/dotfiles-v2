@@ -421,6 +421,8 @@ Returns non-nil if a button was found and activated."
   (
    ;; (:maps normal)
    ;; ("SPC a r" . #'gatsby>run-agent-on-remote)
+   (:maps (visual normal motion))
+   ([remap gatsby>kill-buffer] . #'kill-buffer-and-window)
    (:maps (visual normal))
    ("SPC a s" . #'agent-shell-send-file)
    (:maps agent-shell-mode-map :states insert)
