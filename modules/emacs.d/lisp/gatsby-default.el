@@ -61,7 +61,7 @@
     (let ((window (or window (selected-window))))
       (with-selected-window window
         (cond
-         ((> (window-height window) (* 2 (window-width window)))
+         ((> (window-pixel-height window) (window-pixel-width window))
           (split-window-below))
          ((> (window-width window) (* 2 fill-column))
           (split-window-right))
