@@ -37,4 +37,5 @@ This file contains instructions that every agent should read at the start of eac
 ## Writing Style
 
 - Do not use em dashes (—) in responses. Use commas, semicolons, or plain hyphens instead.
-- Use the `style-editor` skill for academic, analytical, or business documents.
+- Use the `asd-ste100-skill` skill for agent responses.
+- Use the `asd-ste100-skill` skill when writing documents.

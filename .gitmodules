@@ -1,3 +1,6 @@
 [submodule "git-modules/mattpocock-skills"]
 	path = git-modules/mattpocock-skills
 	url = https://github.com/mattpocock/skills
+[submodule "git-modules/asd-ste100-skill"]
+	path = git-modules/asd-ste100-skill
+	url = https://github.com/danyuchn/asd-ste100-skill.git
