@@ -278,5 +278,268 @@
       (set-window-configuration initial-config)
       (kill-buffer test-buffer))))
 
+;;; Async process test helpers
+
+(defun gatsby-test--wait-for (predicate &optional timeout)
+  "Wait until PREDICATE returns non-nil or TIMEOUT seconds (default 10) pass."
+  (let ((deadline (+ (float-time) (or timeout 10))))
+    (while (and (not (funcall predicate)) (< (float-time) deadline))
+      (accept-process-output nil 0.05))
+    (funcall predicate)))
+
+(defmacro gatsby-test--capture-messages (&rest body)
+  "Run BODY capturing `message' calls; evaluate to the list of message strings."
+  (declare (indent 0))
+  `(let ((messages nil))
+     (cl-letf (((symbol-function 'message)
+                (lambda (fmt &rest args)
+                  (push (apply #'format fmt args) messages))))
+       ,@body)
+     (nreverse messages)))
+
+(defun gatsby-test--make-git-repo ()
+  "Create a temp git repo with one commit and a working local origin.
+Return (WORK-DIR . HEAD-SHA)."
+  (let* ((dir (make-temp-file "gatsby-test-repo" t))
+         (origin (expand-file-name "origin.git" dir))
+         (work (expand-file-name "work" dir)))
+    (let ((default-directory dir))
+      (call-process "git" nil nil nil "init" "-q" "--bare" origin)
+      (call-process "git" nil nil nil "clone" "-q" origin work))
+    (let ((default-directory work))
+      (call-process "git" nil nil nil "config" "user.email" "test@example.com")
+      (call-process "git" nil nil nil "config" "user.name" "test")
+      (with-temp-file (expand-file-name "file.txt" work) (insert "hi"))
+      (call-process "git" nil nil nil "add" "file.txt")
+      (call-process "git" nil nil nil "commit" "-q" "-m" "init")
+      (call-process "git" nil nil nil "push" "-q" "origin" "HEAD")
+      (cons work (string-trim (shell-command-to-string "git rev-parse HEAD"))))))
+
+;; gatsby>>sync-package-to-ref tests
+
+(ert-deftest gatsby>>sync-package-to-ref--missing-repo-reports-error ()
+  "When PKG has no repository, CALLBACK receives PKG and an error string."
+  (let (result)
+    (cl-letf (((symbol-function 'elpaca-get) (lambda (_) nil)))
+      (gatsby>>sync-package-to-ref
+       'foo "abc123" (lambda (pkg err) (setq result (list pkg err)))))
+    (should (eq (car result) 'foo))
+    (should (stringp (cadr result)))))
+
+(ert-deftest gatsby>>sync-package-to-ref--success-rebuilds-and-reports ()
+  "On success, CALLBACK gets (PKG nil), the package is rebuilt and HEAD moves to REF."
+  (let* ((repo (gatsby-test--make-git-repo))
+         (dir (car repo))
+         (sha (cdr repo))
+         result rebuilt)
+    (unwind-protect
+        (cl-letf (((symbol-function 'elpaca-get) (lambda (_) 'fake-e))
+                  ((symbol-function 'elpaca-source-dir) (lambda (_) dir))
+                  ((symbol-function 'elpaca-rebuild) (lambda (pkg) (push pkg rebuilt))))
+          (gatsby>>sync-package-to-ref
+           'foo sha (lambda (pkg err) (setq result (list pkg err))))
+          (should (gatsby-test--wait-for (lambda () result)))
+          (should (eq (car result) 'foo))
+          (should (null (cadr result)))
+          (should (equal rebuilt '(foo)))
+          (let ((default-directory dir))
+            (should (string= (string-trim
+                              (shell-command-to-string "git rev-parse HEAD"))
+                             sha))))
+      (delete-directory (file-name-directory dir) t))))
+
+(ert-deftest gatsby>>sync-package-to-ref--checkout-failure-reports-error ()
+  "When `git checkout' fails, CALLBACK gets an error naming the command, no rebuild."
+  (let* ((repo (gatsby-test--make-git-repo))
+         (dir (car repo))
+         (sha (cdr repo))
+         result rebuilt)
+    (unwind-protect
+        (cl-letf (((symbol-function 'elpaca-get) (lambda (_) 'fake-e))
+                  ((symbol-function 'elpaca-source-dir) (lambda (_) dir))
+                  ((symbol-function 'elpaca-rebuild) (lambda (pkg) (push pkg rebuilt))))
+          (gatsby>>sync-package-to-ref
+           'foo "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
+           (lambda (pkg err) (setq result (list pkg err))))
+          (should (gatsby-test--wait-for (lambda () result)))
+          (should (eq (car result) 'foo))
+          (should (stringp (cadr result)))
+          (should (string-match-p "git checkout" (cadr result)))
+          (should (null rebuilt))
+          (let ((default-directory dir))
+            (should (string= (string-trim
+                              (shell-command-to-string "git rev-parse HEAD"))
+                             sha))))
+      (delete-directory (file-name-directory dir) t))))
+
+(ert-deftest gatsby>>sync-package-to-ref--fetch-failure-reports-error ()
+  "When `git fetch' fails, CALLBACK gets an error naming the command, no rebuild."
+  (let* ((repo (gatsby-test--make-git-repo))
+         (dir (car repo))
+         (sha (cdr repo))
+         result rebuilt)
+    (unwind-protect
+        (let ((default-directory dir))
+          (call-process "git" nil nil nil "remote" "set-url" "origin" "/nonexistent"))
+        (cl-letf (((symbol-function 'elpaca-get) (lambda (_) 'fake-e))
+                  ((symbol-function 'elpaca-source-dir) (lambda (_) dir))
+                  ((symbol-function 'elpaca-rebuild) (lambda (pkg) (push pkg rebuilt))))
+          (gatsby>>sync-package-to-ref
+           'foo sha (lambda (pkg err) (setq result (list pkg err))))
+          (should (gatsby-test--wait-for (lambda () result)))
+          (should (eq (car result) 'foo))
+          (should (stringp (cadr result)))
+          (should (string-match-p "git fetch" (cadr result)))
+          (should (null rebuilt)))
+      (delete-directory (file-name-directory dir) t))))
+
+;; gatsby>>check-packages-against-lock tests
+
+(ert-deftest gatsby>>check-packages-against-lock--ignores-lock-only-packages ()
+  "Packages in the lock file but no longer installed are treated as in sync."
+  (let* ((elpaca-lock-file (make-temp-file "lock" nil ".el"))
+         (checked-pkgs nil)
+         result)
+    (unwind-protect
+        (progn
+          (with-temp-file elpaca-lock-file
+            (insert "((removed :source \"test\" :recipe (:package \"removed\" :ref \"abc123\" :type git)))\n"))
+          (cl-letf (((symbol-function 'elpaca-get)
+                     (lambda (pkg)
+                       (push pkg checked-pkgs)
+                       nil))
+                    ((symbol-function 'gatsby>>package-current-ref)
+                     (lambda (_pkg _cb)
+                       (error "gatsby>>package-current-ref should not be called for lock-only packages"))))
+            (let ((elpaca-lock-file elpaca-lock-file))
+              (gatsby>>check-packages-against-lock
+               (lambda (mismatches) (setq result mismatches))))
+            (should (null result))
+            (should (equal checked-pkgs '(removed)))))
+      (delete-file elpaca-lock-file))))
+
+(ert-deftest gatsby>>check-packages-against-lock--reports-wrong-ref ()
+  "Installed packages whose current ref differs from the lock file are reported."
+  (let* ((elpaca-lock-file (make-temp-file "lock" nil ".el"))
+         result)
+    (unwind-protect
+        (progn
+          (with-temp-file elpaca-lock-file
+            (insert "((pkg :source \"test\" :recipe (:package \"pkg\" :ref \"locked\" :type git)))\n"))
+          (cl-letf (((symbol-function 'elpaca-get) (lambda (_) 'e))
+                    ((symbol-function 'gatsby>>package-current-ref)
+                     (lambda (pkg cb) (funcall cb pkg "current"))))
+            (let ((elpaca-lock-file elpaca-lock-file))
+              (gatsby>>check-packages-against-lock
+               (lambda (mismatches) (setq result mismatches))))
+            (should (equal result '((pkg "locked" "current"))))))
+      (delete-file elpaca-lock-file))))
+
+(ert-deftest gatsby>>check-packages-against-lock--ok-when-ref-matches ()
+  "Installed packages with matching ref produce no mismatches."
+  (let* ((elpaca-lock-file (make-temp-file "lock" nil ".el"))
+         result)
+    (unwind-protect
+        (progn
+          (with-temp-file elpaca-lock-file
+            (insert "((pkg :source \"test\" :recipe (:package \"pkg\" :ref \"abc123\" :type git)))\n"))
+          (cl-letf (((symbol-function 'elpaca-get) (lambda (_) 'e))
+                    ((symbol-function 'gatsby>>package-current-ref)
+                     (lambda (pkg cb) (funcall cb pkg "abc123"))))
+            (let ((elpaca-lock-file elpaca-lock-file))
+              (gatsby>>check-packages-against-lock
+               (lambda (mismatches) (setq result mismatches))))
+            (should (null result))))
+      (delete-file elpaca-lock-file))))
+
+;; gatsby>>sync-packages-to-refs tests
+
+(ert-deftest gatsby>>sync-packages-to-refs--all-succeed ()
+  "All packages sync: each is attempted in order, summary lists all as updated."
+  (let (attempted done)
+    (cl-letf (((symbol-function 'gatsby>>sync-package-to-ref)
+               (lambda (pkg ref cb) (push (list pkg ref) attempted) (funcall cb pkg nil))))
+      (let ((messages
+             (gatsby-test--capture-messages
+               (gatsby>>sync-packages-to-refs
+                '((a "r1") (b "r2"))
+                (lambda (updated failed) (setq done (list updated failed)))))))
+        (should (equal (nreverse attempted) '((a "r1") (b "r2"))))
+        (should (equal done '((a b) nil)))
+        (should (cl-some (lambda (m) (string-match-p "Updated: a, b" m)) messages))
+        (should (cl-some (lambda (m) (string-match-p "Failed: none" m)) messages))))))
+
+(ert-deftest gatsby>>sync-packages-to-refs--failure-does-not-stop-rest ()
+  "A failed package is reported, remaining packages still sync, summary lists both."
+  (let (attempted done)
+    (cl-letf (((symbol-function 'gatsby>>sync-package-to-ref)
+               (lambda (pkg _ref cb)
+                 (push pkg attempted)
+                 (funcall cb pkg (when (eq pkg 'b) "git checkout failed")))))
+      (let ((messages
+             (gatsby-test--capture-messages
+               (gatsby>>sync-packages-to-refs
+                '((a "r1") (b "r2") (c "r3"))
+                (lambda (updated failed) (setq done (list updated failed)))))))
+        (should (equal (nreverse attempted) '(a b c)))
+        (should (equal done '((a c) (b))))
+        (should (cl-some (lambda (m)
+                           (and (string-match-p "Failed to sync b" m)
+                                (string-match-p "git checkout failed" m)))
+                         messages))
+        (should (cl-some (lambda (m) (string-match-p "Updated: a, c" m)) messages))
+        (should (cl-some (lambda (m) (string-match-p "Failed: b" m)) messages))))))
+
+(ert-deftest gatsby>>sync-packages-to-refs--empty-list ()
+  "Empty input still reports a summary and calls DONE-CALLBACK."
+  (let (done)
+    (let ((messages
+           (gatsby-test--capture-messages
+             (gatsby>>sync-packages-to-refs
+              nil (lambda (updated failed) (setq done (list updated failed)))))))
+      (should (equal done '(nil nil)))
+      (should (cl-some (lambda (m) (string-match-p "Updated: none" m)) messages)))))
+
+;; gatsby>>maybe-auto-sync-packages-to-lock-file tests
+
+(ert-deftest gatsby>>maybe-auto-sync--disabled-does-nothing ()
+  "When `gatsby>auto-sync-packages-to-lock-file' is nil, no check runs."
+  (let (checked)
+    (cl-letf (((symbol-function 'gatsby>>check-packages-against-lock)
+               (lambda (_) (setq checked t)))
+              (gatsby>auto-sync-packages-to-lock-file nil))
+      (gatsby>>maybe-auto-sync-packages-to-lock-file)
+      (should (null checked)))))
+
+(ert-deftest gatsby>>maybe-auto-sync--no-mismatches ()
+  "When nothing is out of sync, report so and do not sync anything."
+  (let (synced)
+    (cl-letf (((symbol-function 'gatsby>>check-packages-against-lock)
+               (lambda (cb) (funcall cb nil)))
+              ((symbol-function 'gatsby>>sync-packages-to-refs)
+               (lambda (pairs &optional _) (setq synced pairs)))
+              (gatsby>auto-sync-packages-to-lock-file t))
+      (let ((messages
+             (gatsby-test--capture-messages
+               (gatsby>>maybe-auto-sync-packages-to-lock-file))))
+        (should (null synced))
+        (should (cl-some
+                 (lambda (m) (string-match-p "All installed packages match lock file" m))
+                 messages))))))
+
+(ert-deftest gatsby>>maybe-auto-sync--mismatches-are-synced ()
+  "Mismatches are passed to the batch sync as (PKG LOCKED-REF) pairs."
+  (let (synced)
+    (cl-letf (((symbol-function 'gatsby>>check-packages-against-lock)
+               (lambda (cb)
+                 (funcall cb '((a "locked-a" "current-a")
+                               (b "locked-b" "current-b")))))
+              ((symbol-function 'gatsby>>sync-packages-to-refs)
+               (lambda (pairs &optional _) (setq synced pairs)))
+              (gatsby>auto-sync-packages-to-lock-file t))
+      (gatsby-test--capture-messages
+        (gatsby>>maybe-auto-sync-packages-to-lock-file))
+      (should (equal synced '((a "locked-a") (b "locked-b")))))))
+
 (provide 'gatsby-utility-test)
 ;;; gatsby-utility-test.el ends here

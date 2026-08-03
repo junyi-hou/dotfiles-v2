@@ -163,9 +163,11 @@ should bind to `evil-mode-hook'"
           (add-to-list list mode))
       (add-to-list list modes))))
 
-(defun gatsby>>run-process-with-callback (commands &optional buffer final-sentinel)
+(defun gatsby>>run-process-with-callback (commands &optional buffer final-sentinel on-error)
   "Run COMMANDS sequentially. The FINAL-SENTINEL is attached to the last process.
-Return the final process ran."
+ON-ERROR, if non-nil, is called with (PROC EVENT) when a non-final command
+fails; otherwise a generic message is printed.  The chain always stops on
+failure.  Return the final process ran."
   (when commands
     (let* ((command (car commands))
            (rest (cdr commands))
@@ -183,10 +185,12 @@ Return the final process ran."
          (lambda (p event)
            (if (string= event "finished\n")
                (let ((default-directory dir))
-                 (gatsby>>run-process-with-callback rest buffer final-sentinel))
-             (message "Process failed: `%s' failed with %s"
-                      (string-join (process-command p) " ")
-                      event))))
+                 (gatsby>>run-process-with-callback rest buffer final-sentinel on-error))
+             (if on-error
+                 (funcall on-error p event)
+               (message "Process failed: `%s' failed with %s"
+                        (string-join (process-command p) " ")
+                        event)))))
         proc))))
 
 (gatsby>defcommand gatsby>update-emacs-package ()
@@ -279,7 +283,7 @@ CALLBACK is called with (PKG REF) where REF is nil if unavailable."
   "Asynchronously compare installed packages against `elpaca-lock-file'.
 CALLBACK receives a list of (PKG LOCKED-REF CURRENT-REF) mismatches."
   (let* ((lock-refs (gatsby>>read-lock-refs))
-         (pending (hash-table-keys lock-refs))
+         (pending (cl-remove-if-not #'elpaca-get (hash-table-keys lock-refs)))
          (mismatches nil))
     (cl-labels ((check-one
                  ()
@@ -296,39 +300,88 @@ CALLBACK receives a list of (PKG LOCKED-REF CURRENT-REF) mismatches."
                      (funcall callback (nreverse mismatches))))))
       (check-one))))
 
-(defun gatsby>>sync-package-to-ref (pkg ref)
-  "Checkout PKG to REF and rebuild it asynchronously."
-  (when-let* ((e (elpaca-get pkg))
-              (repo (elpaca-source-dir e))
-              ((file-directory-p repo)))
-    (let ((default-directory repo))
-      (message "Syncing %s to locked ref %s..." pkg ref)
-      (gatsby>>run-process-with-callback `(("git" "fetch") ("git" "checkout" ,ref))
-                                         nil
-                                         (lambda (_proc event)
-                                           (if (string-match-p "finished" event)
-                                               (progn
-                                                 (message
-                                                  "Synced %s to %s, rebuilding..."
-                                                  pkg ref)
-                                                 (elpaca-rebuild pkg))
-                                             (message "Failed to sync %s: %s"
-                                                      pkg
-                                                      event)))))))
+(defun gatsby>>sync-package-to-ref (pkg ref callback)
+  "Checkout PKG to REF and rebuild it asynchronously.
+CALLBACK is called with (PKG nil) on success, or (PKG ERROR-STRING) on
+failure.  A failure in any step (missing repo, fetch, checkout) is
+reported through CALLBACK and never throws."
+  (if-let* ((e (elpaca-get pkg))
+            (repo (elpaca-source-dir e))
+            ((file-directory-p repo)))
+      (let ((default-directory repo))
+        (message "Syncing %s to locked ref %s..." pkg ref)
+        (gatsby>>run-process-with-callback
+         `(("git" "fetch") ("git" "checkout" ,ref))
+         nil
+         (lambda (_proc event)
+           (if (string-match-p "finished" event)
+               (progn
+                 (elpaca-rebuild pkg)
+                 (funcall callback pkg nil))
+             (funcall callback
+                      pkg
+                      (format "`git checkout %s' %s" ref (string-trim event)))))
+         (lambda (proc event)
+           (funcall callback
+                    pkg
+                    (format "`%s' %s"
+                            (string-join (process-command proc) " ")
+                            (string-trim event))))))
+    (funcall callback pkg "repository not found")))
+
+(defun gatsby>>sync-packages-to-refs (pkg-refs &optional done-callback)
+  "Sync each (PKG REF) pair in PKG-REFS to its locked ref, one at a time.
+A failed package is reported and skipped; it never aborts the rest.
+Print a summary of updated and failed packages at the end.
+DONE-CALLBACK, if non-nil, is called with (UPDATED FAILED), each a list
+of package symbols."
+  (let ((updated nil)
+        (failed nil))
+    (cl-labels ((next
+                 (items)
+                 (if (null items)
+                     (let* ((updated (nreverse updated))
+                            (failed (nreverse failed))
+                            (updated-str
+                             (if updated
+                                 (string-join
+                                  (mapcar #'symbol-name updated) ", ")
+                               "none"))
+                            (failed-str
+                             (if failed
+                                 (string-join
+                                  (mapcar #'symbol-name failed) ", ")
+                               "none")))
+                       (message "Package sync finished. Updated: %s. Failed: %s."
+                                updated-str failed-str)
+                       (when done-callback
+                         (funcall done-callback updated failed)))
+                   (pcase-let ((`(,pkg ,ref) (car items)))
+                     (gatsby>>sync-package-to-ref
+                      pkg ref
+                      (lambda (pkg err)
+                        (if err
+                            (progn
+                              (push pkg failed)
+                              (message "Failed to sync %s: %s" pkg err))
+                          (push pkg updated)
+                          (message "Updated %s to %s" pkg ref))
+                        (next (cdr items))))))))
+      (next pkg-refs))))
 
 (defun gatsby>>maybe-auto-sync-packages-to-lock-file ()
   "If enabled, asynchronously sync packages to their locked refs after init."
   (when gatsby>auto-sync-packages-to-lock-file
     (message "Checking installed packages against lock file...")
     (gatsby>>check-packages-against-lock
-     (lambda (mismatches)
-       (if mismatches
-           (progn
-             (message "Found %d package(s) out of sync with lock file"
-                      (length mismatches))
-             (pcase-dolist (`(,pkg ,ref ,_) mismatches)
-               (gatsby>>sync-package-to-ref pkg ref)))
-         (message "All installed packages match lock file"))))))
+      (lambda (mismatches)
+        (if mismatches
+            (progn
+              (message "Found %d package(s) out of sync with lock file"
+                       (length mismatches))
+              (gatsby>>sync-packages-to-refs
+               (mapcar (lambda (m) (list (car m) (cadr m))) mismatches)))
+          (message "All installed packages match lock file"))))))
 
 (gatsby>defcommand gatsby>check-packages-against-lock ()
   "Asynchronously check installed packages against `elpaca-lock-file'.
@@ -374,8 +427,9 @@ If the prefix arg ALL is not given, query the user for a single package."
     (pcase-dolist (`(,pkg . ,props) lock-entries)
       (when-let* ((ref (map-nested-elt props '(:recipe :ref))))
         (puthash pkg ref ref-table)))
-    (dolist (pkg (hash-table-keys ref-table))
-      (gatsby>>sync-package-to-ref pkg (gethash pkg ref-table)))))
+    (gatsby>>sync-packages-to-refs
+     (mapcar (lambda (pkg) (list pkg (gethash pkg ref-table)))
+             (hash-table-keys ref-table)))))
 
 (provide 'gatsby--utility)
 ;;; gatsby--utility.el ends here
