@@ -20,9 +20,28 @@
     (when-let* ((root (locate-dominating-file default-directory ".git")))
       (file-name-as-directory (expand-file-name root))))
 
+  (defun gatsby>>agent-shell-new-worktree--commands (git-root sparse-dir worktree-path)
+    "Return the git commands to create a sparse worktree.
+Each entry is a plist with :kind (`add', `sparse', or `checkout'), :cwd,
+and :args (the argv list for the command)."
+    (list
+     (list
+      :kind 'add
+      :cwd git-root
+      :args (list "git" "worktree" "add" "--no-checkout" worktree-path))
+     (list
+      :kind 'sparse
+      :cwd worktree-path
+      :args (list "git" "sparse-checkout" "set" sparse-dir))
+     (list :kind 'checkout :cwd worktree-path :args (list "git" "checkout" "HEAD"))))
+
   (defun gatsby>>agent-shell-new-worktree-shell (arg)
     "Create an agent shell in a new worktree for the enclosing Git repository.
-ARG is forwarded to `gatsby>agent-shell-launch'."
+  The worktree is created with `git worktree add --no-checkout', then a
+  cone-mode sparse checkout is configured for the current project directory
+  (or `.' when the project is the repository root), and `git checkout HEAD'
+  populates the worktree accordingly. ARG is forwarded to
+  `gatsby>agent-shell-launch'."
     (let* ((git-root (gatsby>>agent-shell-git-root))
            (project-root
             (file-name-as-directory
@@ -34,27 +53,60 @@ ARG is forwarded to `gatsby>agent-shell-launch'."
             (when (and git-root (file-in-directory-p project-root git-root))
               (file-relative-name (file-truename project-root)
                                   (file-truename git-root))))
-           (agent-shell-cwd (symbol-function #'agent-shell-cwd)))
+           (sparse-dir (or project-relative-directory ".")))
       (unless git-root
         (user-error "Not in a git repository"))
-      (let ((default-directory git-root))
-        (cl-letf* (((symbol-function #'agent-shell-cwd) (lambda () git-root))
-                   ((symbol-function #'agent-shell)
-                    (lambda (&rest _)
-                      (let ((default-directory
-                             (if project-relative-directory
-                                 (expand-file-name project-relative-directory
-                                                   default-directory)
-                               default-directory)))
-                        (unless (file-directory-p default-directory)
-                          (user-error "Project directory does not exist in worktree: %s"
-                                      default-directory))
-                        (when (and (featurep 'envrc)
-                                   (locate-dominating-file default-directory ".envrc"))
-                          (envrc-allow))
-                        (cl-letf (((symbol-function #'agent-shell-cwd) agent-shell-cwd))
-                          (gatsby>agent-shell-launch arg))))))
-          (agent-shell-new-worktree-shell)))))
+      (let* ((worktrees-dir (file-name-concat git-root ".agent-shell/worktrees"))
+             (worktree-name
+              (progn
+                (require 'agent-shell-worktree)
+                (agent-shell-worktree--generate-name)))
+             (default-path (file-name-concat worktrees-dir worktree-name))
+             (worktree-path
+              (expand-file-name
+               (read-directory-name "Worktree directory: " default-path)))
+             (commands
+              (gatsby>>agent-shell-new-worktree--commands
+               git-root sparse-dir worktree-path)))
+        (when (file-exists-p worktree-path)
+          (user-error "Directory already exists: %s" worktree-path))
+        (make-directory (file-name-directory worktree-path) t)
+        (let* ((default-directory git-root)
+               (output
+                (shell-command-to-string
+                 (mapconcat #'shell-quote-argument (plist-get (nth 0 commands) :args)
+                            " "))))
+          (unless (file-directory-p worktree-path)
+            (user-error "Failed to create worktree: %s" output))
+          (let* ((default-directory worktree-path)
+                 (sparse-output
+                  (shell-command-to-string
+                   (mapconcat #'shell-quote-argument (plist-get (nth 1 commands) :args)
+                              " "))))
+            ;; ponytail: cone mode is the default since git 2.25; `.' means the
+            ;; whole repo when the current project is the repository root.
+            ;; A separate `git checkout HEAD' is needed to materialize files
+            ;; because the worktree was created with --no-checkout.
+            (unless (zerop
+                     (apply #'call-process
+                            (car (nth 2 commands))
+                            nil
+                            nil
+                            nil
+                            (cdr (nth 2 commands))))
+              (user-error "Failed to checkout sparse worktree: %s" sparse-output))
+            (unless (file-directory-p (expand-file-name sparse-dir worktree-path))
+              (user-error "Failed to configure sparse checkout: %s" sparse-output))
+            (let ((default-directory (expand-file-name sparse-dir worktree-path)))
+              (unless (file-directory-p default-directory)
+                (user-error "Project directory does not exist in worktree: %s"
+                            default-directory))
+              (when (and (featurep 'envrc)
+                         (locate-dominating-file default-directory ".envrc"))
+                (envrc-allow))
+              (cl-letf (((symbol-function #'agent-shell-cwd)
+                         (lambda () default-directory)))
+                (gatsby>agent-shell-launch arg))))))))
 
   (gatsby>defcommand gatsby>>agent-shell-manager-launch (arg)
     "Switch to an existing agent shell for the current project, or launch a new one.
