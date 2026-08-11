@@ -32,7 +32,7 @@ and :args (the argv list for the command)."
      (list
       :kind 'sparse
       :cwd worktree-path
-      :args (list "git" "sparse-checkout" "set" sparse-dir))
+      :args (list "git" "sparse-checkout" "set" "--no-cone" sparse-dir))
      (list :kind 'checkout :cwd worktree-path :args (list "git" "checkout" "HEAD"))))
 
   (defun gatsby>>agent-shell-new-worktree-shell (arg)
