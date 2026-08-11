@@ -9,6 +9,9 @@ REMOTE_DOTFILES = "~/dotfiles-v2"
 REMOTE_REPO = "https://github.com/junyi-hou/dotfiles-v2"
 LOCAL_DOTFILES = Path(__file__).resolve().parents[3]
 
+# make sure we can run non-interactive commands
+SSH_OPTS = ["-o", "RemoteCommand=none", "-o", "RequestTTY=no"]
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Deploy dotfiles to a remote host")
@@ -30,6 +33,7 @@ def check_remote_deps(target: str, port: int):
             "ssh",
             "-p",
             str(port),
+            *SSH_OPTS,
             target,
             "command -v git || { echo 'git not found'; exit 1; }; "
             "command -v direnv || { echo 'direnv not found'; exit 1; }; "
@@ -58,6 +62,7 @@ def remote_clone(target: str, port: int, use_local_copy: bool):
                 "ssh",
                 "-p",
                 str(port),
+                *SSH_OPTS,
                 target,
                 f"git clone {REMOTE_REPO} {REMOTE_DOTFILES}",
             ]
@@ -70,6 +75,7 @@ def remote_build(target: str, port: int):
             "ssh",
             "-p",
             str(port),
+            *SSH_OPTS,
             target,
             f"cd {REMOTE_DOTFILES} && direnv allow && direnv exec {REMOTE_DOTFILES} make build",
         ]
@@ -82,6 +88,7 @@ def remote_install(target: str, port: int):
             "ssh",
             "-p",
             str(port),
+            *SSH_OPTS,
             target,
             f"cd {REMOTE_DOTFILES} && direnv allow && direnv exec {REMOTE_DOTFILES} make install",
         ]
