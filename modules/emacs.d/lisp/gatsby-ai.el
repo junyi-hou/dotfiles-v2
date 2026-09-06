@@ -500,18 +500,21 @@ which shell to send to. Otherwise, behave like `agent-shell-send-file'."
             (cond
              ((> (length matching-buffers) 1)
               (agent-shell--read-shell-buffer
-               :prompt (if region-active
-                           "Send region to shell: "
-                         "Send file to shell: ")
+               :prompt
+               (if region-active
+                   "Send region to shell: "
+                 "Send file to shell: ")
                :buffers matching-buffers))
              ((= (length matching-buffers) 1)
               (car matching-buffers)))))
       (if shell-buffer
           (if region-active
-              (let ((text (agent-shell--get-region-context
-                           :deactivate t
-                           :agent-cwd (with-current-buffer shell-buffer
-                                        (agent-shell-cwd)))))
+              (let ((text
+                     (agent-shell--get-region-context
+                      :deactivate t
+                      :agent-cwd
+                      (with-current-buffer shell-buffer
+                        (agent-shell-cwd)))))
                 (agent-shell-insert :text text :shell-buffer shell-buffer))
             (agent-shell-insert
              :text (agent-shell--get-files-context :files files)
