@@ -17,6 +17,17 @@ Emacs configuration using [elpaca](https://github.com/progfolio/elpaca) as the p
 
 Tests live in `tests/` and use `ert`. Each `lisp/gatsby-NAME.el` has corresponding `tests/gatsby-NAME-test.el`.
 
+## Formatting
+
+Format every edit to Elisp files before you run tests. Use `elisp-autofmt` through the running Emacs server. Format only the region you changed. Do not reformat whole legacy files, because that creates large diffs.
+
+```sh
+emacsclient -e '
+  (with-current-buffer (find-file-noselect "PATH/TO/FILE.el")
+    (elisp-autofmt-region BEG END)
+    (save-buffer))'
+```
+
 ## Package Pinning
 
 `elpaca-lock.el` records pinned package recipes. It is auto-updated as a build step (`gatsby>>elpaca-update-lock-file` is appended to `elpaca-default-build-steps`) whenever a package is built or installed. On startup, `elpaca-menu-lock-file` reads it to pin versions. Do not edit it by hand.
