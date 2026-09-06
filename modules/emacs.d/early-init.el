@@ -106,6 +106,25 @@
          lock-contents)
       (append lock-contents (list entry)))))
 
+(defun gatsby>>elpaca-read-lock-file (file)
+  "Return the lock alist stored in FILE, or nil if FILE does not exist."
+  (when (file-exists-p file)
+    (with-temp-buffer
+      (insert-file-contents file)
+      (read (current-buffer)))))
+
+(defun gatsby>>elpaca-write-lock-file (file contents)
+  "Write the lock alist CONTENTS to FILE, one entry per line.
+Unlike `pp', each entry's text depends only on that entry, so
+updating one package never reformats the others."
+  (with-temp-file file
+    (let ((print-escape-newlines t))
+      (insert "(")
+      (dolist (entry contents)
+        (insert "\n ")
+        (prin1 entry (current-buffer)))
+      (insert ")\n"))))
+
 (defun gatsby>>elpaca-update-lock-file (e)
   (elpaca--signal e "Updating lockfile" 'update-lockfile)
   (let* ((repo (elpaca-source-dir e))
@@ -115,16 +134,11 @@
          (recipe (if ref
                      (plist-put (copy-sequence (elpaca<-recipe e)) :ref ref)
                    (elpaca<-recipe e)))
-         (lock-contents
-          (when (file-exists-p elpaca-lock-file)
-            (with-temp-buffer
-              (insert-file-contents elpaca-lock-file)
-              (car (read-from-string (buffer-string))))))
          (updated
-          (gatsby>>elpaca-update-lock-alist
-           lock-contents (elpaca<-id e) recipe)))
-    (with-temp-file elpaca-lock-file
-      (pp updated (current-buffer))))
+           (gatsby>>elpaca-update-lock-alist
+            (gatsby>>elpaca-read-lock-file elpaca-lock-file)
+            (elpaca<-id e) recipe)))
+    (gatsby>>elpaca-write-lock-file elpaca-lock-file updated))
   (elpaca--continue-build e))
 
 (add-to-list 'elpaca-default-build-steps #'gatsby>>elpaca-update-lock-file t)
