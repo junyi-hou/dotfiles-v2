@@ -24,7 +24,7 @@
       (should (eq (plist-get sparse :kind) 'sparse))
       (should (equal (plist-get sparse :cwd) "/repo/.agent-shell/worktrees/foo"))
       (should (equal (plist-get sparse :args)
-                     '("git" "sparse-checkout" "set" "modules/emacs.d")))
+                     '("git" "sparse-checkout" "set" "--no-cone" "modules/emacs.d")))
       (should (eq (plist-get checkout :kind) 'checkout))
       (should (equal (plist-get checkout :cwd) "/repo/.agent-shell/worktrees/foo"))
       (should (equal (plist-get checkout :args)
@@ -36,7 +36,7 @@
                "/repo" "." "/repo/.agent-shell/worktrees/bar")))
     (should (= (length cmds) 3))
     (should (equal (plist-get (nth 1 cmds) :args)
-                   '("git" "sparse-checkout" "set" ".")))))
+                   '("git" "sparse-checkout" "set" "--no-cone" ".")))))
 
 (ert-deftest gatsby>agent-shell-send-file--multiple-matches-prompts ()
   "When multiple shells contain the file, prompt for which shell to use."
