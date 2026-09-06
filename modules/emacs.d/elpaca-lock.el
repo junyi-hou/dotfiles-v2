@@ -598,10 +598,11 @@
                     git :protocol https :inherit t :depth treeless :ref
                     "adb010b7fec943405006fcd1fac280e74ffa9e30"))
  (flymake-childframe :source "elpaca-menu-lock-file" :recipe
-                     (:source nil :package "flymake-childframe" :id flymake-childframe
-                              :host github :repo "junyi-hou/flymake-childframe" :type
-                              git :protocol https :inherit t :depth treeless :ref
-                              "4fab17ff3ec3da4f08f0bd99cc5e99a01a7bb744"))
+                     (:source "elpaca-menu-lock-file" :package "flymake-childframe" :id
+                              flymake-childframe :host github :repo
+                              "junyi-hou/flymake-childframe" :type git :protocol https
+                              :inherit t :depth treeless :ref
+                              "d1ac10d2f9d5f364924dde290761a18494fdcf8e"))
  (jsonnet-mode :source "elpaca-menu-lock-file" :recipe
                (:package "jsonnet-mode" :fetcher github :repo "tminor/jsonnet-mode"
                          :files
