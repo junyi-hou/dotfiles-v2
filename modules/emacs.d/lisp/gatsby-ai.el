@@ -469,6 +469,36 @@ Returns non-nil if a button was found and activated."
         (call-interactively #'agent-shell-queue-request)
       (call-interactively #'shell-maker-submit)))
 
+  (gatsby>defcommand gatsby>agent-shell-send-file (prompt-for-file)
+    "Send file(s) to an agent shell.
+
+If the file is inside the CWD of multiple agent shells, prompt for which
+shell to send to. Otherwise, behave like `agent-shell-send-file'."
+    (let* ((in-shell (derived-mode-p 'agent-shell-mode))
+           (files (if (or in-shell prompt-for-file)
+                      (list (completing-read "Send file: " (agent-shell--project-files)))
+                    (or (agent-shell--buffer-files)
+                        (when (buffer-file-name)
+                          (list (buffer-file-name)))
+                        (list (completing-read "Send file: " (agent-shell--project-files)))
+                        (user-error "No file to send"))))
+         (matching-buffers
+          (seq-filter
+           (lambda (buffer)
+             (with-current-buffer buffer
+               (let ((cwd (agent-shell-cwd)))
+                 (seq-every-p (lambda (file)
+                                (file-in-directory-p (expand-file-name file cwd) cwd))
+                              files))))
+           (agent-shell-buffers))))
+      (if (> (length matching-buffers) 1)
+          (let ((shell-buffer (agent-shell--read-shell-buffer
+                               :prompt "Send file to shell: "
+                               :buffers matching-buffers)))
+            (agent-shell-insert :text (agent-shell--get-files-context :files files)
+                                :shell-buffer shell-buffer))
+        (agent-shell-send-file prompt-for-file))))
+
   :evil-bind
   (
    ;; (:maps normal)
@@ -476,7 +506,7 @@ Returns non-nil if a button was found and activated."
    (:maps (visual normal motion))
    ([remap gatsby>kill-buffer] . #'kill-buffer-and-window)
    (:maps (visual normal))
-   ("SPC a s" . #'agent-shell-send-file)
+   ("SPC a s" . #'gatsby>agent-shell-send-file)
    (:maps agent-shell-mode-map :states insert)
    ("RET" . #'comint-accumulate)
    ("C-r" . #'agent-shell-search-history)
