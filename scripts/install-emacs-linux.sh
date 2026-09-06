@@ -11,8 +11,8 @@ install_build_deps() {
     if command -v apt-get >/dev/null 2>&1; then
         echo "Using apt-get..."
         sudo apt-get install -y gcc make autoconf automake pkg-config \
-            libgnutls28-dev libncurses-dev libxml2-dev zlib1g-dev libgmp-dev texinfo \
-            libtree-sitter-dev
+            libgnutls28-dev libncurses-dev libxml2-dev zlib1g-dev libgmp-dev texinfo
+        install_tree_sitter_from_source
         local gcc_ver
         gcc_ver=$(gcc -dumpversion | cut -d. -f1)
         sudo apt-get install -y "libgccjit-${gcc_ver}-dev"
@@ -42,6 +42,20 @@ install_build_deps() {
         echo "ERROR: no supported package manager found (tried: apt-get, dnf, yum, pacman, apk)" >&2
         exit 1
     fi
+}
+
+# Ubuntu's libtree-sitter-dev is 0.20.x (ABI 13-14), but grammars regenerated with
+# tree-sitter >=0.22 are ABI 15 (e.g. tree-sitter-scala). Build 0.25.x from source
+# so Emacs supports ABI 13-15, same as the macOS build (homebrew tree-sitter).
+install_tree_sitter_from_source() {
+    local ver="0.25.10"
+    local tmp
+    tmp="$(mktemp -d)"
+    curl -fsSL "https://github.com/tree-sitter/tree-sitter/archive/refs/tags/v${ver}.tar.gz" | tar -xz -C "$tmp"
+    make -C "$tmp/tree-sitter-${ver}" -j"$(nproc)"
+    sudo make -C "$tmp/tree-sitter-${ver}" install
+    sudo ldconfig
+    rm -rf "$tmp"
 }
 
 # Copy shared libs needed at runtime into $INSTALL_DIR/lib, skipping fundamental glibc/kernel interfaces
