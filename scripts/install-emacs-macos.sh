@@ -7,13 +7,12 @@ command -v brew > /dev/null || {
 
 brew install gcc pkgconf texinfo autoconf libgccjit librsvg gnutls
 
-## until emacs adopts tree-sitter ABI 26
-brew install tree-sitter@0.25
-brew link --overwrite tree-sitter@0.25
+brew unlink tree-sitter@0.25 2>/dev/null || true
+brew install tree-sitter
 
-git clone -b emacs-mac-gnu_master_exp https://github.com/jdtsmith/emacs-mac.git
+git clone -b emacs-mac-31 https://github.com/jdtsmith/emacs-mac.git
 cd emacs-mac
-git checkout df4e43d51c36275c4d6c133b44e7789d08d7de59
+git checkout 617ada906640ac5694cbec9f5fccf2246b17e21d
 
 # Apply patches if they exist
 if [ -d "../patches" ]; then

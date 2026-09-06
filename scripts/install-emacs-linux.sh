@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-EMACS_VERSION="31.0.91"
-EMACS_SRC="https://alpha.gnu.org/gnu/emacs/pretest/emacs-${EMACS_VERSION}.tar.xz"
+EMACS_VERSION="31.1"
+EMACS_SRC="https://ftp.gnu.org/gnu/emacs/emacs-${EMACS_VERSION}.tar.xz"
 INSTALL_DIR="$HOME/.local/emacs"
 BIN_DIR="$HOME/.local/bin"
 
