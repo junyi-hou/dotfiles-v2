@@ -117,5 +117,72 @@
       (advice-remove #'agent-shell-send-region advice-region)
       (advice-remove #'agent-shell-send-file advice-send-file))))
 
+(ert-deftest gatsby>>agent-shell-manager-launch--no-buffers-launches-new ()
+  "When there are no project agent shells, launch a new one directly."
+  (let ((launched nil))
+    (cl-letf (((symbol-function #'gatsby>>agent-shell-current-client)
+               (lambda () nil))
+              ((symbol-function #'gatsby>agent-shell-launch)
+               (lambda (&rest _) (setq launched t))))
+      (gatsby>>agent-shell-manager-launch nil)
+      (should launched))))
+
+(ert-deftest gatsby>>agent-shell-manager-launch--new-choice-launches-new ()
+  "Selecting \"new\" launches a new agent shell."
+  (let* ((buf (generate-new-buffer " *test-shell*"))
+         (launched nil))
+    (unwind-protect
+        (cl-letf (((symbol-function #'gatsby>>agent-shell-current-client)
+                   (lambda () (list buf)))
+                  ((symbol-function #'completing-read)
+                   (lambda (&rest _) "new"))
+                  ((symbol-function #'agent-shell--read-shell-buffer)
+                   (lambda (&rest _) (error "Should not read existing shell")))
+                  ((symbol-function #'gatsby>agent-shell-launch)
+                   (lambda (&rest _) (setq launched t))))
+          (gatsby>>agent-shell-manager-launch nil)
+          (should launched))
+      (kill-buffer buf))))
+
+(ert-deftest gatsby>>agent-shell-manager-launch--worktree-choice-launches-worktree ()
+  "Selecting \"new (in a new worktree)\" launches a worktree shell."
+  (let* ((buf (generate-new-buffer " *test-shell*"))
+         (worktree nil))
+    (unwind-protect
+        (cl-letf (((symbol-function #'gatsby>>agent-shell-current-client)
+                   (lambda () (list buf)))
+                  ((symbol-function #'completing-read)
+                   (lambda (&rest _) "new (in a new worktree)"))
+                  ((symbol-function #'agent-shell--read-shell-buffer)
+                   (lambda (&rest _) (error "Should not read existing shell")))
+                  ((symbol-function #'gatsby>>agent-shell-new-worktree-shell)
+                   (lambda (&rest _) (setq worktree t))))
+          (gatsby>>agent-shell-manager-launch nil)
+          (should worktree))
+      (kill-buffer buf))))
+
+(ert-deftest gatsby>>agent-shell-manager-launch--existing-choice-uses-read-shell-buffer ()
+  "Selecting \"existing...\" prompts for an existing shell."
+  (let* ((buf (generate-new-buffer " *test-shell*"))
+         (state (list :read-buffers nil :displayed-buffer nil)))
+    (unwind-protect
+        (cl-letf (((symbol-function #'gatsby>>agent-shell-current-client)
+                   (lambda () (list buf)))
+                  ((symbol-function #'completing-read)
+                   (lambda (&rest _) "existing..."))
+                  ((symbol-function #'agent-shell--read-shell-buffer)
+                   (lambda (&rest args)
+                     (plist-put state :read-buffers (plist-get args :buffers))
+                     buf))
+                  ((symbol-function #'display-buffer)
+                   (lambda (buffer _action)
+                     (plist-put state :displayed-buffer buffer)))
+                  ((symbol-function #'select-window) #'ignore)
+                  ((symbol-function #'evil-insert-state) #'ignore))
+          (gatsby>>agent-shell-manager-launch nil)
+          (should (equal (plist-get state :read-buffers) (list buf)))
+          (should (eq (plist-get state :displayed-buffer) buf)))
+      (kill-buffer buf))))
+
 (provide 'gatsby-ai-test)
 ;;; gatsby-ai-test.el ends here

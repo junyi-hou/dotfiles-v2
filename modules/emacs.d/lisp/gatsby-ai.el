@@ -110,33 +110,25 @@ and :args (the argv list for the command)."
 
   (gatsby>defcommand gatsby>>agent-shell-manager-launch (arg)
     "Switch to an existing agent shell for the current project, or launch a new one.
-Shows running agents for the project; selecting one focuses it, selecting \"new\" calls
-`gatsby>agent-shell-launch' with ARG."
-    (if-let* ((collections (gatsby>>agent-shell-current-client)))
-      (let* ((collections
-              (mapcar
-               (lambda (b)
-                 (cons
-                  (format "%s (%s) [%s]"
-                          (buffer-name b)
-                          (agent-shell-manager--get-model-id b)
-                          (agent-shell-manager--get-combined-status b))
-                  b))
-               (gatsby>>agent-shell-current-client)))
-             (picked
-              (completing-read
-               "Current Agents: "
-               `("new" "new (in a new worktree)" ,@ (mapcar #'car collections)))))
-
-        (cond
-         ((equal picked "new")
-          (gatsby>agent-shell-launch arg))
-         ((equal picked "new (in a new worktree)")
-          (gatsby>>agent-shell-new-worktree-shell arg))
-         (t
-          (let ((shell (map-elt collections picked)))
-            (select-window (display-buffer shell agent-shell-display-action))
-            (evil-insert-state)))))
+When project agent shells exist, prompt for \"new\", \"new (in a new worktree)\",
+or \"existing...\".  Choosing \"existing...\" calls `agent-shell--read-shell-buffer'
+to select and focus a running agent; other choices call the corresponding launch
+command with ARG."
+    (if-let* ((buffers (gatsby>>agent-shell-current-client)))
+        (let ((picked (completing-read
+                       "Current Agents: "
+                       '("new" "new (in a new worktree)" "existing..."))))
+          (cond
+           ((equal picked "new")
+            (gatsby>agent-shell-launch arg))
+           ((equal picked "new (in a new worktree)")
+            (gatsby>>agent-shell-new-worktree-shell arg))
+           (t
+            (let ((shell (agent-shell--read-shell-buffer
+                          :prompt "Existing agent shell: "
+                          :buffers buffers)))
+              (select-window (display-buffer shell agent-shell-display-action))
+              (evil-insert-state)))))
       (gatsby>agent-shell-launch arg)))
 
   :evil-bind
