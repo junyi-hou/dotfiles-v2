@@ -96,5 +96,26 @@
       (advice-remove #'agent-shell-buffers advice-buffers)
       (advice-remove #'agent-shell-send-file advice-send-file))))
 
+(ert-deftest gatsby>agent-shell-send-file--region-sends-region ()
+  "When the region is active, send the region instead of the file."
+  (let* ((state (list :region-sent nil))
+         (advice-region (lambda (&rest _)
+                          (plist-put state :region-sent t)))
+         (advice-send-file (lambda (&rest _)
+                             (error "Should send region, not file"))))
+    (unwind-protect
+        (with-temp-buffer
+          (setq buffer-file-name "/project/foo.el")
+          (insert "line1\nline2\nline3\n")
+          (set-mark (point-min))
+          (goto-char (line-end-position 2))
+          (activate-mark)
+          (advice-add #'agent-shell-send-region :override advice-region)
+          (advice-add #'agent-shell-send-file :override advice-send-file)
+          (gatsby>agent-shell-send-file nil)
+          (should (plist-get state :region-sent)))
+      (advice-remove #'agent-shell-send-region advice-region)
+      (advice-remove #'agent-shell-send-file advice-send-file))))
+
 (provide 'gatsby-ai-test)
 ;;; gatsby-ai-test.el ends here
