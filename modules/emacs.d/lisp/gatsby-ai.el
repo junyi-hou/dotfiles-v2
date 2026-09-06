@@ -457,10 +457,14 @@ Returns non-nil if a button was found and activated."
         (agent-shell-previous-item))))
 
   (gatsby>defcommand gatsby>agent-shell-send-or-queue-prompt ()
-    "Send the current prompt if the shell is available. Otherwise put it in the request queue."
-    (if (agent-shell--active-requests-p (agent-shell--state))
-        (call-interactively #'agent-shell-queue-request)
-      (call-interactively #'shell-maker-submit)))
+    "Steer the current turn if the agent supports it, otherwise queue the prompt."
+    (cond
+     ((not (agent-shell--active-requests-p (agent-shell--state)))
+      (call-interactively #'shell-maker-submit))
+     ((agent-shell-steering-supported-p)
+      (call-interactively #'agent-shell-prompt-steer))
+     (t
+      (call-interactively #'agent-shell-prompt-queue))))
 
   (gatsby>defcommand gatsby>agent-shell-send-file (prompt-for-file)
     "Send file(s) to an agent shell.
@@ -468,35 +472,52 @@ Returns non-nil if a button was found and activated."
 If a region is active and the buffer is visiting a file, send the region.
 Otherwise, if the file is inside the CWD of multiple agent shells, prompt for
 which shell to send to. Otherwise, behave like `agent-shell-send-file'."
-    (if (and (region-active-p) (buffer-file-name))
-        (agent-shell-send-region)
-      (let* ((in-shell (derived-mode-p 'agent-shell-mode))
-             (files
-              (if (or in-shell prompt-for-file)
+    (let* ((in-shell (derived-mode-p 'agent-shell-mode))
+           (region-active (and (region-active-p) (buffer-file-name)))
+           (files
+            (cond
+             ((or in-shell prompt-for-file)
+              (list (completing-read "Send file: " (agent-shell--project-files))))
+             (region-active
+              (list (buffer-file-name)))
+             (t
+              (or (agent-shell--buffer-files)
+                  (when (buffer-file-name)
+                    (list (buffer-file-name)))
                   (list (completing-read "Send file: " (agent-shell--project-files)))
-                (or (agent-shell--buffer-files)
-                    (when (buffer-file-name)
-                      (list (buffer-file-name)))
-                    (list (completing-read "Send file: " (agent-shell--project-files)))
-                    (user-error "No file to send"))))
-             (matching-buffers
-              (seq-filter
-               (lambda (buffer)
-                 (with-current-buffer buffer
-                   (let ((cwd (agent-shell-cwd)))
-                     (seq-every-p
-                      (lambda (file)
-                        (file-in-directory-p (expand-file-name file cwd) cwd))
-                      files))))
-               (agent-shell-buffers))))
-        (if (> (length matching-buffers) 1)
-            (let ((shell-buffer
-                   (agent-shell--read-shell-buffer
-                    :prompt "Send file to shell: "
-                    :buffers matching-buffers)))
-              (agent-shell-insert
-               :text (agent-shell--get-files-context :files files)
-               :shell-buffer shell-buffer))
+                  (user-error "No file to send")))))
+           (matching-buffers
+            (seq-filter
+             (lambda (buffer)
+               (with-current-buffer buffer
+                 (let ((cwd (agent-shell-cwd)))
+                   (seq-every-p
+                    (lambda (file)
+                      (file-in-directory-p (expand-file-name file cwd) cwd))
+                    files))))
+             (agent-shell-buffers)))
+           (shell-buffer
+            (cond
+             ((> (length matching-buffers) 1)
+              (agent-shell--read-shell-buffer
+               :prompt (if region-active
+                           "Send region to shell: "
+                         "Send file to shell: ")
+               :buffers matching-buffers))
+             ((= (length matching-buffers) 1)
+              (car matching-buffers)))))
+      (if shell-buffer
+          (if region-active
+              (let ((text (agent-shell--get-region-context
+                           :deactivate t
+                           :agent-cwd (with-current-buffer shell-buffer
+                                        (agent-shell-cwd)))))
+                (agent-shell-insert :text text :shell-buffer shell-buffer))
+            (agent-shell-insert
+             :text (agent-shell--get-files-context :files files)
+             :shell-buffer shell-buffer))
+        (if region-active
+            (agent-shell-send-region)
           (agent-shell-send-file prompt-for-file)))))
 
   :evil-bind
