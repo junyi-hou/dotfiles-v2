@@ -338,14 +338,11 @@ and the prompt read with it is what the command receives."
         (gatsby>agent-shell-send-or-queue-prompt nil)
         (gatsby>agent-shell-send-or-queue-prompt t)
         (should
-         (equal
-          prompt-texts
-          '("Queue until the running turn ends: " "Steer into running turn: ")))
+         (equal prompt-texts '("Queuing: " "Steering: ")))
         (should
          (equal
           sent-prompts
-          '("prompt via Queue until the running turn ends: "
-            "prompt via Steer into running turn: ")))))))
+          '("prompt via Queuing: " "prompt via Steering: ")))))))
 
 (ert-deftest gatsby>>agent-shell-manager-launch--no-buffers-launches-new ()
   "When there are no project agent shells, launch a new one directly."
