@@ -382,17 +382,30 @@ sleep; otherwise keep it awake.  Return a process object to pass to
       (defun system-sleep-unblock-sleep (&rest _)
         t)))
 
+  (defun gatsby>>agent-shell-read-prompt (prompt-text)
+    "Read a prompt from the minibuffer the way `agent-shell--prompt-queue-read' does.
+PROMPT-TEXT replaces the agent's shell prompt as the minibuffer prompt, so
+the caller can say what the prompt will be used for.  The completion setup
+hook still runs, so @ completes project files and / agent commands."
+    (let ((shell-buffer (current-buffer)))
+      (minibuffer-with-setup-hook
+          (lambda ()
+            (run-hook-with-args 'agent-shell-prompt-queue-setup-minibuffer-functions
+                                `((:shell-buffer . ,shell-buffer))))
+        (read-string prompt-text))))
+
   (gatsby>defcommand gatsby>agent-shell-send-or-queue-prompt (force-queue)
     "Steer the current turn if the agent supports it, otherwise queue the prompt.
 
-With prefix argument FORCE-QUEUE, always queue the prompt instead of steering."
+With prefix argument FORCE-QUEUE, always queue the prompt instead of steering.
+The minibuffer prompt says whether the prompt will steer or queue."
     (cond
      ((not (agent-shell--active-requests-p (agent-shell--state)))
       (call-interactively #'shell-maker-submit))
      ((and (not force-queue) (agent-shell-steering-supported-p))
-      (call-interactively #'agent-shell-prompt-steer))
+      (agent-shell-prompt-steer (gatsby>>agent-shell-read-prompt "Steering: ")))
      (t
-      (call-interactively #'agent-shell-prompt-queue))))
+      (agent-shell-prompt-queue (gatsby>>agent-shell-read-prompt "Queuing: ")))))
 
   (gatsby>defcommand gatsby>agent-shell-send-file (prompt-for-file)
     "Send file(s) to an agent shell.
