@@ -206,34 +206,25 @@ command with ARG."
   (agent-shell-display-action nil)
   (agent-shell-file-completion-enabled t)
   (agent-shell-session-strategy 'new)
-  ;; opencode stores sessions under truenames but matches session/list cwd
-  ;; literally, so symlinked project roots (like ~/dotfiles-v2 -> ~/Projects/dotfiles)
-  ;; would otherwise find no past sessions.
+  ;; Resolve symlinked project roots (like ~/dotfiles-v2 -> ~/Projects/dotfiles)
+  ;; so session/list cwd matching works.
   (agent-shell-path-resolver-function #'file-truename)
-  (agent-shell-mcp-servers
-   `(((name . "context7")
-      (type . "http") (url . "https://mcp.context7.com/mcp")
-      (headers
-       .
-       (((name . "CONTEXT7_API_KEY")
-         (value . ,(sops-get-secret-try-env-variable "env/CONTEXT7_API_KEY"))))))
-     ((name . "github")
-      (type . "http") (url . "https://api.githubcopilot.com/mcp/")
-      (headers
-       .
-       (((name . "Authorization")
-         (value
-          .
-          ,(format "Bearer %s"
-                   (sops-get-secret-try-env-variable "env/GITHUB_PAT_KEY")))))))))
+  ;; No global `agent-shell-mcp-servers': pi-acp rejects session/new with a
+  ;; non-empty mcpServers list. MCP (context7+github) lives in
+  ;; ~/.config/mcp/mcp.json, read directly by pi-mcp-adapter.
 
   :config
   (defcustom gatsby>agent-shell-configs
-    `(("opencode" .
+    `(("pi" .
        (:base
-        gatsby>>agent-shell-opencode-config
-        :default-model-id (lambda (&rest _) "opencode-go/kimi-k2.7-code")
-        :default-session-mode-id (lambda (&rest _) "build"))))
+        gatsby>>agent-shell-pi-config
+        :env
+        ("CONTEXT7_API_KEY"
+         ,(sops-get-secret-try-env-variable "env/CONTEXT7_API_KEY")
+         "OPENCODE_API_KEY"
+         ,(sops-get-secret-try-env-variable "env/OPENCODE_GO_API_KEY")
+         "GITHUB_PAT_KEY"
+         ,(sops-get-secret-try-env-variable "env/GITHUB_PAT_KEY")))))
     "Alist of named agent-shell configuration profiles.
 Each entry is (NAME . PLIST) where NAME is a string identifier and PLIST
 must contain :base (a config-builder function symbol accepting keyword args).
@@ -242,17 +233,17 @@ environment variables."
     :type '(alist :key-type string :value-type sexp)
     :group 'gatsby)
 
-  (defun gatsby>>agent-shell-opencode-config (&rest args)
-    (let ((config (agent-shell-opencode-make-agent-config))
+  (defun gatsby>>agent-shell-pi-config (&rest args)
+    (let ((config (agent-shell-pi-make-agent-config))
           (env (plist-get args :env)))
       ;; handle env
       (map-put!
        config
        :client-maker
        (lambda (buffer)
-         (let ((agent-shell-opencode-environment
+         (let ((agent-shell-pi-environment
                 (apply #'agent-shell-make-environment-variables env)))
-           (agent-shell-opencode-make-client :buffer buffer))))
+           (agent-shell-pi-make-client :buffer buffer))))
       ;; handle rest of the config keys
       (thread-last
        args
@@ -391,71 +382,6 @@ sleep; otherwise keep it awake.  Return a process object to pass to
       (defun system-sleep-unblock-sleep (&rest _)
         t)))
 
-  (defun gatsby>>agent-shell-pending-permission-p ()
-    (map-some
-     (lambda (_id data) (map-elt data :permission-request-id))
-     (map-elt (agent-shell--state) :tool-calls)))
-
-  (defun gatsby>>agent-shell-activate-permission-button (char-str)
-    "Find and activate the most recent permission button whose navigatable char is CHAR-STR.
-Returns non-nil if a button was found and activated."
-    (save-excursion
-      (goto-char (point-max))
-      (catch 'found
-        (while t
-          (let ((match
-                 (text-property-search-backward 'agent-shell-permission-button t t)))
-            (unless match
-              (throw 'found nil))
-            (when (string= (string (char-after)) char-str)
-              (let* ((map (get-text-property (point) 'keymap))
-                     (action (and map (lookup-key map (kbd "RET")))))
-                (when action
-                  (call-interactively action)
-                  (throw 'found t)))))))))
-
-  (gatsby>defcommand gatsby>agent-shell-permission-allow-once ()
-    "Allow once (y) if pending permission, else yank."
-    (if (gatsby>>agent-shell-pending-permission-p)
-        (gatsby>>agent-shell-activate-permission-button "y")
-      (call-interactively #'evil-yank)))
-
-  (gatsby>defcommand gatsby>agent-shell-permission-allow-always ()
-    "Allow always (!) if pending permission, else no-op."
-    (when (gatsby>>agent-shell-pending-permission-p)
-      (gatsby>>agent-shell-activate-permission-button "!")))
-
-  (gatsby>defcommand gatsby>agent-shell-permission-view-diff ()
-    "View diff (v) if pending permission with diff, else enter visual mode."
-    (if (and (gatsby>>agent-shell-pending-permission-p)
-             (gatsby>>agent-shell-activate-permission-button "v"))
-        nil
-      (call-interactively #'evil-visual-char)))
-
-  (gatsby>defcommand gatsby>agent-shell-next-prompt-or-permission ()
-    "Jump to the next permission button if there's a pending permission ask.
-     Else go to next/prev prompt"
-    (cl-letf*
-        ( ;; Make sure `self-insert-command' does not get trigger when in the last prompt
-         ((symbol-function #'shell-maker-point-at-last-prompt-p)
-          (lambda (&rest _) nil)))
-      (if (map-elt (agent-shell--state) :tool-calls)
-          (unless (call-interactively #'agent-shell-next-permission-button)
-            (call-interactively #'agent-shell-next-item))
-        (call-interactively #'agent-shell-next-item))))
-
-  (gatsby>defcommand gatsby>agent-shell-prev-prompt-or-permission ()
-    "Jump to the prev permission button if there's a pending permission ask.
-     Else go to next/prev prompt"
-    (cl-letf*
-        ( ;; Make sure `self-insert-command' does not get trigger when in the last prompt
-         ((symbol-function #'shell-maker-point-at-last-prompt-p)
-          (lambda (&rest _) nil)))
-      (if (map-elt (agent-shell--state) :tool-calls)
-          (unless (call-interactively #'agent-shell-previous-permission-button)
-            (agent-shell-previous-item))
-        (agent-shell-previous-item))))
-
   (gatsby>defcommand gatsby>agent-shell-send-or-queue-prompt ()
     "Steer the current turn if the agent supports it, otherwise queue the prompt."
     (cond
@@ -539,11 +465,8 @@ which shell to send to. Otherwise, behave like `agent-shell-send-file'."
    ("C-c C-c" . #'agent-shell-interrupt)
    ("M-RET" . #'gatsby>agent-shell-send-or-queue-prompt)
    (:maps agent-shell-mode-map :states normal)
-   ("y" . #'gatsby>agent-shell-permission-allow-once)
-   ("!" . #'gatsby>agent-shell-permission-allow-always)
-   ("v" . #'gatsby>agent-shell-permission-view-diff)
-   (">" . #'gatsby>agent-shell-next-prompt-or-permission)
-   ("<" . #'gatsby>agent-shell-prev-prompt-or-permission)
+   (">" . #'agent-shell-next-item)
+   ("<" . #'agent-shell-previous-item)
    ("z o" . #'agent-shell-ui-toggle-fragment)
    ("z c" . #'agent-shell-ui-toggle-fragment)
    ("m" . #'agent-shell-set-session-mode)
