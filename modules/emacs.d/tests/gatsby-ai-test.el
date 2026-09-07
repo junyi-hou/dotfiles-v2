@@ -10,33 +10,39 @@
 
 (ert-deftest gatsby>>agent-shell-new-worktree--commands--subproject ()
   "Commands for a project subdirectory use sparse checkout for that directory."
-  (let ((cmds (gatsby>>agent-shell-new-worktree--commands
-               "/repo" "modules/emacs.d" "/repo/.agent-shell/worktrees/foo")))
+  (let ((cmds
+         (gatsby>>agent-shell-new-worktree--commands
+          "/repo" "modules/emacs.d" "/repo/.agent-shell/worktrees/foo")))
     (should (= (length cmds) 3))
     (let ((add (nth 0 cmds))
           (sparse (nth 1 cmds))
           (checkout (nth 2 cmds)))
       (should (eq (plist-get add :kind) 'add))
       (should (equal (plist-get add :cwd) "/repo"))
-      (should (equal (plist-get add :args)
-                     '("git" "worktree" "add" "--no-checkout"
-                       "/repo/.agent-shell/worktrees/foo")))
+      (should
+       (equal
+        (plist-get add :args)
+        '("git" "worktree" "add" "--no-checkout" "/repo/.agent-shell/worktrees/foo")))
       (should (eq (plist-get sparse :kind) 'sparse))
       (should (equal (plist-get sparse :cwd) "/repo/.agent-shell/worktrees/foo"))
-      (should (equal (plist-get sparse :args)
-                     '("git" "sparse-checkout" "set" "--no-cone" "modules/emacs.d")))
+      (should
+       (equal
+        (plist-get sparse :args)
+        '("git" "sparse-checkout" "set" "--no-cone" "modules/emacs.d")))
       (should (eq (plist-get checkout :kind) 'checkout))
       (should (equal (plist-get checkout :cwd) "/repo/.agent-shell/worktrees/foo"))
-      (should (equal (plist-get checkout :args)
-                     '("git" "checkout" "HEAD"))))))
+      (should (equal (plist-get checkout :args) '("git" "checkout" "HEAD"))))))
 
 (ert-deftest gatsby>>agent-shell-new-worktree--commands--repo-root ()
   "Commands for the repository root use `.' as the sparse checkout path."
-  (let ((cmds (gatsby>>agent-shell-new-worktree--commands
-               "/repo" "." "/repo/.agent-shell/worktrees/bar")))
+  (let ((cmds
+         (gatsby>>agent-shell-new-worktree--commands
+          "/repo" "." "/repo/.agent-shell/worktrees/bar")))
     (should (= (length cmds) 3))
-    (should (equal (plist-get (nth 1 cmds) :args)
-                   '("git" "sparse-checkout" "set" "--no-cone" ".")))))
+    (should
+     (equal
+      (plist-get (nth 1 cmds) :args)
+      '("git" "sparse-checkout" "set" "--no-cone" ".")))))
 
 (ert-deftest gatsby>agent-shell-send-file--multiple-matches-prompts ()
   "When multiple shells contain the file, prompt for which shell to use."
@@ -84,8 +90,7 @@
   "When no shell contains the file, fall back to `agent-shell-send-file'."
   (let* ((state (list :fallback-called nil))
          (advice-buffers (lambda () nil))
-         (advice-send-file (lambda (&rest _)
-                             (plist-put state :fallback-called t))))
+         (advice-send-file (lambda (&rest _) (plist-put state :fallback-called t))))
     (unwind-protect
         (with-temp-buffer
           (setq buffer-file-name "/project/foo.el")
@@ -100,10 +105,8 @@
   "When the region is active and no shell contains the file, fall back to
 `agent-shell-send-region'."
   (let* ((state (list :region-sent nil))
-         (advice-region (lambda (&rest _)
-                          (plist-put state :region-sent t)))
-         (advice-send-file (lambda (&rest _)
-                             (error "Should send region, not file"))))
+         (advice-region (lambda (&rest _) (plist-put state :region-sent t)))
+         (advice-send-file (lambda (&rest _) (error "Should send region, not file"))))
     (unwind-protect
         (with-temp-buffer
           (setq buffer-file-name "/project/foo.el")
@@ -128,9 +131,10 @@ to that shell."
          (advice-buffers (lambda () (list buf)))
          (advice-cwd (lambda () temp-dir))
          (advice-region-context (lambda (&rest _) "region context"))
-         (advice-insert (lambda (&rest args)
-                          (plist-put state :inserted-buffer (plist-get args :shell-buffer))
-                          (plist-put state :inserted-text (plist-get args :text))))
+         (advice-insert
+          (lambda (&rest args)
+            (plist-put state :inserted-buffer (plist-get args :shell-buffer))
+            (plist-put state :inserted-text (plist-get args :text))))
          (advice-send-region (lambda (&rest _) (error "Should use existing shell")))
          (advice-send-file (lambda (&rest _) (error "Should use existing shell"))))
     (unwind-protect
@@ -144,7 +148,9 @@ to that shell."
             (activate-mark)
             (advice-add #'agent-shell-buffers :override advice-buffers)
             (advice-add #'agent-shell-cwd :override advice-cwd)
-            (advice-add #'agent-shell--get-region-context :override advice-region-context)
+            (advice-add
+             #'agent-shell--get-region-context
+             :override advice-region-context)
             (advice-add #'agent-shell-insert :override advice-insert)
             (advice-add #'agent-shell-send-region :override advice-send-region)
             (advice-add #'agent-shell-send-file :override advice-send-file)
@@ -175,8 +181,9 @@ which shell to use."
           (lambda (&rest args)
             (plist-put state :read-buffers (plist-get args :buffers))
             buf-a))
-         (advice-insert (lambda (&rest args)
-                          (plist-put state :inserted-buffer (plist-get args :shell-buffer))))
+         (advice-insert
+          (lambda (&rest args)
+            (plist-put state :inserted-buffer (plist-get args :shell-buffer))))
          (advice-send-region (lambda (&rest _) (error "Should prompt for shell")))
          (advice-send-file (lambda (&rest _) (error "Should prompt for shell"))))
     (unwind-protect
@@ -190,7 +197,9 @@ which shell to use."
             (activate-mark)
             (advice-add #'agent-shell-buffers :override advice-buffers)
             (advice-add #'agent-shell-cwd :override advice-cwd)
-            (advice-add #'agent-shell--get-region-context :override advice-region-context)
+            (advice-add
+             #'agent-shell--get-region-context
+             :override advice-region-context)
             (advice-add #'agent-shell--read-shell-buffer :override advice-read)
             (advice-add #'agent-shell-insert :override advice-insert)
             (advice-add #'agent-shell-send-region :override advice-send-region)
@@ -218,12 +227,18 @@ which shell to use."
                 ((symbol-function #'agent-shell--active-requests-p)
                  (lambda (&rest _) nil))
                 ((symbol-function #'shell-maker-submit)
-                 (lambda () (interactive) (plist-put state :submit-called t)))
+                 (lambda ()
+                   (interactive)
+                   (plist-put state :submit-called t)))
                 ((symbol-function #'agent-shell-prompt-steer)
-                 (lambda () (interactive) (plist-put state :steer-called t)))
+                 (lambda ()
+                   (interactive)
+                   (plist-put state :steer-called t)))
                 ((symbol-function #'agent-shell-prompt-queue)
-                 (lambda () (interactive) (plist-put state :queue-called t))))
-        (gatsby>agent-shell-send-or-queue-prompt)
+                 (lambda ()
+                   (interactive)
+                   (plist-put state :queue-called t))))
+        (gatsby>agent-shell-send-or-queue-prompt nil)
         (should (plist-get state :submit-called))
         (should (not (plist-get state :steer-called)))
         (should (not (plist-get state :queue-called)))))))
@@ -237,15 +252,20 @@ which shell to use."
                  (lambda () '(:supports-steering t)))
                 ((symbol-function #'agent-shell--active-requests-p)
                  (lambda (&rest _) t))
-                ((symbol-function #'agent-shell-steering-supported-p)
-                 (lambda () t))
+                ((symbol-function #'agent-shell-steering-supported-p) (lambda () t))
                 ((symbol-function #'shell-maker-submit)
-                 (lambda () (interactive) (plist-put state :submit-called t)))
+                 (lambda ()
+                   (interactive)
+                   (plist-put state :submit-called t)))
                 ((symbol-function #'agent-shell-prompt-steer)
-                 (lambda () (interactive) (plist-put state :steer-called t)))
+                 (lambda ()
+                   (interactive)
+                   (plist-put state :steer-called t)))
                 ((symbol-function #'agent-shell-prompt-queue)
-                 (lambda () (interactive) (plist-put state :queue-called t))))
-        (gatsby>agent-shell-send-or-queue-prompt)
+                 (lambda ()
+                   (interactive)
+                   (plist-put state :queue-called t))))
+        (gatsby>agent-shell-send-or-queue-prompt nil)
         (should (not (plist-get state :submit-called)))
         (should (plist-get state :steer-called))
         (should (not (plist-get state :queue-called)))))))
@@ -285,15 +305,20 @@ which shell to use."
                  (lambda () '(:supports-steering nil)))
                 ((symbol-function #'agent-shell--active-requests-p)
                  (lambda (&rest _) t))
-                ((symbol-function #'agent-shell-steering-supported-p)
-                 (lambda () nil))
+                ((symbol-function #'agent-shell-steering-supported-p) (lambda () nil))
                 ((symbol-function #'shell-maker-submit)
-                 (lambda () (interactive) (plist-put state :submit-called t)))
+                 (lambda ()
+                   (interactive)
+                   (plist-put state :submit-called t)))
                 ((symbol-function #'agent-shell-prompt-steer)
-                 (lambda () (interactive) (plist-put state :steer-called t)))
+                 (lambda ()
+                   (interactive)
+                   (plist-put state :steer-called t)))
                 ((symbol-function #'agent-shell-prompt-queue)
-                 (lambda () (interactive) (plist-put state :queue-called t))))
-        (gatsby>agent-shell-send-or-queue-prompt)
+                 (lambda ()
+                   (interactive)
+                   (plist-put state :queue-called t))))
+        (gatsby>agent-shell-send-or-queue-prompt nil)
         (should (not (plist-get state :submit-called)))
         (should (not (plist-get state :steer-called)))
         (should (plist-get state :queue-called))))))
@@ -301,8 +326,7 @@ which shell to use."
 (ert-deftest gatsby>>agent-shell-manager-launch--no-buffers-launches-new ()
   "When there are no project agent shells, launch a new one directly."
   (let ((launched nil))
-    (cl-letf (((symbol-function #'gatsby>>agent-shell-current-client)
-               (lambda () nil))
+    (cl-letf (((symbol-function #'gatsby>>agent-shell-current-client) (lambda () nil))
               ((symbol-function #'gatsby>agent-shell-launch)
                (lambda (&rest _) (setq launched t))))
       (gatsby>>agent-shell-manager-launch nil)
@@ -315,8 +339,7 @@ which shell to use."
     (unwind-protect
         (cl-letf (((symbol-function #'gatsby>>agent-shell-current-client)
                    (lambda () (list buf)))
-                  ((symbol-function #'completing-read)
-                   (lambda (&rest _) "new"))
+                  ((symbol-function #'completing-read) (lambda (&rest _) "new"))
                   ((symbol-function #'agent-shell--read-shell-buffer)
                    (lambda (&rest _) (error "Should not read existing shell")))
                   ((symbol-function #'gatsby>agent-shell-launch)
@@ -342,22 +365,21 @@ which shell to use."
           (should worktree))
       (kill-buffer buf))))
 
-(ert-deftest gatsby>>agent-shell-manager-launch--existing-choice-uses-read-shell-buffer ()
+(ert-deftest gatsby>>agent-shell-manager-launch--existing-choice-uses-read-shell-buffer
+    ()
   "Selecting \"existing...\" prompts for an existing shell."
   (let* ((buf (generate-new-buffer " *test-shell*"))
          (state (list :read-buffers nil :displayed-buffer nil)))
     (unwind-protect
         (cl-letf (((symbol-function #'gatsby>>agent-shell-current-client)
                    (lambda () (list buf)))
-                  ((symbol-function #'completing-read)
-                   (lambda (&rest _) "existing..."))
+                  ((symbol-function #'completing-read) (lambda (&rest _) "existing..."))
                   ((symbol-function #'agent-shell--read-shell-buffer)
                    (lambda (&rest args)
                      (plist-put state :read-buffers (plist-get args :buffers))
                      buf))
                   ((symbol-function #'display-buffer)
-                   (lambda (buffer _action)
-                     (plist-put state :displayed-buffer buffer)))
+                   (lambda (buffer _action) (plist-put state :displayed-buffer buffer)))
                   ((symbol-function #'select-window) #'ignore)
                   ((symbol-function #'evil-insert-state) #'ignore))
           (gatsby>>agent-shell-manager-launch nil)
