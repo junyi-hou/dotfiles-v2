@@ -505,5 +505,12 @@ which shell to send to. Otherwise, behave like `agent-shell-send-file'."
   :ensure (:host github :repo "junyi-hou/agent-shell-tramp")
   :config (agent-shell-tramp-mode 1))
 
+(use-package latex-to-svg-backend
+  :ensure (:host github :repo "alberti42/latex-to-svg-backend"))
+
+(use-package agent-shell-math-renderer
+  :ensure (:host github :repo "alberti42/agent-shell-math-renderer")
+  :hook (agent-shell-mode . agent-shell-math-renderer-mode))
+
 (provide 'gatsby-ai)
 ;;; gatsby-ai.el ends here
