@@ -60,23 +60,6 @@ With `--use-local-copy`, the local dotfiles directory is copied to the remote vi
 deploy --use-local-copy user@host [-p port]
 ```
 
-### Remote Agent
-
-Start a headless agent on a remote machine from your laptop using [agent-shell-to-go](https://github.com/junyi-hou/agent-shell-to-go), which allows you to keep interacting with a code agent from discord/slack on your phone.
-
-To start a remote agent, run
-```sh
-run-agent /path/to/project user@host
-```
-
-This SSHes into `user@host` and launches a headless Emacs session that communicates via Slack or Discord. Configure credentials in `~/dotfiles-v2/modules/claude/config.el` on the remote before running.
-
-Prerequisites on the remote:
-- Dotfiles deployed (see [Remote Development](#remote-development))
-- Dotfiles fully installed (`make build` + `make install`, now can be automated with adding `-b` flag to the `deploy` script)
-
-The agent runs in the background using `emacs --daemon` and persists after the SSH connection closes.
-
 
 ## Secrets
 

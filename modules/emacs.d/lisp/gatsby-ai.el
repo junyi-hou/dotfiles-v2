@@ -150,21 +150,6 @@ command with ARG."
    ("x" . #'agent-shell-manager-kill)
    ("d" . #'agent-shell-manager-delete-killed)))
 
-(use-package agent-shell-to-go
-  :ensure (:host github :repo "junyi-hou/agent-shell-to-go" :branch "stable")
-  :custom
-  (agent-shell-to-go-discord-guild-id
-   (sops-get-secret-try-env-variable "env/DISCORD_GUILD_ID"))
-  (agent-shell-to-go-discord-bot-token
-   (sops-get-secret-try-env-variable "env/DISCORD_BOT_TOKEN"))
-  (agent-shell-to-go-discord-authorized-users
-   (list (sops-get-secret-try-env-variable "env/DISCORD_USER_ID")))
-  (agent-shell-to-go-show-tool-output nil)
-  (agent-shell-to-go-projects-directory "~/Projects/")
-  (agent-shell-to-go-default-transport 'discord)
-  (agent-shell-to-go-start-agent-function
-   (lambda () (gatsby>agent-shell-launch nil t))))
-
 (gatsby>use-internal-package agent-workflows
   :commands (agent-workflows-commit agent-workflows-review)
   :hook
@@ -305,53 +290,6 @@ without prompting."
        :new-session t
        :session-strategy strategy)))
 
-  (defconst gatsby>run-agent-remote-hosts-cache-file
-    (no-littering-expand-var-file-name "run-agent-remote-hosts.el")
-    "Cache file for run-agent remote SSH hosts.")
-
-  (gatsby>defcommand gatsby>run-agent-on-remote ()
-    "Run agent on a remote server via the run-agent script."
-    (let* ((cfg (gatsby>>agent-shell-select-config))
-           (env-var (map-elt cfg :env))
-           (ssh-host
-            (completing-read
-             "SSH host: "
-             (gatsby>retrieve-or-save-item gatsby>run-agent-remote-hosts-cache-file)))
-           (_
-            (gatsby>retrieve-or-save-item gatsby>run-agent-remote-hosts-cache-file
-                                          ssh-host))
-           (remote-dir
-            (read-directory-name "Remote directory: "
-                                 (format "/rpc:%s:~/Projects/" ssh-host)))
-           (localname (tramp-file-name-localname (tramp-dissect-file-name remote-dir)))
-           (env-args
-            (let ((args nil)
-                  (rest env-var))
-              (while rest
-                (push (format "%s=%s" (pop rest) (pop rest)) args))
-              (nreverse args))))
-      (let ((buf
-             (compile
-              (format "%s %s %s %s"
-                      "run-agent"
-                      localname
-                      ssh-host
-                      (mapconcat #'shell-quote-argument env-args " "))))
-            (config-name (map-elt cfg :config-name)))
-        (with-current-buffer buf
-          (add-hook 'compilation-finish-functions
-                    (lambda (_buf msg)
-                      (if (string-match-p "finished" msg)
-                          (message "Ran %s config on %s for %s"
-                                   config-name
-                                   ssh-host
-                                   localname)
-                        (message "Failed: %s config on %s for %s"
-                                 config-name
-                                 ssh-host
-                                 localname)))
-                    nil t)))))
-
   ;; Emacs's built-in `system-sleep' needs NS, W32, or D-Bus support.  This
   ;; build has none, so provide a minimal macOS backend via `caffeinate' so
   ;; agent-shell can still keep the system awake during long turns.
@@ -466,8 +404,6 @@ which shell to send to. Otherwise, behave like `agent-shell-send-file'."
 
   :evil-bind
   (
-   ;; (:maps normal)
-   ;; ("SPC a r" . #'gatsby>run-agent-on-remote)
    (:maps (visual normal motion))
    ([remap gatsby>kill-buffer] . #'kill-buffer-and-window)
    (:maps (visual normal))
