@@ -250,6 +250,32 @@ which shell to use."
         (should (plist-get state :steer-called))
         (should (not (plist-get state :queue-called)))))))
 
+(ert-deftest gatsby>agent-shell-send-or-queue-prompt--force-queue-uses-queue ()
+  "With FORCE-QUEUE, queue even when steering is supported."
+  (let ((state (list :submit-called nil :steer-called nil :queue-called nil)))
+    (with-temp-buffer
+      (cl-letf (((symbol-function #'agent-shell--state)
+                 (lambda () '(:supports-steering t)))
+                ((symbol-function #'agent-shell--active-requests-p)
+                 (lambda (&rest _) t))
+                ((symbol-function #'agent-shell-steering-supported-p) (lambda () t))
+                ((symbol-function #'shell-maker-submit)
+                 (lambda ()
+                   (interactive)
+                   (plist-put state :submit-called t)))
+                ((symbol-function #'agent-shell-prompt-steer)
+                 (lambda ()
+                   (interactive)
+                   (plist-put state :steer-called t)))
+                ((symbol-function #'agent-shell-prompt-queue)
+                 (lambda ()
+                   (interactive)
+                   (plist-put state :queue-called t))))
+        (gatsby>agent-shell-send-or-queue-prompt t)
+        (should (not (plist-get state :submit-called)))
+        (should (not (plist-get state :steer-called)))
+        (should (plist-get state :queue-called))))))
+
 (ert-deftest gatsby>agent-shell-send-or-queue-prompt--no-steering-uses-queue ()
   "When there are active requests but steering is not supported, fall back to
 `agent-shell-prompt-queue'."
