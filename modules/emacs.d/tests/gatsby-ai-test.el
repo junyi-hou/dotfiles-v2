@@ -339,44 +339,5 @@ which shell to use."
           (should (eq (plist-get state :displayed-buffer) buf)))
       (kill-buffer buf))))
 
-(ert-deftest gatsby>>agent-shell-expand-mcp-value--expands-placeholders ()
-  "Placeholders expand via sops; plain text passes through."
-  (cl-letf (((symbol-function #'sops-get-secret-try-env-variable)
-             (lambda (path)
-               (cdr (assoc path '(("env/FOO" . "sekret")
-                                  ("env/BAR" . "tok")))))))
-    (should (equal (gatsby>>agent-shell-expand-mcp-value "${FOO}") "sekret"))
-    (should (equal (gatsby>>agent-shell-expand-mcp-value "Bearer ${BAR}")
-                   "Bearer tok"))
-    (should (equal (gatsby>>agent-shell-expand-mcp-value "plain") "plain"))
-    (should (equal (gatsby>>agent-shell-expand-mcp-value nil) nil))))
-
-(ert-deftest gatsby>>agent-shell-shared-mcp-servers--converts-mcp-json ()
-  "mcp.json entries convert to agent-shell http server shape."
-  (let ((file (make-temp-file "mcp-" nil ".json")))
-    (unwind-protect
-        (progn
-          (with-temp-file file
-            (insert "{\"mcpServers\":{\"context7\":{"
-                    "\"url\":\"https://mcp.context7.com/mcp\","
-                    "\"headers\":{\"CONTEXT7_API_KEY\":\"${CTX}\"}}}}"))
-          (cl-letf (((symbol-function #'sops-get-secret-try-env-variable)
-                     (lambda (path)
-                       (when (equal path "env/CTX") "sekret"))))
-            (should (equal (gatsby>>agent-shell-shared-mcp-servers file)
-                           '(((name . "context7")
-                              (type . "http")
-                              (url . "https://mcp.context7.com/mcp")
-                              (headers
-                               . (((name . "CONTEXT7_API_KEY")
-                                   (value . "sekret"))))))))))
-      (delete-file file))))
-
-(ert-deftest gatsby>>agent-shell-shared-mcp-servers--missing-file-returns-nil ()
-  "Absent mcp.json (e.g. before install) yields no servers."
-  (should (equal (gatsby>>agent-shell-shared-mcp-servers
-                  "/nonexistent/mcp.json")
-                 nil)))
-
 (provide 'gatsby-ai-test)
 ;;; gatsby-ai-test.el ends here

@@ -1,0 +1,16 @@
+{
+  "defaultProvider": "opencode",
+  "defaultModel": "muse-spark-1.3-contributor-free",
+  "defaultThinkingLevel": "high",
+  "packages": [
+    "npm:@dietrichgebert/ponytail",
+    "npm:pi-mcp-adapter",
+    "npm:pi-web-access",
+    "npm:pi-subagents",
+    "npm:pi-intercom"
+  ],
+  "lastChangelogVersion": "0.85.1",
+  "theme": "dark",
+  "steeringMode": "all",
+  "followUpMode": "all"
+}

@@ -34,8 +34,6 @@ jobs:
           path: |
             .pixi
             .tools
-            ~/.opencode
-            ~/.local/bin/opencode
           key: dotfiles-env-${{ matrix.os }}-${{ hashFiles('pixi.toml', 'pixi.lock', '.envrc') }}
           restore-keys: |
             dotfiles-env-${{ matrix.os }}-
@@ -76,8 +74,6 @@ jobs:
           path: |
             .pixi
             .tools
-            ~/.opencode
-            ~/.local/bin/opencode
           key: dotfiles-env-${{ matrix.os }}-${{ hashFiles('pixi.toml', 'pixi.lock', '.envrc') }}
           restore-keys: |
             dotfiles-env-${{ matrix.os }}-
@@ -152,8 +148,6 @@ jobs:
           path: |
             .pixi
             .tools
-            ~/.opencode
-            ~/.local/bin/opencode
           key: dotfiles-env-${{ matrix.os }}-${{ hashFiles('pixi.toml', 'pixi.lock', '.envrc') }}
           restore-keys: |
             dotfiles-env-${{ matrix.os }}-
@@ -197,8 +191,6 @@ jobs:
           path: |
             .pixi
             .tools
-            ~/.opencode
-            ~/.local/bin/opencode
           key: dotfiles-env-${{ matrix.os }}-${{ hashFiles('pixi.toml', 'pixi.lock', '.envrc') }}
           restore-keys: |
             dotfiles-env-${{ matrix.os }}-
@@ -240,8 +232,6 @@ jobs:
           path: |
             .pixi
             .tools
-            ~/.opencode
-            ~/.local/bin/opencode
           key: dotfiles-env-${{ matrix.os }}-${{ hashFiles('pixi.toml', 'pixi.lock', '.envrc') }}
           restore-keys: |
             dotfiles-env-${{ matrix.os }}-
@@ -259,4 +249,5 @@ jobs:
 
       - name: Verify agent installation
         run: |
-          command -v opencode
+          command -v pi
+          command -v pi-acp

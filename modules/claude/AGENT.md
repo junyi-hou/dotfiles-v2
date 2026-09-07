@@ -1,6 +1,9 @@
 # AGENT Guide
 
-This file contains instructions that every agent should read at the start of each conversation and maintain in memory throughout the entire interaction. **IMPORTANT:** Once this file has been read or updated, it MUST be loaded at the beginning of any new conversation to ensure awareness of communication requirements.
+This file contains instructions that every agent should read at the start of each
+conversation and maintain in memory throughout the entire interaction. **IMPORTANT:**
+Once this file has been read or updated, it MUST be loaded at the beginning of any new
+conversation to ensure awareness of communication requirements.
 
 ## Be Critical
 
@@ -35,10 +38,29 @@ This file contains instructions that every agent should read at the start of eac
 - Do not change remote secrets, flags, or infrastructure.
 - Do not send mail, chat, or webhook posts.
 - Ask before any action that leaves this machine or changes shared state.
-- Follow an explicit user instruction to do a specific action above. Confirm the exact action first, then do only that action.
+- Follow an explicit user instruction to do a specific action above. Confirm the exact
+  action first, then do only that action.
 
 ## Writing Style
 
-- Do not use em dashes (—) in responses. Use commas, semicolons, or plain hyphens instead.
+- Do not use em dashes (—) in responses. Use commas, semicolons, or plain hyphens
+  instead.
 - Use the `asd-ste100-skill` skill for agent responses.
 - Use the `asd-ste100-skill` skill when writing documents.
+
+## Peer Agent Coordination
+
+This section applies only when you run inside pi with the `intercom`
+tool loaded. Other agents ignore it.
+
+- At session start, call `intercom({ action: "list" })`. Record each peer name, working
+  directory, and status.
+- You can check for peer activity in
+  `<PROJECT-ROOT>/.agent-shell/transcripts/`. Transcripts are Markdown files with an
+  agent name and working directory header. Match peers by working directory. Read the
+  newest files first.
+- When a peer change affects your work, contact that peer through intercom. Use `send`
+  for notices the peer can read later. Use `ask` only when you cannot proceed without
+  the answer.
+- After you change shared code or contracts, send a short notice to affected peers. Name
+  the files and describe the new behavior.
