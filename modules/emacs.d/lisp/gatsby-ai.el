@@ -382,12 +382,14 @@ sleep; otherwise keep it awake.  Return a process object to pass to
       (defun system-sleep-unblock-sleep (&rest _)
         t)))
 
-  (gatsby>defcommand gatsby>agent-shell-send-or-queue-prompt ()
-    "Steer the current turn if the agent supports it, otherwise queue the prompt."
+  (gatsby>defcommand gatsby>agent-shell-send-or-queue-prompt (force-queue)
+    "Steer the current turn if the agent supports it, otherwise queue the prompt.
+
+With prefix argument FORCE-QUEUE, always queue the prompt instead of steering."
     (cond
      ((not (agent-shell--active-requests-p (agent-shell--state)))
       (call-interactively #'shell-maker-submit))
-     ((agent-shell-steering-supported-p)
+     ((and (not force-queue) (agent-shell-steering-supported-p))
       (call-interactively #'agent-shell-prompt-steer))
      (t
       (call-interactively #'agent-shell-prompt-queue))))
