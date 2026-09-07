@@ -23,16 +23,19 @@ This file contains instructions that every agent should read at the start of eac
 - Match existing style, even if you'd do it differently.
 - If you notice unrelated dead code, mention it - don't delete it.
 
-## Version Controls
+## External Actions
 
-- Don't commit the change you made, ever.
-
-## Skill Usages
-
-- Whenever planning new features, use the `grill-with-docs` skill to write down ADRs as much as possible.
-- Whenever implementing new features, use the `tdd` skill for test-driven development as much as possible.
-- Whenever debugging a hard bug or perf regression, use the `diagnosing-bugs` skill before editing.
-- Whenever designing or improving a module's interface, use the `codebase-design` skill.
+- Do not commit changes, ever.
+- Do not push branches, tags, or any ref to a remote.
+- Do not open, review, comment on, merge, or close pull requests.
+- Do not open, edit, close, or comment on issues.
+- Do not create, edit, or delete releases.
+- Do not trigger CI workflows or deployments.
+- Do not publish packages or container images.
+- Do not change remote secrets, flags, or infrastructure.
+- Do not send mail, chat, or webhook posts.
+- Ask before any action that leaves this machine or changes shared state.
+- Follow an explicit user instruction to do a specific action above. Confirm the exact action first, then do only that action.
 
 ## Writing Style
 
