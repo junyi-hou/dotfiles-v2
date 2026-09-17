@@ -403,8 +403,7 @@ which shell to send to. Otherwise, behave like `agent-shell-send-file'."
           (agent-shell-send-file prompt-for-file)))))
 
   :evil-bind
-  (
-   (:maps (visual normal motion))
+  ((:maps (visual normal motion))
    ([remap gatsby>kill-buffer] . #'kill-buffer-and-window)
    (:maps (visual normal))
    ("SPC a s" . #'gatsby>agent-shell-send-file)
@@ -447,6 +446,14 @@ which shell to send to. Otherwise, behave like `agent-shell-send-file'."
 (use-package agent-shell-math-renderer
   :ensure (:host github :repo "alberti42/agent-shell-math-renderer")
   :hook (agent-shell-mode . agent-shell-math-renderer-mode))
+
+(use-package agent-recall
+  :ensure (:host github :repo "mrx-xo/agent-recall")
+  :hook (agent-shell-mode . agent-recall-track-sessions)
+  :custom
+  (agent-recall-search-paths '("~/Projects"))
+  (agent-recall-search-function 'consult-ripgrep)
+  (agent-recall-browse-sort 'modified-desc))
 
 (provide 'gatsby-ai)
 ;;; gatsby-ai.el ends here
