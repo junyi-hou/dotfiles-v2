@@ -33,6 +33,9 @@
 // level in the mode slot without sending session/set_mode (whose in-flight
 // window drops pi-acp's startup banner below the prompt). The real thinking
 // level rides along in a separate field for the thought_level option.
+// Thinking levels are NOT advertised as session modes; the client's
+// thought_level config option (set through session/setConfiguration) is
+// the only place to change them.
 //
 // Idempotent per feature: exits 0 without changes when a feature's marker is
 // already present.
@@ -227,16 +230,25 @@ const fullAccessModeEdits = [
   return {
     currentModeId: "full-access",
     thinkingLevel: current,
-    availableModes: [{ id: "full-access", name: "Full Access", description: null }].concat(available.map((id) => ({
-      id,
-      name: \`Thinking: \${id}\`,
-      description: null
-    })))
+    thinkingLevels: available,
+    availableModes: [{ id: "full-access", name: "Full Access", description: null }]
   };`],
 
-  // The thought_level option keeps tracking the real thinking level.
-  [`      currentValue: state.modes.currentModeId,`,
-   `      currentValue: state.modes.thinkingLevel ?? state.modes.currentModeId,`],
+  // The thought_level option keeps tracking the real thinking level; its
+  // options come from thinkingLevels, not availableModes (now session
+  // modes only).
+  [`      currentValue: state.modes.currentModeId,
+      options: state.modes.availableModes.map((mode) => ({
+        value: mode.id,
+        name: mode.name,
+        description: mode.description ?? null
+      }))`,
+   `      currentValue: state.modes.thinkingLevel ?? state.modes.currentModeId,
+      options: state.modes.thinkingLevels.map((id) => ({
+        value: id,
+        name: id,
+        description: null
+      }))`],
 ];
 
 if (src.includes('mode === "full-access"')) {
@@ -291,6 +303,10 @@ const steeringIntoTurnEdits = [
 ];
 
 if (src.includes('name: "Full Access"')) {
+  if (src.includes('name: \`Thinking:')) {
+    console.error("dist has thinking levels mixed into session modes (older patch); reinstall pi-acp@0.0.33 first (npm install -g pi-acp@0.0.33) then re-run");
+    process.exit(1);
+  }
   console.log("full-access-mode: already patched; skipping");
 } else {
   applyEdits(fullAccessModeEdits);
@@ -493,6 +509,8 @@ if (!check.includes("getSteeringState")) fail("steering helper missing");
 if (!check.includes('mode === "full-access"')) fail("full-access marker missing");
 if (!check.includes('name: "Full Access"')) fail("full-access-mode marker missing");
 if (!check.includes("thinkingLevel: current")) fail("thinking-level field missing");
+if (!check.includes("thinkingLevels: available")) fail("thinking-level list missing");
+if (check.includes("name: \`Thinking:")) fail("thinking levels leaked into session modes");
 if (!check.includes("_session/steering")) fail("steering handler missing");
 if (!check.includes("steering: { supported: true }")) fail("steering advertisement missing");
 if (!check.includes("reportUsage")) fail("usage helper missing");
