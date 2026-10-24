@@ -175,9 +175,15 @@ Press C-c C-c to re-encrypt and save.  Normal file saves are disabled."
          (enc-file (expand-file-name sops-enc-file gatsby>dotfiles-repo-location))
          (_ (unless (file-exists-p enc-file)
               (user-error "Encrypted secrets not found: %s" enc-file)))
-         (decrypted (shell-command-to-string
-                     (format "sops --input-type json --output-type json -d %s"
-                             (shell-quote-argument enc-file))))
+         (decrypted (with-temp-buffer
+                      (let ((status (call-process "sops" nil t nil
+                                                  "--input-type" "json"
+                                                  "--output-type" "json"
+                                                  "-d" enc-file)))
+                        (if (zerop status)
+                            (buffer-string)
+                          (user-error "sops decryption failed: %s"
+                                      (string-trim (buffer-string)))))))
          (buf (get-buffer-create "*edit-secret*")))
     (with-current-buffer buf
       (erase-buffer)
