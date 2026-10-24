@@ -490,7 +490,7 @@ selection live.  When no region is active, the peer overlay is removed."
             (delete-overlay ssdf--mirror-overlay)
             (setq ssdf--mirror-overlay nil)))))))
 
-;;;; Staging
+;;;; Staging and discarding
 
 (defun ssdf--linetype-content (buf row)
   "Return (TYPE . CONTENT) for line ROW (1-indexed) in BUF."
@@ -608,13 +608,126 @@ If the refreshed diff is empty (all changes staged), close the view."
     (when found
       (goto-char found))))
 
-(defun ssdf-stage ()
-  "Stage the hunk at point, or the active region, then refresh the diff.
-Uses `git apply --cached --recount' so partial hunks stage correctly.
-After staging, repositions to the same hunk index within the file;
-if the staged hunk was the last one, the next remaining hunk is
-landed on instead."
-  (interactive)
+(defun ssdf--git-apply (patch &rest args)
+  "Run `git apply' with ARGS, feeding PATCH via stdin.
+Return (STATUS . OUTPUT) where STATUS is the exit code and OUTPUT is
+whatever git printed."
+  (with-temp-buffer
+    (insert patch)
+    (cons
+     ;; --unidiff-zero: region-restricted patches carry no context
+     ;; lines, which git apply refuses by default.
+     (apply #'call-process-region
+            (point-min)
+            (point-max)
+            "git"
+            nil
+            t
+            nil
+            "apply"
+            (append '("--unidiff-zero") args (list "-")))
+     (buffer-string))))
+
+(defun ssdf--hunk-patch (left-buf right-buf header-pos file-name)
+  "Return a unified-diff patch for the hunk at HEADER-POS in FILE-NAME.
+The patch is restricted to the active region when one exists.
+LEFT-BUF and RIGHT-BUF are the aligned ssdf buffers.  Signals
+`user-error' when the selected range contains no diff lines."
+  (let* ((base-old (or (get-text-property header-pos 'ssdf-old-start) 1))
+         (base-new (or (get-text-property header-pos 'ssdf-new-start) 1))
+         (hunk-range (ssdf--hunk-row-range header-pos))
+         (region-rows
+          (if mark-active
+              (let ((beg (line-number-at-pos (region-beginning)))
+                    (end (line-number-at-pos (region-end))))
+                (cons (max beg (car hunk-range)) (min end (cdr hunk-range))))
+            hunk-range))
+         (start-row (car region-rows))
+         (hunk-start (car hunk-range))
+         (offsets
+          (cl-loop
+           for
+           row
+           from
+           hunk-start
+           to
+           (1- start-row)
+           for
+           off
+           =
+           (ssdf--row-line-offset left-buf right-buf row)
+           sum
+           (car off)
+           into
+           od
+           sum
+           (cdr off)
+           into
+           nd
+           finally
+           return
+           (cons od nd)))
+         (patch-old (+ base-old (car offsets)))
+         (patch-new (+ base-new (cdr offsets)))
+         (patch-lines
+          (cl-loop
+           for
+           row
+           from
+           start-row
+           to
+           (cdr region-rows)
+           append
+           (ssdf--row-patch-lines left-buf right-buf row))))
+    (unless patch-lines
+      (user-error "No diff lines in the selected range"))
+    ;; New files (old-start 0) and deletions (new-start 0) need
+    ;; /dev/null sides plus a mode line; without them `git apply'
+    ;; fails on new files and silently stages an empty file instead
+    ;; of deleting removed ones.
+    (let* ((new-file-p (eq base-old 0))
+           (deleted-file-p (eq base-new 0))
+           (mode-line
+            (cond
+             (new-file-p
+              "new file mode 100644\n")
+             (deleted-file-p
+              (format "deleted file mode %s\n"
+                      (or (ssdf--file-index-mode file-name) "100644")))
+             (t
+              ""))))
+      (concat
+       "diff --git a/"
+       file-name
+       " b/"
+       file-name
+       "\n"
+       mode-line
+       "--- "
+       (if new-file-p
+           "/dev/null"
+         (concat "a/" file-name))
+       "\n"
+       "+++ "
+       (if deleted-file-p
+           "/dev/null"
+         (concat "b/" file-name))
+       "\n"
+       "@@ -"
+       (number-to-string patch-old)
+       " +"
+       (number-to-string patch-new)
+       " @@\n"
+       (mapconcat #'identity patch-lines "\n")
+       "\n"))))
+
+(defun ssdf--act-on-hunk (apply-fn &optional prompt)
+  "Build a patch for the hunk (or region) at point and run APPLY-FN on it.
+APPLY-FN is called with the patch string and signals `user-error' on
+failure.  With PROMPT, ask for confirmation before applying.
+After applying, refresh the diff and reposition to the same hunk
+index within the file; if it was the last hunk, land on the next
+remaining one instead."
   (unless ssdf--peer
     (user-error "Not in a ssdf buffer"))
   (let* ((left-buf (get-buffer ssdf--left-name))
@@ -623,115 +736,45 @@ landed on instead."
          (file-name (and header-pos (ssdf--current-file-name))))
     (unless (and header-pos file-name)
       (user-error "No hunk at point"))
+    (when (and prompt (not (y-or-n-p (format prompt file-name))))
+      (user-error "Abort"))
     (let ((saved-hunk-index (ssdf--hunk-index-in-file header-pos)))
-      (let* ((base-old (or (get-text-property header-pos 'ssdf-old-start) 1))
-             (base-new (or (get-text-property header-pos 'ssdf-new-start) 1))
-             (hunk-range (ssdf--hunk-row-range header-pos))
-             (region-rows
-              (if mark-active
-                  (let ((beg (line-number-at-pos (region-beginning)))
-                        (end (line-number-at-pos (region-end))))
-                    (cons (max beg (car hunk-range)) (min end (cdr hunk-range))))
-                hunk-range))
-             (start-row (car region-rows))
-             (hunk-start (car hunk-range))
-             (offsets
-              (cl-loop
-               for
-               row
-               from
-               hunk-start
-               to
-               (1- start-row)
-               for
-               off
-               =
-               (ssdf--row-line-offset left-buf right-buf row)
-               sum
-               (car off)
-               into
-               od
-               sum
-               (cdr off)
-               into
-               nd
-               finally
-               return
-               (cons od nd)))
-             (patch-old (+ base-old (car offsets)))
-             (patch-new (+ base-new (cdr offsets)))
-             (patch-lines
-              (cl-loop
-               for
-               row
-               from
-               start-row
-               to
-               (cdr region-rows)
-               append
-               (ssdf--row-patch-lines left-buf right-buf row))))
-        (unless patch-lines
-          (user-error "Nothing to stage in the selected range"))
-        ;; New files (old-start 0) and deletions (new-start 0) need
-        ;; /dev/null sides plus a mode line; without them `git apply
-        ;; --cached' fails on new files and silently stages an empty
-        ;; file instead of deleting removed ones.
-        (let* ((new-file-p (eq base-old 0))
-               (deleted-file-p (eq base-new 0))
-               (mode-line
-                (cond
-                 (new-file-p
-                  "new file mode 100644\n")
-                 (deleted-file-p
-                  (format "deleted file mode %s\n"
-                          (or (ssdf--file-index-mode file-name) "100644")))
-                 (t
-                  "")))
-               (patch
-                (concat
-                 "diff --git a/"
-                 file-name
-                 " b/"
-                 file-name
-                 "\n"
-                 mode-line
-                 "--- "
-                 (if new-file-p
-                     "/dev/null"
-                   (concat "a/" file-name))
-                 "\n"
-                 "+++ "
-                 (if deleted-file-p
-                     "/dev/null"
-                   (concat "b/" file-name))
-                 "\n"
-                 "@@ -"
-                 (number-to-string patch-old)
-                 " +"
-                 (number-to-string patch-new)
-                 " @@\n"
-                 (mapconcat #'identity patch-lines "\n")
-                 "\n")))
-          (let ((result
-                 (with-temp-buffer
-                   (insert patch)
-                   (let ((status
-                          (call-process-region (point-min) (point-max) "git"
-                                               nil
-                                               t
-                                               nil
-                                               "apply"
-                                               "--cached"
-                                               "--recount"
-                                               "-")))
-                     (cons status (buffer-string))))))
-            (unless (eq (car result) 0)
-              (user-error "git apply --cached failed: %s"
-                          (string-trim (cdr result)))))))
+      (funcall apply-fn (ssdf--hunk-patch left-buf right-buf header-pos file-name))
       (ssdf--refresh-diff)
       (when (get-buffer ssdf--left-name)
         (with-current-buffer (get-buffer ssdf--left-name)
           (ssdf--goto-file-hunk file-name saved-hunk-index))))))
+
+(defun ssdf-stage ()
+  "Stage the hunk at point, or the active region, then refresh the diff.
+Uses `git apply --cached --recount' so partial hunks stage correctly."
+  (interactive)
+  (ssdf--act-on-hunk
+   (lambda (patch)
+     (let ((result (ssdf--git-apply patch "--cached" "--recount")))
+       (unless (eq (car result) 0)
+         (user-error "git apply --cached failed: %s" (string-trim (cdr result))))))))
+
+(defun ssdf--apply-reverse (patch)
+  "Reverse-apply PATCH to the working tree, and to the index when possible.
+Discarding a staged change must also revert the index, otherwise the
+hunk survives as a staged diff and its removal reappears as an
+unstaged one.  For unstaged changes the index apply does not match
+and its failure is ignored."
+  (let ((worktree (ssdf--git-apply patch "--recount" "-R")))
+    (if (eq (car worktree) 0)
+        (ssdf--git-apply patch "--recount" "-R" "--cached")
+      (let ((index (ssdf--git-apply patch "--recount" "-R" "--cached")))
+        (unless (eq (car index) 0)
+          (user-error "git apply -R failed: %s" (string-trim (cdr worktree))))))))
+
+(defun ssdf-discard ()
+  "Discard the hunk at point, or the active region, then refresh the diff.
+Reverse-applies the change to the working tree; if the change is
+staged, it is removed from the index as well.  Asks for confirmation
+before discarding."
+  (interactive)
+  (ssdf--act-on-hunk #'ssdf--apply-reverse "Discard hunk in %s? "))
 
 ;;;; Mode
 
@@ -748,6 +791,7 @@ landed on instead."
     (define-key map (kbd "+") #'ssdf-increase-context)
     (define-key map (kbd "-") #'ssdf-decrease-context)
     (define-key map (kbd "s") #'ssdf-stage)
+    (define-key map (kbd "k") #'ssdf-discard)
     (define-key map (kbd "q") #'ssdf-quit)
     map)
   "Keymap for `ssdf-mode'.")

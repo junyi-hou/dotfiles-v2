@@ -645,6 +645,97 @@ not an empty blob in its place."
       (ssdf-quit)
       (delete-directory repo t))))
 
+;;; ssdf-discard (integration with a temp git repo)
+
+(defconst ssdf-test--mod-delta
+  "mod.txt\n@@ -1,3 +1,3 @@\n  1   1 │ first\n  2      │-old\n      2 │+new\n  3   3 │ last\n")
+
+(defconst ssdf-test--mod-diff
+  "diff --git a/mod.txt b/mod.txt\nindex 111..222 100644\n--- a/mod.txt\n+++ b/mod.txt\n@@ -1,3 +1,3 @@\n first\n-old\n+new\n last\n")
+
+(defconst ssdf-test--two-pair-delta
+  "mod.txt\n@@ -1,5 +1,5 @@\n  1   1 │ first\n  2      │-old1\n      2 │+new1\n  3      │-old2\n      3 │+new2\n  4   4 │ last\n")
+
+(defconst ssdf-test--two-pair-diff
+  "diff --git a/mod.txt b/mod.txt\nindex 111..222 100644\n--- a/mod.txt\n+++ b/mod.txt\n@@ -1,5 +1,5 @@\n first\n-old1\n+new1\n-old2\n+new2\n last\n")
+
+(defun ssdf-test--file-content (repo name)
+  "Return the contents of NAME within REPO."
+  (with-temp-buffer
+    (insert-file-contents (expand-file-name name repo))
+    (buffer-string)))
+
+(defun ssdf-test--goto-first-hunk ()
+  "Move point in the left ssdf buffer to the first `@@' header."
+  (with-current-buffer (get-buffer ssdf--left-name)
+    (goto-char (point-min))
+    (re-search-forward "^@@ ")
+    (goto-char (line-beginning-position))))
+
+(defmacro ssdf-test--discard-diff (delta-output diff-text &rest body)
+  "Display DIFF-TEXT via mocked DELTA-OUTPUT with point on its hunk.
+BODY runs in the left ssdf buffer afterwards (before discarding), so
+tests can position a region first."
+  (declare (indent 2))
+  `(ssdf-test--with-delta-output ,delta-output
+     (ssdf-display-diff ,diff-text :source-fn (lambda (_) ,diff-text))
+     (ssdf-test--goto-first-hunk)
+     (with-current-buffer (get-buffer ssdf--left-name)
+       ,@body)))
+
+(ert-deftest ssdf-discard--unstaged-hunk ()
+  "Discarding an unstaged hunk reverts the working tree; index and HEAD stay untouched."
+  (let ((repo (ssdf-test--make-repo '(("mod.txt" . "first\nold\nlast\n")))))
+    (unwind-protect
+        (let ((default-directory repo))
+          (with-temp-file (expand-file-name "mod.txt" repo)
+            (insert "first\nnew\nlast\n"))
+          (cl-letf (((symbol-function 'y-or-n-p) (lambda (_) t)))
+            (ssdf-test--discard-diff ssdf-test--mod-delta ssdf-test--mod-diff
+              (ssdf-discard)))
+          (should (equal (ssdf-test--file-content repo "mod.txt") "first\nold\nlast\n"))
+          (should (equal (ssdf--git "diff") ""))
+          (should (equal (ssdf--git "diff" "--staged") "")))
+      (ssdf-quit)
+      (delete-directory repo t))))
+
+(ert-deftest ssdf-discard--staged-hunk ()
+  "Discarding a staged hunk removes it from both the index and the working tree."
+  (let ((repo (ssdf-test--make-repo '(("mod.txt" . "first\nold\nlast\n")))))
+    (unwind-protect
+        (let ((default-directory repo))
+          (with-temp-file (expand-file-name "mod.txt" repo)
+            (insert "first\nnew\nlast\n"))
+          (ssdf--git "add" "mod.txt")
+          (cl-letf (((symbol-function 'y-or-n-p) (lambda (_) t)))
+            (ssdf-test--discard-diff ssdf-test--mod-delta ssdf-test--mod-diff
+              (ssdf-discard)))
+          (should (equal (ssdf--git "diff" "--staged") ""))
+          (should
+           (equal (ssdf-test--file-content repo "mod.txt") "first\nold\nlast\n")))
+      (ssdf-quit)
+      (delete-directory repo t))))
+
+(ert-deftest ssdf-discard--region-restricted ()
+  "With an active region, only the selected rows are discarded, not the whole hunk."
+  (let ((repo (ssdf-test--make-repo '(("mod.txt" . "first\nold1\nold2\nlast\n")))))
+    (unwind-protect
+        (let ((default-directory repo))
+          (with-temp-file (expand-file-name "mod.txt" repo)
+            (insert "first\nnew1\nnew2\nlast\n"))
+          (cl-letf (((symbol-function 'y-or-n-p) (lambda (_) t)))
+            (ssdf-test--discard-diff ssdf-test--two-pair-delta ssdf-test--two-pair-diff
+              ;; Select only the second change row (old2/new2).
+              (forward-line 3)
+              (push-mark (line-beginning-position) t t)
+              (end-of-line)
+              (ssdf-discard)))
+          (should
+           (equal
+            (ssdf-test--file-content repo "mod.txt") "first\nnew1\nold2\nlast\n")))
+      (ssdf-quit)
+      (delete-directory repo t))))
+
 ;;; ssdf-from-magit — `(recent status)' lineage
 
 (defmacro ssdf-test--from-magit-recent (value line point-offset &rest body)
