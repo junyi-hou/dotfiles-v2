@@ -37,7 +37,10 @@ to render them.  The actual rendering is delegated to
   :global t
   (if jupyter-kitty-graphics-mode
       (progn
-        (setq jupyter-kitty-gfx--saved-mime-types jupyter-nongraphic-mime-types)
+        ;; The body runs on every invocation, even redundant enables;
+        ;; only save the pre-mode value once.
+        (unless jupyter-kitty-gfx--saved-mime-types
+          (setq jupyter-kitty-gfx--saved-mime-types jupyter-nongraphic-mime-types))
         (with-no-warnings
           (setq jupyter-nongraphic-mime-types
                 '(:application/vnd.jupyter.widget-view+json
