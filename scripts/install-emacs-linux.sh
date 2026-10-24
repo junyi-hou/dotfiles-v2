@@ -10,6 +10,7 @@ BIN_DIR="$HOME/.local/bin"
 install_build_deps() {
     if command -v apt-get >/dev/null 2>&1; then
         echo "Using apt-get..."
+        sudo apt-get update
         sudo apt-get install -y gcc make autoconf automake pkg-config \
             libgnutls28-dev libncurses-dev libxml2-dev zlib1g-dev libgmp-dev texinfo
         install_tree_sitter_from_source
