@@ -318,7 +318,7 @@ interactively select a single test to run instead."
   (remove-hook 'magit-pre-start-git-hook #'magit-maybe-save-repository-buffers)
   (magit-fast-mode)
 
-  :evil-bind ((:maps magit-status-mode-map) ("<return>" . #'ssdf-from-magit)))
+  :evil-bind ((:maps magit-status-mode-map) ("M-RET" . #'ssdf-from-magit)))
 
 (gatsby>use-internal-package git-rebase
   :evil-bind
