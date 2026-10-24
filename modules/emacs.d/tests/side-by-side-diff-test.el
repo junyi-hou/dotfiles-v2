@@ -26,6 +26,15 @@ Prints the ANSI-stripped fixture content so test output shows what is being test
      (cl-letf (((symbol-function 'ssdf--run-delta) (lambda (_) fixture)))
        ,@body)))
 
+(defmacro ssdf-test--with-delta-output (output &rest body)
+  "Like `ssdf-test--with-delta-fixture' but with literal delta OUTPUT."
+  (declare (indent 1))
+  `(let ((fixture ,output))
+     (message "\n=== delta output ===\n%s\n==================="
+              (ansi-color-filter-apply fixture))
+     (cl-letf (((symbol-function 'ssdf--run-delta) (lambda (_) fixture)))
+       ,@body)))
+
 (defun ssdf-test--strip-props (hunks)
   "Return HUNKS with text properties stripped from line content."
   (mapcar (lambda (h)
@@ -555,6 +564,86 @@ Prints the ANSI-stripped fixture content so test output shows what is being test
           (with-current-buffer b
             (should-not ssdf--mirror-overlay)))
       (mapc #'kill-buffer (list a b)))))
+
+;;; ssdf--parse-delta -- new/deleted file names
+
+(ert-deftest ssdf--parse-delta--new-and-deleted-file-names ()
+  "Delta prints \"added: F\" / \"removed: F\" for new/deleted files; the real
+file name must be extracted, not taken verbatim."
+  (ssdf-test--with-delta-output
+   "added: new.txt\n@@ -0,0 +1,2 @@\n  1 │+line1\n  2 │+line2\n"
+   (let ((h (car (ssdf--parse-delta ""))))
+     (should (equal (ssdf--hunk-file h) "new.txt"))
+     (should (= (ssdf--hunk-old-start h) 0))
+     (should (= (ssdf--hunk-new-start h) 1))))
+  (ssdf-test--with-delta-output
+   "removed: del.txt\n@@ -1 +0,0 @@\n  1 │-orig\n"
+   (let ((h (car (ssdf--parse-delta ""))))
+     (should (equal (ssdf--hunk-file h) "del.txt"))
+     (should (= (ssdf--hunk-old-start h) 1))
+     (should (= (ssdf--hunk-new-start h) 0)))))
+
+;;; ssdf-stage (integration with a temp git repo)
+
+(defconst ssdf-test--new-file-delta
+  "added: new.txt\n@@ -0,0 +1,2 @@\n  1 │+line1\n  2 │+line2\n")
+
+(defconst ssdf-test--deleted-file-delta
+  "removed: del.txt\n@@ -1 +0,0 @@\n  1 │-orig\n")
+
+(defconst ssdf-test--new-file-diff
+  "diff --git a/new.txt b/new.txt\nnew file mode 100644\n--- /dev/null\n+++ b/new.txt\n@@ -0,0 +1,2 @@\n+line1\n+line2\n")
+
+(defconst ssdf-test--deleted-file-diff
+  "diff --git a/del.txt b/del.txt\ndeleted file mode 100644\n--- a/del.txt\n+++ /dev/null\n@@ -1 +0,0 @@\n-orig\n")
+
+(defun ssdf-test--make-repo (files)
+  "Create a temp git repo committing FILES (alist of REL-NAME . CONTENT); return dir."
+  (let ((repo (make-temp-file "ssdf-stage-" t)))
+    (let ((default-directory repo))
+      (ssdf--git "init" ".")
+      (ssdf--git "config" "user.email" "ssdf@test")
+      (ssdf--git "config" "user.name" "ssdf-test")
+      (pcase-dolist (`(,name . ,content) files)
+        (with-temp-file (expand-file-name name repo) (insert content)))
+      (ssdf--git "add" ".")
+      (ssdf--git "commit" "-m" "init"))
+    repo))
+
+(defun ssdf-test--stage-diff (delta-output diff-text)
+  "Display DIFF-TEXT via mocked DELTA-OUTPUT, then stage its hunk."
+  (ssdf-test--with-delta-output delta-output
+    (ssdf-display-diff diff-text :source-fn (lambda (_) diff-text))
+    (with-current-buffer (get-buffer ssdf--left-name)
+      (goto-char (point-min))
+      (re-search-forward "^@@ ")
+      (goto-char (line-beginning-position))
+      (ssdf-stage))))
+
+(ert-deftest ssdf-stage--new-file-hunk ()
+  "Staging a new-file hunk (old-start 0) puts the content in the index."
+  (let ((repo (ssdf-test--make-repo '(("other.txt" . "x\n")))))
+    (unwind-protect
+        (let ((default-directory repo))
+          (with-temp-file (expand-file-name "new.txt" repo)
+            (insert "line1\nline2\n"))
+          (ssdf--git "add" "-N" "new.txt")
+          (ssdf-test--stage-diff ssdf-test--new-file-delta ssdf-test--new-file-diff)
+          (should (equal (ssdf--git "show" ":new.txt") "line1\nline2\n")))
+      (ssdf-quit)
+      (delete-directory repo t))))
+
+(ert-deftest ssdf-stage--deleted-file-hunk ()
+  "Staging a deleted-file hunk (new-start 0) removes the path from the index,
+not an empty blob in its place."
+  (let ((repo (ssdf-test--make-repo '(("del.txt" . "orig\n")))))
+    (unwind-protect
+        (let ((default-directory repo))
+          (delete-file (expand-file-name "del.txt" repo))
+          (ssdf-test--stage-diff ssdf-test--deleted-file-delta ssdf-test--deleted-file-diff)
+          (should (equal (ssdf--git "ls-files" "--" "del.txt") "")))
+      (ssdf-quit)
+      (delete-directory repo t))))
 
 (provide 'side-by-side-diff-test)
 ;;; side-by-side-diff-test.el ends here

@@ -207,10 +207,14 @@ become text properties via `ansi-color-apply'."
               (when-let* ((entry (ssdf--parse-delta-line line)))
                 (push entry pending))))
            ;; Anything else is a file name emitted by delta's --file-style=raw
-           ;; (just the bare path, no "diff --git" prefix).  Flush any open hunk.
+           ;; (the bare path, or "added: F" / "removed: F" for new/deleted
+           ;; files).  Flush any open hunk.
            (t
             (flush)
-            (setq file (string-trim plain))))))
+            (setq file
+                  (if (string-match "\\`\\(?:added\\|removed\\): " plain)
+                      (substring plain (match-end 0))
+                    (string-trim plain)))))))
       (flush))
     (nreverse result)))
 
@@ -599,13 +603,27 @@ landed on instead."
                                    append (ssdf--row-patch-lines left-buf right-buf row))))
         (unless patch-lines
           (user-error "Nothing to stage in the selected range"))
-        (let ((patch (concat "diff --git a/" file-name " b/" file-name "\n"
-                             "--- a/" file-name "\n"
-                             "+++ b/" file-name "\n"
-                             "@@ -" (number-to-string patch-old) " +"
-                             (number-to-string patch-new) " @@\n"
-                             (mapconcat #'identity patch-lines "\n")
-                             "\n")))
+        ;; New files (old-start 0) and deletions (new-start 0) need
+        ;; /dev/null sides plus a mode line; without them `git apply
+        ;; --cached' fails on new files and silently stages an empty
+        ;; file instead of deleting removed ones.
+        (let* ((new-file-p    (eq base-old 0))
+               (deleted-file-p (eq base-new 0))
+               (mode-line
+                (cond
+                 (new-file-p "new file mode 100644\n")
+                 (deleted-file-p
+                  (format "deleted file mode %s\n"
+                          (or (ssdf--file-index-mode file-name) "100644")))
+                 (t "")))
+               (patch (concat "diff --git a/" file-name " b/" file-name "\n"
+                              mode-line
+                              "--- " (if new-file-p "/dev/null" (concat "a/" file-name)) "\n"
+                              "+++ " (if deleted-file-p "/dev/null" (concat "b/" file-name)) "\n"
+                              "@@ -" (number-to-string patch-old) " +"
+                              (number-to-string patch-new) " @@\n"
+                              (mapconcat #'identity patch-lines "\n")
+                              "\n")))
           (let ((status
                  (with-temp-buffer
                    (insert patch)
@@ -832,6 +850,12 @@ In `magit-status-mode' this checks the section at point; in
   (with-temp-buffer
     (apply #'process-file "git" nil t nil args)
     (buffer-string)))
+
+(defun ssdf--file-index-mode (file)
+  "Return the git index mode string (e.g. \"100644\") for FILE, or nil."
+  (let ((out (string-trim (ssdf--git "ls-files" "-s" "--" file))))
+    (when (string-match "\\`\\([0-9]*\\) " out)
+      (and (> (match-end 1) (match-beginning 1)) (match-string 1 out)))))
 
 ;;;###autoload
 (defun ssdf-from-magit ()
