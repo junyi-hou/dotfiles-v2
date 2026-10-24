@@ -20,6 +20,7 @@
 (declare-function magit-current-section "magit-section")
 (declare-function magit-section-lineage "magit-section")
 (declare-function evil-visual-line "evil")
+(defvar magit-log-section-commit-count)
 
 ;;;; Customization
 
@@ -758,12 +759,12 @@ landed on instead."
  "Major mode for side-by-side diff viewing."
  :group
  'side-by-side-diff
+ (visual-line-mode -1)
  (setq-local
   truncate-lines t
   buffer-read-only t
   outline-regexp "^=== "
   outline-level (lambda () 1))
- (visual-line-mode -1)
  (outline-minor-mode 1)
  (ssdf-visual-line-mode 1)
  (add-hook 'post-command-hook #'ssdf--sync nil t)
@@ -1038,6 +1039,41 @@ Signal an error when git fails, including its stderr."
                  (source-fn
                   (lambda (ctx)
                     (ssdf--git "show" (format "-U%d" ctx) "--format=" rev))))
+            (ssdf-display-diff
+             (funcall source-fn ssdf-default-context)
+             :context ssdf-default-context
+             :source-fn source-fn)))
+         (`(recent . ,_)
+          ;; The "Recent commits" section in `magit-status-mode'.  Stock
+          ;; magit stores the range string as the section value and wraps
+          ;; each commit in its own section (handled above); `magit-fast'
+          ;; stores the commit count and inserts commits as plain text, so
+          ;; point on any commit line lands here.  Parse the hash at the
+          ;; start of the cursor's line and show that commit; on the heading
+          ;; line (no hash) fall back to the whole recent range.
+          (let* ((value (oref section value))
+                 (range
+                  (cond
+                   ((stringp value)
+                    value)
+                   ((integerp value)
+                    (format "HEAD~%d..HEAD" value))
+                   ;; ponytail: repos with fewer commits than the count
+                   ;; fall through to git's own error; derive root range
+                   ;; if that ever bites.
+                   (t
+                    (format "HEAD~%d..HEAD" magit-log-section-commit-count))))
+                 (line
+                  (buffer-substring-no-properties
+                   (line-beginning-position) (line-end-position)))
+                 (hash
+                  (and (string-match "\\`\\([0-9a-f]\\{7,40\\}\\)" line)
+                       (match-string 1 line)))
+                 (source-fn
+                  (if hash
+                      (lambda (ctx)
+                        (ssdf--git "show" (format "-U%d" ctx) "--format=" hash))
+                    (lambda (ctx) (ssdf--git "diff" (format "-U%d" ctx) range)))))
             (ssdf-display-diff
              (funcall source-fn ssdf-default-context)
              :context ssdf-default-context

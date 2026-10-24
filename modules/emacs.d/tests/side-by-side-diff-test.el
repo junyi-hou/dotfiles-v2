@@ -645,5 +645,72 @@ not an empty blob in its place."
       (ssdf-quit)
       (delete-directory repo t))))
 
+;;; ssdf-from-magit — `(recent status)' lineage
+
+(defmacro ssdf-test--from-magit-recent (value line point-offset &rest body)
+  "Run `ssdf-from-magit' on a `recent' section holding VALUE, with the
+cursor at POINT-OFFSET on a buffer LINE.  `ssdf--git' records its args in
+`git-args' and `ssdf-display-diff' is mocked out, so BODY can assert on the
+git invocation without a repo, delta, or windows."
+  (declare (indent 3))
+  `(let (git-args)
+     (with-temp-buffer
+       (insert ,line "\n")
+       (goto-char (+ (point-min) ,point-offset))
+       (let ((major-mode 'magit-status-mode)
+             (section (magit-section :type 'recent)))
+         (oset section value ,value)
+         (cl-letf (((symbol-function 'magit-current-section) (lambda () section))
+                   ((symbol-function 'ssdf--git)
+                    (lambda (&rest args)
+                      (push args git-args)
+                      "diff"))
+                   ((symbol-function 'ssdf-display-diff) (lambda (&rest _) t)))
+           (ssdf-from-magit)))
+       ,@body)))
+
+(ert-deftest ssdf-mode--enforces-truncated-lines ()
+  "`visual-line-mode -1' kills the buffer-local `truncate-lines' set earlier
+in the mode body, so the disable must run BEFORE the `setq-local'.  Without
+truncation, long lines wrap and the two panels visually desync."
+  (with-temp-buffer
+    (ssdf-mode)
+    (should truncate-lines)
+    (should (local-variable-p 'truncate-lines))))
+
+(ert-deftest ssdf-from-magit--recent-section--range-string-value ()
+  "Stock magit stores the range string as the recent section value; on the
+heading line (no hash) diff that range as-is."
+  (ssdf-test--from-magit-recent "HEAD~2..HEAD" "Recent commits" 0
+    (should (equal (car git-args) '("diff" "-U3" "HEAD~2..HEAD")))))
+
+(ert-deftest ssdf-from-magit--recent-section--count-value ()
+  "`magit-fast' stores the commit count as the value; on the heading line
+(no hash) derive the range from it."
+  (ssdf-test--from-magit-recent 5 "Recent commits" 0
+    (should (equal (car git-args) '("diff" "-U3" "HEAD~5..HEAD")))))
+
+(ert-deftest ssdf-from-magit--recent-section--nil-value ()
+  "A nil value (repo younger than the count) falls back to the count."
+  (let ((magit-log-section-commit-count 10))
+    (ssdf-test--from-magit-recent nil "Recent commits" 0
+      (should (equal (car git-args) '("diff" "-U3" "HEAD~10..HEAD"))))))
+
+(ert-deftest ssdf-from-magit--recent-section--hash-on-line-shows-commit ()
+  "`magit-fast' writes commits as plain text; parse the hash at the start of
+the cursor's line and `git show' that commit instead."
+  (ssdf-test--from-magit-recent 5 "abc1234 (HEAD -> main) fix: the thing" 0
+    (should (equal (car git-args) '("show" "-U3" "--format=" "abc1234")))))
+
+(ert-deftest ssdf-from-magit--recent-section--cursor-mid-line-still-parses-hash ()
+  "The hash is parsed from the line, not from point, so mid-line cursors work."
+  (ssdf-test--from-magit-recent "HEAD~2..HEAD"
+      "abcdef12345678901234567890123456789012 some subject"
+      20
+    (should
+     (equal
+      (car git-args)
+      '("show" "-U3" "--format=" "abcdef12345678901234567890123456789012")))))
+
 (provide 'side-by-side-diff-test)
 ;;; side-by-side-diff-test.el ends here
