@@ -624,14 +624,16 @@ landed on instead."
                               (number-to-string patch-new) " @@\n"
                               (mapconcat #'identity patch-lines "\n")
                               "\n")))
-          (let ((status
+          (let ((result
                  (with-temp-buffer
                    (insert patch)
-                   (call-process-region (point-min) (point-max)
-                                        "git" nil t nil
-                                        "apply" "--cached" "--recount" "-"))))
-            (unless (eq status 0)
-              (user-error "git apply --cached failed")))))
+                   (let ((status (call-process-region (point-min) (point-max)
+                                                       "git" nil t nil
+                                                       "apply" "--cached" "--recount" "-")))
+                     (cons status (buffer-string))))))
+            (unless (eq (car result) 0)
+              (user-error "git apply --cached failed: %s"
+                          (string-trim (cdr result)))))))
       (ssdf--refresh-diff)
       (when (get-buffer ssdf--left-name)
         (with-current-buffer (get-buffer ssdf--left-name)
@@ -846,10 +848,15 @@ In `magit-status-mode' this checks the section at point; in
                             (member "--cached" diffargs))))))))
 
 (defun ssdf--git (&rest args)
-  "Run git with ARGS in `default-directory' and return stdout."
+  "Run git with ARGS in `default-directory' and return stdout.
+Signal an error when git fails, including its stderr."
   (with-temp-buffer
-    (apply #'process-file "git" nil t nil args)
-    (buffer-string)))
+    (let ((status (apply #'process-file "git" nil t nil args)))
+      (if (zerop status)
+          (buffer-string)
+        (user-error "git %s failed: %s"
+                    (mapconcat #'identity args " ")
+                    (string-trim (buffer-string)))))))
 
 (defun ssdf--file-index-mode (file)
   "Return the git index mode string (e.g. \"100644\") for FILE, or nil."
