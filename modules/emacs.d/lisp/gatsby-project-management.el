@@ -312,17 +312,13 @@ interactively select a single test to run instead."
 (use-package magit-fast
   :ensure (:host github :repo "zHaOdANiuu/magit-fast")
   :after magit
+  :custom-face (magit-log-commit-heading ((t)))
   :init
   (remove-hook 'server-switch-hook 'magit-commit-diff)
   (remove-hook 'magit-pre-start-git-hook #'magit-maybe-save-repository-buffers)
   (magit-fast-mode)
 
-  :config
-  (gatsby>defcommand gatsby>magit-fast-diff ()
-    (when-let* ((file (magit-file-at-point)))
-      (magit-diff-dwim nil `(,file))))
-
-  :evil-bind ((:maps magit-status-mode-map) ("<return>" . #'gatsby>magit-fast-diff)))
+  :evil-bind ((:maps magit-status-mode-map) ("<return>" . #'ssdf-from-magit)))
 
 (gatsby>use-internal-package git-rebase
   :evil-bind
