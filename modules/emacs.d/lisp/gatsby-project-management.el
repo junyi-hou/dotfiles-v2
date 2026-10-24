@@ -195,6 +195,21 @@ interactively select a single test to run instead."
 ;; and https://github.com/jixiuf/vmacs/blob/master/config/emacs/lazy/lazy-version-control.el
 (use-package magit
   :ensure (:host github :repo "magit/magit")
+  :init (magit-auto-revert-mode -1)
+  :custom
+  (magit-log-section-commit-count 5)
+  (magit-process-connection-type nil)
+  (magit-refresh-verbose nil)
+  (magit-refresh-status-buffer nil)
+  (magit-revision-insert-related-refs nil)
+  (magit-save-repository-buffers nil)
+  (magit-uniquify-buffer-names nil)
+  (magit-status-sections-hook
+   '(magit-insert-error-header
+     magit-insert-untracked-files
+     magit-insert-unstaged-changes
+     magit-insert-staged-changes
+     magit-insert-recent-commits))
   :hook
   ((evil-mode
     .
@@ -211,21 +226,6 @@ interactively select a single test to run instead."
        'motion)))
    (evil-mode . (lambda () (gatsby>>put-mode-to-evil-state 'git-commit-mode 'insert))))
   :config
-
-  (make-variable-buffer-local 'magit-log-section-commit-count)
-
-  ;; make recent-commits always visible
-  (magit-add-section-hook
-   'magit-status-sections-hook
-   'magit-insert-recent-commits
-   'magit-insert-unpushed-to-upstream-or-recent
-   'replace)
-
-  (magit-add-section-hook
-   'magit-status-sections-hook
-   'magit-insert-unpushed-to-upstream
-   'magit-insert-unpushed-to-pushremote
-   'append)
 
   (make-variable-buffer-local 'magit-log-section-commit-count)
 
@@ -308,6 +308,21 @@ interactively select a single test to run instead."
    ("SPC r" . #'magit-refresh-buffer)
    ("SPC o s" . #'gatsby>eshell-open-or-switch)
    ("SPC o S" . #'gatsby>ghostel-open-or-switch)))
+
+(use-package magit-fast
+  :ensure (:host github :repo "zHaOdANiuu/magit-fast")
+  :after magit
+  :init
+  (remove-hook 'server-switch-hook 'magit-commit-diff)
+  (remove-hook 'magit-pre-start-git-hook #'magit-maybe-save-repository-buffers)
+  (magit-fast-mode)
+
+  :config
+  (gatsby>defcommand gatsby>magit-fast-diff ()
+    (when-let* ((file (magit-file-at-point)))
+      (magit-diff-dwim nil `(,file))))
+
+  :evil-bind ((:maps magit-status-mode-map) ("<return>" . #'gatsby>magit-fast-diff)))
 
 (gatsby>use-internal-package git-rebase
   :evil-bind
