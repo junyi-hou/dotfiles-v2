@@ -431,13 +431,24 @@ region instead of inserting it directly."
   :ensure (:host github :repo "alberti42/agent-shell-math-renderer")
   :hook (agent-shell-mode . agent-shell-math-renderer-mode))
 
-;; (use-package agent-recall
-;;   :ensure (:host github :repo "mrx-xo/agent-recall")
-;;   :hook (agent-shell-mode . agent-recall-track-sessions)
-;;   :custom
-;;   (agent-recall-search-paths '("~/Projects"))
-;;   (agent-recall-search-function 'consult-ripgrep)
-;;   (agent-recall-browse-sort 'modified-desc))
+(use-package agent-recall
+  :ensure (:host github :repo "mrx-xo/agent-recall")
+  :hook
+  (agent-shell-mode . agent-recall-track-sessions)
+  (agent-recall-transcript-mode
+   . (lambda () (gatsby>>put-mode-to-evil-state 'agent-recall-transcript-mode 'motion)))
+
+  :custom
+  (agent-recall-search-paths '("~/Projects"))
+  (agent-recall-search-function 'consult-ripgrep)
+  (agent-recall-browse-sort 'modified-desc)
+  :evil-bind
+  ((:maps agent-recall-transcript-mode-map :states (motion normal))
+   (">" . #'agent-recall-next-user-message)
+   ("<" . #'agent-recall-prev-user-message)
+   (:maps (motion visual normal))
+   ("SPC a f" . #'agent-recall-search)
+   ("SPC a b" . #'agent-recall-browse)))
 
 (provide 'gatsby-ai)
 ;;; gatsby-ai.el ends here
