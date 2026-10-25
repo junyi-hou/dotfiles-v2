@@ -358,6 +358,10 @@ interactively select a single test to run instead."
    (">" . #'ssdf-next-hunk)
    ("<" . #'ssdf-prev-hunk)
    ("q" . #'ssdf-quit)
+   (:maps ssdf-mode-map :states (motion visual))
+   ("s" . #'ssdf-stage)
+   ("u" . #'ssdf-unstage)
+   ("d" . #'ssdf-discard)
    (:maps diff-mode-map)
    ("M-RET" . #'ssdf-from-diff-buffer)
    (:maps

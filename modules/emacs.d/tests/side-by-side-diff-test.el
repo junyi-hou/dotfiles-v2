@@ -585,18 +585,6 @@ file name must be extracted, not taken verbatim."
 
 ;;; ssdf-stage (integration with a temp git repo)
 
-(defconst ssdf-test--new-file-delta
-  "added: new.txt\n@@ -0,0 +1,2 @@\n  1 │+line1\n  2 │+line2\n")
-
-(defconst ssdf-test--deleted-file-delta
-  "removed: del.txt\n@@ -1 +0,0 @@\n  1 │-orig\n")
-
-(defconst ssdf-test--new-file-diff
-  "diff --git a/new.txt b/new.txt\nnew file mode 100644\n--- /dev/null\n+++ b/new.txt\n@@ -0,0 +1,2 @@\n+line1\n+line2\n")
-
-(defconst ssdf-test--deleted-file-diff
-  "diff --git a/del.txt b/del.txt\ndeleted file mode 100644\n--- a/del.txt\n+++ /dev/null\n@@ -1 +0,0 @@\n-orig\n")
-
 (defun ssdf-test--make-repo (files)
   "Create a temp git repo committing FILES (alist of REL-NAME . CONTENT); return dir."
   (let ((repo (make-temp-file "ssdf-stage-" t)))
@@ -610,15 +598,13 @@ file name must be extracted, not taken verbatim."
       (ssdf--git "commit" "-m" "init"))
     repo))
 
-(defun ssdf-test--stage-diff (delta-output diff-text)
-  "Display DIFF-TEXT via mocked DELTA-OUTPUT, then stage its hunk."
-  (ssdf-test--with-delta-output delta-output
-    (ssdf-display-diff diff-text :source-fn (lambda (_) diff-text))
-    (with-current-buffer (get-buffer ssdf--left-name)
-      (goto-char (point-min))
-      (re-search-forward "^@@ ")
-      (goto-char (line-beginning-position))
-      (ssdf-stage))))
+;; The (DELTA . DIFF) pairs consumed here live in tests/fixtures/git-*.el
+;; alongside the other captured fixtures.
+
+(defun ssdf-test--stage-fixture (fixture)
+  "Display the (DELTA . DIFF) git FIXTURE, then stage its hunk."
+  (ssdf-test--act-fixture fixture
+    (ssdf-stage)))
 
 (ert-deftest ssdf-stage--new-file-hunk ()
   "Staging a new-file hunk (old-start 0) puts the content in the index."
@@ -628,7 +614,7 @@ file name must be extracted, not taken verbatim."
           (with-temp-file (expand-file-name "new.txt" repo)
             (insert "line1\nline2\n"))
           (ssdf--git "add" "-N" "new.txt")
-          (ssdf-test--stage-diff ssdf-test--new-file-delta ssdf-test--new-file-diff)
+          (ssdf-test--stage-fixture "git-new-file.el")
           (should (equal (ssdf--git "show" ":new.txt") "line1\nline2\n")))
       (ssdf-quit)
       (delete-directory repo t))))
@@ -640,24 +626,12 @@ not an empty blob in its place."
     (unwind-protect
         (let ((default-directory repo))
           (delete-file (expand-file-name "del.txt" repo))
-          (ssdf-test--stage-diff ssdf-test--deleted-file-delta ssdf-test--deleted-file-diff)
+          (ssdf-test--stage-fixture "git-deleted-file.el")
           (should (equal (ssdf--git "ls-files" "--" "del.txt") "")))
       (ssdf-quit)
       (delete-directory repo t))))
 
 ;;; ssdf-discard (integration with a temp git repo)
-
-(defconst ssdf-test--mod-delta
-  "mod.txt\n@@ -1,3 +1,3 @@\n  1   1 │ first\n  2      │-old\n      2 │+new\n  3   3 │ last\n")
-
-(defconst ssdf-test--mod-diff
-  "diff --git a/mod.txt b/mod.txt\nindex 111..222 100644\n--- a/mod.txt\n+++ b/mod.txt\n@@ -1,3 +1,3 @@\n first\n-old\n+new\n last\n")
-
-(defconst ssdf-test--two-pair-delta
-  "mod.txt\n@@ -1,5 +1,5 @@\n  1   1 │ first\n  2      │-old1\n      2 │+new1\n  3      │-old2\n      3 │+new2\n  4   4 │ last\n")
-
-(defconst ssdf-test--two-pair-diff
-  "diff --git a/mod.txt b/mod.txt\nindex 111..222 100644\n--- a/mod.txt\n+++ b/mod.txt\n@@ -1,5 +1,5 @@\n first\n-old1\n+new1\n-old2\n+new2\n last\n")
 
 (defun ssdf-test--file-content (repo name)
   "Return the contents of NAME within REPO."
@@ -672,16 +646,20 @@ not an empty blob in its place."
     (re-search-forward "^@@ ")
     (goto-char (line-beginning-position))))
 
-(defmacro ssdf-test--discard-diff (delta-output diff-text &rest body)
-  "Display DIFF-TEXT via mocked DELTA-OUTPUT with point on its hunk.
-BODY runs in the left ssdf buffer afterwards (before discarding), so
-tests can position a region first."
-  (declare (indent 2))
-  `(ssdf-test--with-delta-output ,delta-output
-     (ssdf-display-diff ,diff-text :source-fn (lambda (_) ,diff-text))
-     (ssdf-test--goto-first-hunk)
-     (with-current-buffer (get-buffer ssdf--left-name)
-       ,@body)))
+(defmacro ssdf-test--act-fixture (fixture &rest body)
+  "Display the (DELTA . DIFF) git FIXTURE with point on its hunk.
+BODY runs in the left ssdf buffer before the action, so tests can
+position a region first."
+  (declare (indent 1))
+  `(let ((pair (ssdf-test--load-fixture ,fixture)))
+     (message "\n=== fixture: %s ===\n%s\n==================="
+              ,fixture
+              (ansi-color-filter-apply (car pair)))
+     (cl-letf (((symbol-function 'ssdf--run-delta) (lambda (_) (car pair))))
+       (ssdf-display-diff (cdr pair) :source-fn (lambda (_) (cdr pair)))
+       (ssdf-test--goto-first-hunk)
+       (with-current-buffer (get-buffer ssdf--left-name)
+         ,@body))))
 
 (ert-deftest ssdf-discard--unstaged-hunk ()
   "Discarding an unstaged hunk reverts the working tree; index and HEAD stay untouched."
@@ -691,7 +669,7 @@ tests can position a region first."
           (with-temp-file (expand-file-name "mod.txt" repo)
             (insert "first\nnew\nlast\n"))
           (cl-letf (((symbol-function 'y-or-n-p) (lambda (_) t)))
-            (ssdf-test--discard-diff ssdf-test--mod-delta ssdf-test--mod-diff
+            (ssdf-test--act-fixture "git-mod.el"
               (ssdf-discard)))
           (should (equal (ssdf-test--file-content repo "mod.txt") "first\nold\nlast\n"))
           (should (equal (ssdf--git "diff") ""))
@@ -708,7 +686,7 @@ tests can position a region first."
             (insert "first\nnew\nlast\n"))
           (ssdf--git "add" "mod.txt")
           (cl-letf (((symbol-function 'y-or-n-p) (lambda (_) t)))
-            (ssdf-test--discard-diff ssdf-test--mod-delta ssdf-test--mod-diff
+            (ssdf-test--act-fixture "git-mod.el"
               (ssdf-discard)))
           (should (equal (ssdf--git "diff" "--staged") ""))
           (should
@@ -724,7 +702,7 @@ tests can position a region first."
           (with-temp-file (expand-file-name "mod.txt" repo)
             (insert "first\nnew1\nnew2\nlast\n"))
           (cl-letf (((symbol-function 'y-or-n-p) (lambda (_) t)))
-            (ssdf-test--discard-diff ssdf-test--two-pair-delta ssdf-test--two-pair-diff
+            (ssdf-test--act-fixture "git-two-pair.el"
               ;; Select only the second change row (old2/new2).
               (forward-line 3)
               (push-mark (line-beginning-position) t t)
@@ -733,6 +711,65 @@ tests can position a region first."
           (should
            (equal
             (ssdf-test--file-content repo "mod.txt") "first\nnew1\nold2\nlast\n")))
+      (ssdf-quit)
+      (delete-directory repo t))))
+
+;;; ssdf-stage / ssdf-unstage — region-restricted (not the entire hunk)
+
+(ert-deftest ssdf-stage--region-restricted ()
+  "With an active region, only the selected rows are staged, not the whole hunk."
+  (let ((repo (ssdf-test--make-repo '(("mod.txt" . "first\nold1\nold2\nlast\n")))))
+    (unwind-protect
+        (let ((default-directory repo))
+          (with-temp-file (expand-file-name "mod.txt" repo)
+            (insert "first\nnew1\nnew2\nlast\n"))
+          (ssdf-test--act-fixture "git-two-pair.el"
+            ;; Select only the second change row (old2/new2).
+            (forward-line 3)
+            (push-mark (line-beginning-position) t t)
+            (end-of-line)
+            (ssdf-stage))
+          (should (equal (ssdf--git "show" ":mod.txt") "first\nold1\nnew2\nlast\n"))
+          (should
+           (equal
+            (ssdf-test--file-content repo "mod.txt") "first\nnew1\nnew2\nlast\n")))
+      (ssdf-quit)
+      (delete-directory repo t))))
+
+(ert-deftest ssdf-unstage--whole-hunk ()
+  "Unstaging a staged hunk resets the index to HEAD; the working tree keeps the change."
+  (let ((repo (ssdf-test--make-repo '(("mod.txt" . "first\nold\nlast\n")))))
+    (unwind-protect
+        (let ((default-directory repo))
+          (with-temp-file (expand-file-name "mod.txt" repo)
+            (insert "first\nnew\nlast\n"))
+          (ssdf--git "add" "mod.txt")
+          (ssdf-test--act-fixture "git-mod.el"
+            (ssdf-unstage))
+          (should (equal (ssdf--git "diff" "--staged") ""))
+          (should
+           (equal (ssdf-test--file-content repo "mod.txt") "first\nnew\nlast\n")))
+      (ssdf-quit)
+      (delete-directory repo t))))
+
+(ert-deftest ssdf-unstage--region-restricted ()
+  "With an active region, only the selected rows are unstaged from the index."
+  (let ((repo (ssdf-test--make-repo '(("mod.txt" . "first\nold1\nold2\nlast\n")))))
+    (unwind-protect
+        (let ((default-directory repo))
+          (with-temp-file (expand-file-name "mod.txt" repo)
+            (insert "first\nnew1\nnew2\nlast\n"))
+          (ssdf--git "add" "mod.txt")
+          (ssdf-test--act-fixture "git-two-pair.el"
+            ;; Select only the second change row (old2/new2).
+            (forward-line 3)
+            (push-mark (line-beginning-position) t t)
+            (end-of-line)
+            (ssdf-unstage))
+          (should (equal (ssdf--git "show" ":mod.txt") "first\nnew1\nold2\nlast\n"))
+          (should
+           (equal
+            (ssdf-test--file-content repo "mod.txt") "first\nnew1\nnew2\nlast\n")))
       (ssdf-quit)
       (delete-directory repo t))))
 

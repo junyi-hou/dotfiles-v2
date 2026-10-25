@@ -755,6 +755,17 @@ Uses `git apply --cached --recount' so partial hunks stage correctly."
        (unless (eq (car result) 0)
          (user-error "git apply --cached failed: %s" (string-trim (cdr result))))))))
 
+(defun ssdf-unstage ()
+  "Unstage the hunk at point, or the active region, then refresh the diff.
+Reverse-applies the change to the index only; the working tree is
+untouched."
+  (interactive)
+  (ssdf--act-on-hunk
+   (lambda (patch)
+     (let ((result (ssdf--git-apply patch "--cached" "-R" "--recount")))
+       (unless (eq (car result) 0)
+         (user-error "git apply --cached -R failed: %s" (string-trim (cdr result))))))))
+
 (defun ssdf--apply-reverse (patch)
   "Reverse-apply PATCH to the working tree, and to the index when possible.
 Discarding a staged change must also revert the index, otherwise the
@@ -791,6 +802,7 @@ before discarding."
     (define-key map (kbd "+") #'ssdf-increase-context)
     (define-key map (kbd "-") #'ssdf-decrease-context)
     (define-key map (kbd "s") #'ssdf-stage)
+    (define-key map (kbd "u") #'ssdf-unstage)
     (define-key map (kbd "k") #'ssdf-discard)
     (define-key map (kbd "q") #'ssdf-quit)
     map)
