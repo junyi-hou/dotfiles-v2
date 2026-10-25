@@ -320,42 +320,20 @@ sleep; otherwise keep it awake.  Return a process object to pass to
       (defun system-sleep-unblock-sleep (&rest _)
         t)))
 
-  (defun gatsby>>agent-shell-read-prompt (prompt-text)
-    "Read a prompt from the minibuffer the way `agent-shell--prompt-queue-read' does.
-PROMPT-TEXT replaces the agent's shell prompt as the minibuffer prompt, so
-the caller can say what the prompt will be used for.  The completion setup
-hook still runs, so @ completes project files and / agent commands."
-    (let ((shell-buffer (current-buffer)))
-      (minibuffer-with-setup-hook
-          (lambda ()
-            (run-hook-with-args 'agent-shell-prompt-queue-setup-minibuffer-functions
-                                `((:shell-buffer . ,shell-buffer))))
-        (read-string prompt-text))))
-
-  (gatsby>defcommand gatsby>agent-shell-send-or-queue-prompt (force-queue)
-    "Steer the current turn if the agent supports it, otherwise queue the prompt.
-
-With prefix argument FORCE-QUEUE, always queue the prompt instead of steering.
-The minibuffer prompt says whether the prompt will steer or queue."
-    (cond
-     ((not (agent-shell--active-requests-p (agent-shell--state)))
-      (call-interactively #'shell-maker-submit))
-     ((and (not force-queue) (agent-shell-steering-supported-p))
-      (agent-shell-prompt-steer (gatsby>>agent-shell-read-prompt "Steering: ")))
-     (t
-      (agent-shell-prompt-queue (gatsby>>agent-shell-read-prompt "Queuing: ")))))
-
-  (gatsby>defcommand gatsby>agent-shell-send-file (prompt-for-file)
+  (gatsby>defcommand gatsby>agent-shell-send-file (queue)
     "Send file(s) to an agent shell.
 
 If a region is active and the buffer is visiting a file, send the region.
 Otherwise, if the file is inside the CWD of multiple agent shells, prompt for
-which shell to send to. Otherwise, behave like `agent-shell-send-file'."
+which shell to send to. Otherwise, behave like `agent-shell-send-file'.
+
+With a prefix argument, read a queue prompt prefilled with the file or
+region instead of inserting it directly."
     (let* ((in-shell (derived-mode-p 'agent-shell-mode))
            (region-active (and (region-active-p) (buffer-file-name)))
            (files
             (cond
-             ((or in-shell prompt-for-file)
+             (in-shell
               (list (completing-read "Send file: " (agent-shell--project-files))))
              (region-active
               (list (buffer-file-name)))
@@ -363,8 +341,8 @@ which shell to send to. Otherwise, behave like `agent-shell-send-file'."
               (or (agent-shell--buffer-files)
                   (when (buffer-file-name)
                     (list (buffer-file-name)))
-                  (list (completing-read "Send file: " (agent-shell--project-files)))
-                  (user-error "No file to send")))))
+                  (list
+                   (completing-read "Send file: " (agent-shell--project-files)))))))
            (matching-buffers
             (seq-filter
              (lambda (buffer)
@@ -385,22 +363,28 @@ which shell to send to. Otherwise, behave like `agent-shell-send-file'."
                  "Send file to shell: ")
                :buffers matching-buffers))
              ((= (length matching-buffers) 1)
-              (car matching-buffers)))))
-      (if shell-buffer
-          (if region-active
-              (let ((text
-                     (agent-shell--get-region-context
-                      :deactivate t
-                      :agent-cwd
-                      (with-current-buffer shell-buffer
-                        (agent-shell-cwd)))))
-                (agent-shell-insert :text text :shell-buffer shell-buffer))
-            (agent-shell-insert
-             :text (agent-shell--get-files-context :files files)
-             :shell-buffer shell-buffer))
-        (if region-active
-            (agent-shell-send-region)
-          (agent-shell-send-file prompt-for-file)))))
+              (car matching-buffers))))
+           (text
+            (when (or queue shell-buffer)
+              (if region-active
+                  (agent-shell--get-region-context
+                   :deactivate t
+                   :agent-cwd
+                   (when shell-buffer
+                     (with-current-buffer shell-buffer
+                       (agent-shell-cwd))))
+                (agent-shell--get-files-context :files files)))))
+      (cond
+       (queue
+        (with-current-buffer (or shell-buffer (agent-shell--shell-buffer))
+          (agent-shell-prompt-queue
+           (agent-shell--prompt-queue-read :initial (concat text "\n\n")))))
+       (shell-buffer
+        (agent-shell-insert :text text :shell-buffer shell-buffer))
+       (region-active
+        (agent-shell-send-region))
+       (t
+        (agent-shell-send-file)))))
 
   :evil-bind
   ((:maps (visual normal motion))
@@ -413,7 +397,8 @@ which shell to send to. Otherwise, behave like `agent-shell-send-file'."
    (:maps agent-shell-mode-map :states (normal visual insert))
    ("C-c C-l" . #'comint-clear-buffer)
    ("C-c C-c" . #'agent-shell-interrupt)
-   ("M-RET" . #'gatsby>agent-shell-send-or-queue-prompt)
+   ("M-RET" . #'agent-shell-prompt-queue)
+   ("M-v" . #'yank-media)
    (:maps agent-shell-mode-map :states normal)
    (">" . #'agent-shell-next-item)
    ("<" . #'agent-shell-previous-item)
@@ -423,7 +408,6 @@ which shell to send to. Otherwise, behave like `agent-shell-send-file'."
    ("M" . #'agent-shell-set-session-model)
    ("t" . #'agent-shell-set-session-thought-level)
    ("q" . #'delete-window)
-   ("M-v" . #'agent-shell-yank-dwim)
    ([remap kill-buffer-and-window] . #'delete-window)
    (:maps agent-shell-diff-mode-map)
    (">" . #'diff-hunk-next)
