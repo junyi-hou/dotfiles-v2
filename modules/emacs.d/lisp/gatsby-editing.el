@@ -111,6 +111,8 @@
    ("C-k" . #'windmove-up)
    ("C-e" . #'gatsby>evil-scroll-down)
    ("C-y" . #'gatsby>evil-scroll-up)
+   (:maps universal-argument-map)
+   ("M-u" . #'universal-argument-more)
    (:maps (motion normal visual))
    ("j" . #'evil-next-visual-line)
    ("k" . #'evil-previous-visual-line)
