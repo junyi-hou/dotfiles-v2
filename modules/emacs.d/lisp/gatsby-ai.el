@@ -386,11 +386,6 @@ region instead of inserting it directly."
        (t
         (agent-shell-send-file)))))
 
-  (gatsby>defcommand gatsby>agent-shell-send-or-queue (queue)
-    (if (and queue (shell-maker-busy))
-        (agent-shell-busy-submit-queue)
-      (shell-maker-submit)))
-
   :evil-bind
   ((:maps (visual normal motion))
    ([remap gatsby>kill-buffer] . #'kill-buffer-and-window)
@@ -402,7 +397,8 @@ region instead of inserting it directly."
    (:maps agent-shell-mode-map :states (normal visual insert))
    ("C-c C-l" . #'comint-clear-buffer)
    ("C-c C-c" . #'agent-shell-interrupt)
-   ("M-RET" . #'gatsby>agent-shell-send-or-queue)
+   ("C-<return>" . #'agent-shell-prompt-queue)
+   ("M-RET" . #'shell-maker-submit)
    ("M-v" . #'yank-media)
    (:maps agent-shell-mode-map :states normal)
    (">" . #'agent-shell-next-item)
