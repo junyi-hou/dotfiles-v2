@@ -214,6 +214,69 @@ if (src.includes("STEERING_MODE_CONFIG_ID")) {
   console.log("steering: patched");
 }
 
+if (src.includes("Thinking effort updates its config option, not the session mode.")) {
+  console.log("thought-level-mode: already patched; skipping");
+} else {
+  applyEdits([[
+    `      await session.proc.setThinkingLevel(params.value);\n      void this.conn.sessionUpdate({\n        sessionId: session.sessionId,\n        update: {\n          sessionUpdate: "current_mode_update",\n          currentModeId: params.value\n        }\n      });\n    } else if (configId === STEERING_MODE_CONFIG_ID || configId === FOLLOW_UP_MODE_CONFIG_ID) {`,
+    `      await session.proc.setThinkingLevel(params.value);\n      // Thinking effort updates its config option, not the session mode.\n    } else if (configId === STEERING_MODE_CONFIG_ID || configId === FOLLOW_UP_MODE_CONFIG_ID) {`
+  ]]);
+  changed = true;
+  console.log("thought-level-mode: patched");
+}
+
+if (src.includes('if (tl === "max") current = "xhigh";')) {
+  console.log("xhigh-state: already patched; skipping");
+} else {
+  applyEdits([[
+    `  if (tl && isThinkingLevel(tl)) current = tl;`,
+    `  if (tl === "max") current = "xhigh";\n  else if (tl && isThinkingLevel(tl)) current = tl;`
+  ]]);
+  changed = true;
+  console.log("xhigh-state: patched");
+}
+
+if (src.includes("async getAvailableThinkingLevels()")) {
+  console.log("model-thinking-levels: already patched; skipping");
+} else {
+  applyEdits([[
+    `  async setThinkingLevel(level) {
+    const res = await this.request({ type: "set_thinking_level", level });
+    if (!res.success) throw new Error(\`pi set_thinking_level failed: \${res.error ?? JSON.stringify(res.data)}\`);
+  }`,
+    `  async setThinkingLevel(level) {
+    const res = await this.request({ type: "set_thinking_level", level });
+    if (!res.success) throw new Error(\`pi set_thinking_level failed: \${res.error ?? JSON.stringify(res.data)}\`);
+  }
+  async getAvailableThinkingLevels() {
+    const res = await this.request({ type: "get_available_thinking_levels" });
+    if (!res.success) throw new Error("pi get_available_thinking_levels failed");
+    return res.data;
+  }`
+  ]]);
+  changed = true;
+  console.log("model-thinking-levels: patched");
+}
+
+if (src.includes('level === "max" ? "xhigh" : level')) {
+  console.log("model-thinking-options: already patched; skipping");
+} else {
+  applyEdits([[
+    `  const available = ["off", "minimal", "low", "medium", "high", "xhigh"];`,
+    `  let available = ["off", "minimal", "low", "medium", "high", "xhigh"];
+  try {
+    const result = await proc.getAvailableThinkingLevels();
+    if (Array.isArray(result?.levels)) {
+      available = [...new Set(result.levels.map((level) => level === "max" ? "xhigh" : level).filter(isThinkingLevel))];
+    }
+  } catch {
+  }
+  if (!available.includes(current)) current = available[0] ?? "medium";`
+  ]]);
+  changed = true;
+  console.log("model-thinking-options: patched");
+}
+
 const fullAccessModeEdits = [
   // Report Full Access as the current session mode. thinkingLevel preserves
   // the real thinking level for the thought_level config option below.
@@ -510,6 +573,10 @@ if (!check.includes('mode === "full-access"')) fail("full-access marker missing"
 if (!check.includes('name: "Full Access"')) fail("full-access-mode marker missing");
 if (!check.includes("thinkingLevel: current")) fail("thinking-level field missing");
 if (!check.includes("thinkingLevels: available")) fail("thinking-level list missing");
+if (!check.includes('if (tl === "max") current = "xhigh";')) fail("max thinking level is not mapped to xhigh");
+if (!check.includes("get_available_thinking_levels")) fail("model thinking levels are not queried");
+if (!check.includes('level === "max" ? "xhigh" : level')) fail("model max option is not mapped to xhigh");
+if (check.includes("currentModeId: params.value")) fail("thinking level still updates session mode");
 if (check.includes("name: \`Thinking:")) fail("thinking levels leaked into session modes");
 if (!check.includes("_session/steering")) fail("steering handler missing");
 if (!check.includes("steering: { supported: true }")) fail("steering advertisement missing");
