@@ -6,8 +6,7 @@
     "npm:@dietrichgebert/ponytail",
     "npm:pi-mcp-adapter",
     "npm:pi-web-access",
-    "npm:pi-subagents",
-    "npm:pi-intercom"
+    "npm:pi-subagents"
   ],
   "lastChangelogVersion": "0.85.1",
   "theme": "dark",
