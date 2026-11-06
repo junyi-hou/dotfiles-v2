@@ -1,6 +1,6 @@
 {
-  "defaultProvider": "opencode-go",
-  "defaultModel": "glm-5.3",
+  "defaultProvider": "openai",
+  "defaultModel": "gpt-6.1-terra",
   "defaultThinkingLevel": "low",
   "packages": [
     "npm:@dietrichgebert/ponytail",
@@ -8,8 +8,9 @@
     "npm:pi-web-access",
     "npm:pi-subagents"
   ],
-  "lastChangelogVersion": "0.85.1",
   "theme": "dark",
   "steeringMode": "all",
-  "followUpMode": "all"
+  "followUpMode": "all",
+  "lastChangelogVersion": "1.4.0",
+  "deviceId": "4b300337-a4e0-47e5-b3a2-cb9edc270dd5"
 }
