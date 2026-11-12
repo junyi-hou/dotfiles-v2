@@ -451,5 +451,8 @@ region instead of inserting it directly."
    ("SPC a f" . #'agent-recall-search)
    ("SPC a b" . #'agent-recall-browse)))
 
+(use-package omnigent
+  :ensure (:host github :repo "junyi-hou/emacs-omnigent"))
+
 (provide 'gatsby-ai)
 ;;; gatsby-ai.el ends here
