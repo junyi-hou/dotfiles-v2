@@ -54,6 +54,28 @@ def test_uninstall_removes_symlink_when_installed():
         assert not install_link.exists()
 
 
+def test_uninstall_skips_destination_parent_that_resolves_to_source():
+    with tempfile.TemporaryDirectory() as tmp:
+        repo_root = Path(tmp).resolve()
+        module_root = repo_root / "modules"
+        module_dir = module_root / "mymod"
+        module_dir.mkdir(parents=True)
+        module_file = module_dir / "rc"
+        module_file.write_text("source content")
+        install_root = repo_root / "home"
+        install_root.mkdir()
+        install_dir = install_root / ".mymod"
+        install_dir.symlink_to(module_dir)
+
+        with patch("scripts.uninstall.git_root", return_value=repo_root):
+            with patch("scripts._lib.HOME", install_root):
+                uninstall(module_file, dry_run=False)
+
+        assert module_file.read_text() == "source content"
+        assert install_dir.is_symlink()
+        assert install_dir.resolve() == module_dir
+
+
 def test_uninstall_records_mtime_in_state():
     with tempfile.TemporaryDirectory() as tmp:
         module_root, module_file = _make_module_tree(tmp)

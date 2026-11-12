@@ -38,6 +38,11 @@ def uninstall(module: str | Path, *, dry_run: bool = True, state: dict[str, floa
 
     relative_path = module.relative_to(module_root)
     install_path = get_target_path(relative_path)
+    # A parent of the destination may itself link to the source directory.
+    # In that case removing the destination would delete the repository entry.
+    if install_path.parent.resolve() / install_path.name == module.parent.resolve() / module.name:
+        logger.debug(f"{install_path} is the source entry, skipping.")
+        return
     backup_path = get_backup_path(install_path)
     install_folder = should_install_folder(module)
 
