@@ -452,7 +452,25 @@ region instead of inserting it directly."
    ("SPC a b" . #'agent-recall-browse)))
 
 (use-package omnigent
-  :ensure (:host github :repo "junyi-hou/emacs-omnigent"))
+  :ensure (:host github :repo "junyi-hou/emacs-omnigent")
+  :hook
+  (omnigent-ui-sessions-mode
+   . (lambda () (gatsby>>put-mode-to-evil-state 'omnigent-ui-sessions-mode 'motion)))
+  (omnigent-ui-workspace-mode
+   . (lambda () (gatsby>>put-mode-to-evil-state 'omnigent-ui-workspace-mode 'motion)))
+  :evil-bind
+  ((:maps omnigent-ui-sessions-mode-map :states motion)
+   ("c" . #'omnigent-sessions-create)
+   ("a" . #'omnigent-ui-archive)
+   ("d" . #'omnigent-ui-delete)
+   ("RET" . #'omnigent-ui-sessions-open)
+   ("r" . #'omnigent-ui-refresh)
+   (:maps omnigent-ui-workspace-mode-map :states motion)
+   ("r" . #'omnigent-ui-workspace-refresh)
+   ("RET" . #'omnigent-workspace-diff)
+   (:maps omnigent-conversation-mode-map :states (normal insert))
+   ("M-RET" . #'omnigent-conversation-send)
+   ("C-c C-c" . #'omnigent-conversation-interrupt)))
 
 (provide 'gatsby-ai)
 ;;; gatsby-ai.el ends here

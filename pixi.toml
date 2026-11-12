@@ -10,6 +10,8 @@ platforms = ["osx-arm64", "linux-64"]
 dev = ["local"]
 all = ["global"]
 
+[system-requirements]
+macos = "26.1"
 
 [feature.local.dependencies]
 python = ">=3.12"
@@ -28,9 +30,10 @@ gh = "*"
 git-delta = "*"
 fd-find = "*"
 ripgrep = "*"
-nodejs = "*"      # for acp
-go-sops = "*"     # for secret management
+nodejs = "*"        # for acp
+go-sops = "*"       # for secret management
 tmux = "*"
+codex = "==0.167.2"
 
 # lsp
 harper = "*"
@@ -44,8 +47,8 @@ codebook-lsp = "*"
 jsonnet-language-server = "*"
 
 [feature.global.tasks]
-install-pi = "npm install -g @earendil-works/pi-coding-agent@1.4.0 pi-acp@0.0.33 && node modules/pi/agent/patch-pi-acp.mjs"
 install-starpls = "bash scripts/install-starpls.sh"
 
 [feature.global.pypi-dependencies]
-"rassumfrassum" = "*"
+rassumfrassum = "*"
+omnigent = "==0.21.0"

@@ -1,0 +1,9 @@
+providers:
+  codex:
+    cli: codex
+    default: true
+    kind: subscription
+  pi:
+    cli: pi
+    default: pi
+    kind: subscription
