@@ -453,6 +453,7 @@ region instead of inserting it directly."
 
 (use-package omnigent
   :ensure (:host github :repo "junyi-hou/emacs-omnigent")
+  :custom (omnigent-side-window-width 0.2)
   :hook
   (omnigent-ui-sessions-mode
    . (lambda () (gatsby>>put-mode-to-evil-state 'omnigent-ui-sessions-mode 'motion)))
@@ -465,12 +466,27 @@ region instead of inserting it directly."
    ("d" . #'omnigent-ui-delete)
    ("RET" . #'omnigent-ui-sessions-open)
    ("r" . #'omnigent-ui-refresh)
+   ("SPC r" . #'omnigent-ui-refresh)
    (:maps omnigent-ui-workspace-mode-map :states motion)
    ("r" . #'omnigent-ui-workspace-refresh)
-   ("RET" . #'omnigent-workspace-diff)
+   ("SPC r" . #'omnigent-ui-workspace-refresh)
+   ("RET" . #'omnigent-ui-workspace-diff)
+   ("M-RET" . #'omnigent-ui-workspace-visit-file)
+   ("SPC g" . #'omnigent-ui-workspace-magit-status)
    (:maps omnigent-conversation-mode-map :states (normal insert))
    ("M-RET" . #'omnigent-conversation-send)
-   ("C-c C-c" . #'omnigent-conversation-interrupt)))
+   ("C-c C-c" . #'omnigent-conversation-interrupt)
+   (:maps omnigent-conversation-mode-map :states (normal))
+   ;; ("SPC s" . #'omnigent-conversation-side-chat)
+   ("SPC c" . #'omnigent-sessions-create)
+   ("SPC r" . #'omnigent-conversation-reconnect)
+   ("SPC f" . #'omnigent-conversation-fork)
+   ("SPC m" . #'omnigent-conversation-set-model)
+   ("SPC t" . #'omnigent-conversation-set-effort)
+   ("SPC a" . #'omnigent-conversation-archive)
+
+   ("zc" . #'omnigent-conversation-close-block)
+   ("zo" . #'omnigent-conversation-open-block)))
 
 (provide 'gatsby-ai)
 ;;; gatsby-ai.el ends here
